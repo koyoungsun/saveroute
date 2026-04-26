@@ -9,6 +9,7 @@ interface TelecomProvider {
   id: string;
   name: string;
   isMvno: boolean;
+  isNone?: boolean;
 }
 
 interface TelecomProduct {
@@ -21,6 +22,7 @@ interface TelecomProduct {
 interface CardCompany {
   id: string;
   name: string;
+  isNone?: boolean;
 }
 
 interface CardProduct {
@@ -39,6 +41,12 @@ interface RegisteredBenefit {
 }
 
 const telecomProviders: TelecomProvider[] = [
+  { id: "none", name: "통신사 없음", isMvno: false, isNone: true },
+  {
+    id: "mvno-unknown",
+    name: "알뜰요금제 사용 중이지만 혜택 확인 필요",
+    isMvno: true,
+  },
   { id: "skt", name: "SKT", isMvno: false },
   { id: "kt", name: "KT", isMvno: false },
   { id: "lguplus", name: "LGU+", isMvno: false },
@@ -48,6 +56,12 @@ const telecomProviders: TelecomProvider[] = [
 ];
 
 const telecomProducts: TelecomProduct[] = [
+  {
+    id: "mvno-unknown-plan",
+    providerId: "mvno-unknown",
+    name: "혜택 확인 필요",
+    isMvno: true,
+  },
   { id: "skt-vip", providerId: "skt", name: "T멤버십 VIP", isMvno: false },
   { id: "skt-gold", providerId: "skt", name: "T멤버십 Gold", isMvno: false },
   { id: "kt-vip", providerId: "kt", name: "KT VIP", isMvno: false },
@@ -75,6 +89,7 @@ const telecomProducts: TelecomProduct[] = [
 ];
 
 const cardCompanies: CardCompany[] = [
+  { id: "none", name: "카드 없음", isNone: true },
   { id: "shinhan", name: "신한카드" },
   { id: "samsung", name: "삼성카드" },
   { id: "hyundai", name: "현대카드" },
@@ -129,18 +144,11 @@ const cardTypeLabels: Record<CardType, string> = {
 };
 
 export function BenefitForm() {
-  const [selectedTelecomProviderId, setSelectedTelecomProviderId] = useState(
-    telecomProviders[0].id,
-  );
-  const [selectedCardCompanyId, setSelectedCardCompanyId] = useState(
-    cardCompanies[0].id,
-  );
-  const [selectedTelecomProductId, setSelectedTelecomProductId] = useState(
-    telecomProducts[0].id,
-  );
-  const [selectedCardProductId, setSelectedCardProductId] = useState(
-    cardProducts[0].id,
-  );
+  const [selectedTelecomProviderId, setSelectedTelecomProviderId] =
+    useState("none");
+  const [selectedCardCompanyId, setSelectedCardCompanyId] = useState("none");
+  const [selectedTelecomProductId, setSelectedTelecomProductId] = useState("");
+  const [selectedCardProductId, setSelectedCardProductId] = useState("");
   const [registeredBenefits, setRegisteredBenefits] = useState<
     RegisteredBenefit[]
   >([]);
@@ -175,6 +183,10 @@ export function BenefitForm() {
   );
   const shouldShowMvnoNotice =
     selectedTelecomProvider?.isMvno || selectedTelecomProduct?.isMvno;
+  const hasTelecomProviderSelected =
+    Boolean(selectedTelecomProvider) && !selectedTelecomProvider?.isNone;
+  const hasCardCompanySelected =
+    Boolean(selectedCardCompany) && !selectedCardCompany?.isNone;
   const telecomBenefitCount = registeredBenefits.filter(
     (benefit) => benefit.category === "telecom",
   ).length;
@@ -192,14 +204,13 @@ export function BenefitForm() {
 
   const handleCardCompanyChange = (companyId: string) => {
     setSelectedCardCompanyId(companyId);
-    setSelectedCardProductId(
-      cardProducts.find((product) => product.companyId === companyId)?.id ?? "",
-    );
+    setSelectedCardProductId("");
   };
 
   const addTelecomBenefit = () => {
     if (
       telecomBenefitCount >= 2 ||
+      !hasTelecomProviderSelected ||
       !selectedTelecomProvider ||
       !selectedTelecomProduct
     ) {
@@ -218,18 +229,20 @@ export function BenefitForm() {
   };
 
   const addCardBenefit = () => {
-    if (cardBenefitCount >= 3 || !selectedCardCompany || !selectedCardProduct) {
+    if (cardBenefitCount >= 3 || !hasCardCompanySelected || !selectedCardCompany) {
       return;
     }
 
     setRegisteredBenefits((current) => [
       ...current,
       {
-        id: `card-${selectedCardProduct.id}`,
+        id: `card-${selectedCardCompany.id}-${selectedCardProduct?.id ?? "later"}`,
         category: "card",
         providerName: selectedCardCompany.name,
-        productName: selectedCardProduct.name,
-        badge: cardTypeLabels[selectedCardProduct.cardType],
+        productName: selectedCardProduct?.name ?? "카드상품 나중에 선택",
+        badge: selectedCardProduct
+          ? cardTypeLabels[selectedCardProduct.cardType]
+          : undefined,
       },
     ]);
   };
@@ -240,10 +253,22 @@ export function BenefitForm() {
     );
   };
 
+  const handleSave = () => {
+    if (registeredBenefits.length === 0) {
+      alert("혜택 없이 저장되었습니다.");
+      return;
+    }
+
+    alert("혜택이 저장되었습니다.");
+  };
+
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-gray-800">통신사</h2>
+        <p className="mt-1 text-xs text-gray-400">
+          통신사 혜택이 없다면 ‘통신사 없음’을 선택해도 됩니다.
+        </p>
 
         <label
           htmlFor="telecom-provider"
@@ -274,8 +299,12 @@ export function BenefitForm() {
           id="telecom-product"
           value={selectedTelecomProductId}
           onChange={(event) => setSelectedTelecomProductId(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={!hasTelecomProviderSelected}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
         >
+          {!hasTelecomProviderSelected ? (
+            <option value="">통신사를 먼저 선택해주세요</option>
+          ) : null}
           {filteredTelecomProducts.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
@@ -293,7 +322,7 @@ export function BenefitForm() {
         <button
           type="button"
           onClick={addTelecomBenefit}
-          disabled={telecomBenefitCount >= 2}
+          disabled={telecomBenefitCount >= 2 || !hasTelecomProviderSelected}
           className="mt-4 text-sm font-medium text-blue-600 disabled:text-gray-400"
         >
           + 통신사 추가
@@ -302,6 +331,9 @@ export function BenefitForm() {
 
       <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-gray-800">카드</h2>
+        <p className="mt-1 text-xs text-gray-400">
+          정확한 카드명을 모르면 카드사만 선택해도 됩니다.
+        </p>
 
         <label
           htmlFor="card-company"
@@ -332,8 +364,14 @@ export function BenefitForm() {
           id="card-product"
           value={selectedCardProductId}
           onChange={(event) => setSelectedCardProductId(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={!hasCardCompanySelected}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
         >
+          <option value="">
+            {hasCardCompanySelected
+              ? "카드상품은 나중에 선택"
+              : "카드사를 먼저 선택해주세요"}
+          </option>
           {filteredCardProducts.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
@@ -350,7 +388,7 @@ export function BenefitForm() {
         <button
           type="button"
           onClick={addCardBenefit}
-          disabled={cardBenefitCount >= 3}
+          disabled={cardBenefitCount >= 3 || !hasCardCompanySelected}
           className="mt-4 block text-sm font-medium text-blue-600 disabled:text-gray-400"
         >
           + 카드 추가
@@ -388,15 +426,18 @@ export function BenefitForm() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-gray-500">
-            등록된 혜택이 없습니다.
-          </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-sm text-gray-500">등록된 혜택이 없습니다.</p>
+            <p className="text-xs text-gray-400">
+              통신사나 카드를 등록하면 검색 결과가 더 정확해져요.
+            </p>
+          </div>
         )}
       </section>
 
       <button
         type="button"
-        onClick={() => alert("혜택이 저장되었습니다.")}
+        onClick={handleSave}
         className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700"
       >
         저장하기
