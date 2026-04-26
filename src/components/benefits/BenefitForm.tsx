@@ -1,0 +1,406 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { X } from "lucide-react";
+
+type CardType = "credit" | "debit" | "prepaid" | "unknown";
+
+interface TelecomProvider {
+  id: string;
+  name: string;
+  isMvno: boolean;
+}
+
+interface TelecomProduct {
+  id: string;
+  providerId: string;
+  name: string;
+  isMvno: boolean;
+}
+
+interface CardCompany {
+  id: string;
+  name: string;
+}
+
+interface CardProduct {
+  id: string;
+  companyId: string;
+  name: string;
+  cardType: CardType;
+}
+
+interface RegisteredBenefit {
+  id: string;
+  category: "telecom" | "card";
+  providerName: string;
+  productName: string;
+  badge?: string;
+}
+
+const telecomProviders: TelecomProvider[] = [
+  { id: "skt", name: "SKT", isMvno: false },
+  { id: "kt", name: "KT", isMvno: false },
+  { id: "lguplus", name: "LGU+", isMvno: false },
+  { id: "kt-m-mobile", name: "KT M모바일", isMvno: true },
+  { id: "sk-7mobile", name: "SK 7mobile", isMvno: true },
+  { id: "uplus-mvno", name: "U+ 알뜰모바일", isMvno: true },
+];
+
+const telecomProducts: TelecomProduct[] = [
+  { id: "skt-vip", providerId: "skt", name: "T멤버십 VIP", isMvno: false },
+  { id: "skt-gold", providerId: "skt", name: "T멤버십 Gold", isMvno: false },
+  { id: "kt-vip", providerId: "kt", name: "KT VIP", isMvno: false },
+  { id: "kt-gold", providerId: "kt", name: "KT Gold", isMvno: false },
+  { id: "lguplus-vip", providerId: "lguplus", name: "U+ VIP", isMvno: false },
+  { id: "lguplus-basic", providerId: "lguplus", name: "U+ 일반", isMvno: false },
+  {
+    id: "kt-m-mobile-plan",
+    providerId: "kt-m-mobile",
+    name: "KT M모바일 요금제",
+    isMvno: true,
+  },
+  {
+    id: "sk-7mobile-plan",
+    providerId: "sk-7mobile",
+    name: "SK 7mobile 요금제",
+    isMvno: true,
+  },
+  {
+    id: "uplus-mvno-plan",
+    providerId: "uplus-mvno",
+    name: "U+ 알뜰모바일 요금제",
+    isMvno: true,
+  },
+];
+
+const cardCompanies: CardCompany[] = [
+  { id: "shinhan", name: "신한카드" },
+  { id: "samsung", name: "삼성카드" },
+  { id: "hyundai", name: "현대카드" },
+  { id: "kb", name: "국민카드" },
+  { id: "hana", name: "하나카드" },
+];
+
+const cardProducts: CardProduct[] = [
+  {
+    id: "shinhan-deep-dream",
+    companyId: "shinhan",
+    name: "신한 Deep Dream",
+    cardType: "credit",
+  },
+  {
+    id: "shinhan-s-line",
+    companyId: "shinhan",
+    name: "신한 S-Line 체크",
+    cardType: "debit",
+  },
+  {
+    id: "samsung-taptap-o",
+    companyId: "samsung",
+    name: "삼성 taptap O",
+    cardType: "credit",
+  },
+  {
+    id: "hyundai-zero",
+    companyId: "hyundai",
+    name: "현대카드 ZERO",
+    cardType: "credit",
+  },
+  {
+    id: "kb-nori",
+    companyId: "kb",
+    name: "KB국민 노리 체크카드",
+    cardType: "debit",
+  },
+  {
+    id: "hana-prepaid",
+    companyId: "hana",
+    name: "하나 선불카드",
+    cardType: "prepaid",
+  },
+];
+
+const cardTypeLabels: Record<CardType, string> = {
+  credit: "신용카드",
+  debit: "체크카드",
+  prepaid: "선불카드",
+  unknown: "기타",
+};
+
+export function BenefitForm() {
+  const [selectedTelecomProviderId, setSelectedTelecomProviderId] = useState(
+    telecomProviders[0].id,
+  );
+  const [selectedCardCompanyId, setSelectedCardCompanyId] = useState(
+    cardCompanies[0].id,
+  );
+  const [selectedTelecomProductId, setSelectedTelecomProductId] = useState(
+    telecomProducts[0].id,
+  );
+  const [selectedCardProductId, setSelectedCardProductId] = useState(
+    cardProducts[0].id,
+  );
+  const [registeredBenefits, setRegisteredBenefits] = useState<
+    RegisteredBenefit[]
+  >([]);
+
+  const filteredTelecomProducts = useMemo(
+    () =>
+      telecomProducts.filter(
+        (product) => product.providerId === selectedTelecomProviderId,
+      ),
+    [selectedTelecomProviderId],
+  );
+
+  const filteredCardProducts = useMemo(
+    () =>
+      cardProducts.filter(
+        (product) => product.companyId === selectedCardCompanyId,
+      ),
+    [selectedCardCompanyId],
+  );
+
+  const selectedTelecomProvider = telecomProviders.find(
+    (provider) => provider.id === selectedTelecomProviderId,
+  );
+  const selectedTelecomProduct = telecomProducts.find(
+    (product) => product.id === selectedTelecomProductId,
+  );
+  const selectedCardCompany = cardCompanies.find(
+    (company) => company.id === selectedCardCompanyId,
+  );
+  const selectedCardProduct = cardProducts.find(
+    (product) => product.id === selectedCardProductId,
+  );
+  const shouldShowMvnoNotice =
+    selectedTelecomProvider?.isMvno || selectedTelecomProduct?.isMvno;
+  const telecomBenefitCount = registeredBenefits.filter(
+    (benefit) => benefit.category === "telecom",
+  ).length;
+  const cardBenefitCount = registeredBenefits.filter(
+    (benefit) => benefit.category === "card",
+  ).length;
+
+  const handleTelecomProviderChange = (providerId: string) => {
+    setSelectedTelecomProviderId(providerId);
+    setSelectedTelecomProductId(
+      telecomProducts.find((product) => product.providerId === providerId)
+        ?.id ?? "",
+    );
+  };
+
+  const handleCardCompanyChange = (companyId: string) => {
+    setSelectedCardCompanyId(companyId);
+    setSelectedCardProductId(
+      cardProducts.find((product) => product.companyId === companyId)?.id ?? "",
+    );
+  };
+
+  const addTelecomBenefit = () => {
+    if (
+      telecomBenefitCount >= 2 ||
+      !selectedTelecomProvider ||
+      !selectedTelecomProduct
+    ) {
+      return;
+    }
+
+    setRegisteredBenefits((current) => [
+      ...current,
+      {
+        id: `telecom-${selectedTelecomProduct.id}`,
+        category: "telecom",
+        providerName: selectedTelecomProvider.name,
+        productName: selectedTelecomProduct.name,
+      },
+    ]);
+  };
+
+  const addCardBenefit = () => {
+    if (cardBenefitCount >= 3 || !selectedCardCompany || !selectedCardProduct) {
+      return;
+    }
+
+    setRegisteredBenefits((current) => [
+      ...current,
+      {
+        id: `card-${selectedCardProduct.id}`,
+        category: "card",
+        providerName: selectedCardCompany.name,
+        productName: selectedCardProduct.name,
+        badge: cardTypeLabels[selectedCardProduct.cardType],
+      },
+    ]);
+  };
+
+  const removeBenefit = (benefitId: string) => {
+    setRegisteredBenefits((current) =>
+      current.filter((benefit) => benefit.id !== benefitId),
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <h2 className="text-base font-semibold text-gray-800">통신사</h2>
+
+        <label
+          htmlFor="telecom-provider"
+          className="mt-4 block text-sm font-medium text-gray-700"
+        >
+          통신사
+        </label>
+        <select
+          id="telecom-provider"
+          value={selectedTelecomProviderId}
+          onChange={(event) => handleTelecomProviderChange(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {telecomProviders.map((provider) => (
+            <option key={provider.id} value={provider.id}>
+              {provider.name}
+            </option>
+          ))}
+        </select>
+
+        <label
+          htmlFor="telecom-product"
+          className="mt-4 block text-sm font-medium text-gray-700"
+        >
+          등급 / 요금제
+        </label>
+        <select
+          id="telecom-product"
+          value={selectedTelecomProductId}
+          onChange={(event) => setSelectedTelecomProductId(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {filteredTelecomProducts.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}
+            </option>
+          ))}
+        </select>
+
+        {shouldShowMvnoNotice ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+            알뜰요금제 혜택은 통신사/요금제별로 다를 수 있어 실제 적용 여부
+            확인이 필요합니다.
+          </p>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={addTelecomBenefit}
+          disabled={telecomBenefitCount >= 2}
+          className="mt-4 text-sm font-medium text-blue-600 disabled:text-gray-400"
+        >
+          + 통신사 추가
+        </button>
+      </section>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <h2 className="text-base font-semibold text-gray-800">카드</h2>
+
+        <label
+          htmlFor="card-company"
+          className="mt-4 block text-sm font-medium text-gray-700"
+        >
+          카드사
+        </label>
+        <select
+          id="card-company"
+          value={selectedCardCompanyId}
+          onChange={(event) => handleCardCompanyChange(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {cardCompanies.map((company) => (
+            <option key={company.id} value={company.id}>
+              {company.name}
+            </option>
+          ))}
+        </select>
+
+        <label
+          htmlFor="card-product"
+          className="mt-4 block text-sm font-medium text-gray-700"
+        >
+          카드 선택
+        </label>
+        <select
+          id="card-product"
+          value={selectedCardProductId}
+          onChange={(event) => setSelectedCardProductId(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {filteredCardProducts.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}
+            </option>
+          ))}
+        </select>
+
+        {selectedCardProduct ? (
+          <span className="mt-3 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+            {cardTypeLabels[selectedCardProduct.cardType]}
+          </span>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={addCardBenefit}
+          disabled={cardBenefitCount >= 3}
+          className="mt-4 block text-sm font-medium text-blue-600 disabled:text-gray-400"
+        >
+          + 카드 추가
+        </button>
+      </section>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <h2 className="text-base font-semibold text-gray-800">등록된 혜택</h2>
+
+        {registeredBenefits.length > 0 ? (
+          <ul className="mt-3 divide-y divide-gray-100">
+            {registeredBenefits.map((benefit) => (
+              <li
+                key={benefit.id}
+                className="flex items-center justify-between gap-3 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-800">
+                    {benefit.productName}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {benefit.providerName}
+                    {benefit.badge ? ` · ${benefit.badge}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeBenefit(benefit.id)}
+                  aria-label={`${benefit.productName} 삭제`}
+                  className="shrink-0 text-gray-400 hover:text-red-500"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-gray-500">
+            등록된 혜택이 없습니다.
+          </p>
+        )}
+      </section>
+
+      <button
+        type="button"
+        onClick={() => alert("혜택이 저장되었습니다.")}
+        className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700"
+      >
+        저장하기
+      </button>
+    </div>
+  );
+}
