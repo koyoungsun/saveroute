@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
+
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!email.trim()) {
@@ -30,7 +35,23 @@ export default function SignupPage() {
     }
 
     setError("");
+    setIsLoading(true);
+
+    const supabase = createClient();
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+
     alert("회원가입 성공");
+    router.push("/my-benefits");
   };
 
   return (
@@ -114,9 +135,10 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
           >
-            회원가입
+            {isLoading ? "가입 중..." : "회원가입"}
           </button>
         </form>
 

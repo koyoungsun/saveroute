@@ -1,16 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
-export default function LoginPage() {
+import { createClient } from "@/lib/supabase/client";
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!email.trim() || !password) {
@@ -19,7 +25,22 @@ export default function LoginPage() {
     }
 
     setError("");
-    alert("로그인 성공");
+    setIsLoading(true);
+
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+
+    router.push(searchParams.get("redirect") ?? "/");
   };
 
   return (
@@ -37,7 +58,7 @@ export default function LoginPage() {
           SaveRoute
         </h1>
 
-        {/* Later: read redirect query param and route there after real auth. */}
+        {/* Login redirects to ?redirect=... when provided, otherwise home. */}
         <form onSubmit={handleSubmit} className="mt-10 space-y-4">
           <div>
             <label
@@ -90,9 +111,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
           >
-            로그인
+            {isLoading ? "로그인 중..." : "로그인"}
           </button>
         </form>
 
@@ -104,5 +126,13 @@ export default function LoginPage() {
         </p>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
