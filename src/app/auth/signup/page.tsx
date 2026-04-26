@@ -34,7 +34,7 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-[430px] bg-surface-muted px-4 py-6">
+    <main className="px-4 py-6">
       <Link
         href="/"
         className="inline-flex items-center gap-1 text-sm text-gray-600"
