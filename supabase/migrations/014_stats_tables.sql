@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS public.daily_user_stats (
 );
 
 CREATE TABLE IF NOT EXISTS public.segment_search_stats (
+  id BIGSERIAL PRIMARY KEY,
   date DATE NOT NULL,
   gender_group TEXT,
   age_group TEXT,
   brand_id INT REFERENCES public.brands(id),
-  search_count INT NOT NULL DEFAULT 0,
-  PRIMARY KEY (date, gender_group, age_group, brand_id)
+  search_count INT NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_brand_daily_stats_brand_id
@@ -44,3 +44,10 @@ CREATE INDEX IF NOT EXISTS idx_brand_request_daily_stats_request_count
   ON public.brand_request_daily_stats(request_count DESC);
 CREATE INDEX IF NOT EXISTS idx_segment_search_stats_brand_id
   ON public.segment_search_stats(brand_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_segment_search_stats_unique_segment
+  ON public.segment_search_stats(
+    date,
+    COALESCE(gender_group, ''),
+    COALESCE(age_group, ''),
+    COALESCE(brand_id, 0)
+  );
