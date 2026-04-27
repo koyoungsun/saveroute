@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { DiscountDetail } from "@/components/search/DiscountDetailPanel";
@@ -6,6 +7,7 @@ import { DiscountExpandSection } from "@/components/search/DiscountExpandSection
 import { DiscountRankFirst } from "@/components/search/DiscountRankFirst";
 import { DiscountRankItem } from "@/components/search/DiscountRankItem";
 import { EmptyState } from "@/components/search/EmptyState";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -76,6 +78,15 @@ function getKeyword(keyword?: string | string[]) {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const keyword = getKeyword(params.keyword);
+
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase.auth.getSession();
+
+  if (!data.session) {
+    const redirectTo = `/search?keyword=${encodeURIComponent(keyword)}`;
+    redirect(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`);
+  }
+
   const matchedBrand = dummyBrands.find((brand) => brand === keyword);
 
   if (!keyword || !matchedBrand) {
