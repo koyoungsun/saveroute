@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 
 interface SearchBarProps {
   defaultValue?: string;
+  isLoggedIn?: boolean;
 }
 
-export function SearchBar({ defaultValue = "" }: SearchBarProps) {
+export function SearchBar({ defaultValue = "", isLoggedIn = true }: SearchBarProps) {
   const router = useRouter();
   const [keyword, setKeyword] = useState(defaultValue);
 
@@ -18,7 +19,13 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
       return;
     }
 
-    router.push(`/search?keyword=${encodeURIComponent(trimmedKeyword)}`);
+    if (isLoggedIn) {
+      router.push(`/search?keyword=${encodeURIComponent(trimmedKeyword)}`);
+      return;
+    }
+
+    const redirectTo = `/search?keyword=${encodeURIComponent(trimmedKeyword)}`;
+    router.push(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

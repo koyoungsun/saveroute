@@ -67,6 +67,39 @@ export default function SignupPage() {
       <section className="mt-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <h1 className="text-xl font-bold text-gray-900">회원가입</h1>
 
+        <div className="mt-6 space-y-2">
+          <button
+            type="button"
+            onClick={() => alert("구글 로그인은 준비 중입니다.")}
+            className="w-full rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-900 hover:bg-gray-50"
+          >
+            Google로 계속하기
+          </button>
+          <button
+            type="button"
+            onClick={() => alert("카카오 로그인은 준비 중입니다.")}
+            className="w-full rounded-xl border border-gray-200 bg-[#FEE500] py-3 font-semibold text-[#191600] hover:brightness-95"
+          >
+            카카오로 계속하기
+          </button>
+          <button
+            type="button"
+            onClick={() => alert("네이버 로그인은 추후 지원 예정입니다.")}
+            aria-disabled="true"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 font-semibold text-gray-400"
+          >
+            네이버 (추후 지원)
+          </button>
+        </div>
+
+        <div className="mt-8 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <p className="shrink-0 text-xs font-medium text-gray-400">
+            또는 이메일로 계속하기
+          </p>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <label
