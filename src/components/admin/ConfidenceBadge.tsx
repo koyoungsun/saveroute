@@ -10,7 +10,10 @@ const confidenceClassNames: Record<ConfidenceBadgeProps["confidence"], string> =
 
 export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   return (
-    <span className={`badge ${confidenceClassNames[confidence]}`}>
+    <span
+      className={`badge rounded-pill px-2 py-1 fw-semibold ${confidenceClassNames[confidence]}`}
+      style={{ minWidth: "72px", textTransform: "uppercase" }}
+    >
       {confidence}
     </span>
   );

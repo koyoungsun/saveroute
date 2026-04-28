@@ -16,7 +16,10 @@ const statusClassNames: Record<string, string> = {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <span className={`badge ${statusClassNames[status] ?? "bg-secondary"}`}>
+    <span
+      className={`badge rounded-pill px-2 py-1 fw-semibold ${statusClassNames[status] ?? "bg-secondary"}`}
+      style={{ minWidth: "72px", textTransform: "uppercase" }}
+    >
       {status}
     </span>
   );

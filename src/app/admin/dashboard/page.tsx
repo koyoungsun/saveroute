@@ -85,8 +85,8 @@ export default function AdminDashboardPage() {
 
       <div className="row g-4 mt-1">
         <div className="col-lg-6">
-          <div className="card">
-            <div className="card-header bg-white fw-semibold">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white fw-semibold py-3">
               업데이트 필요 할인
             </div>
             <div className="table-responsive">
@@ -103,8 +103,10 @@ export default function AdminDashboardPage() {
                 <tbody>
                   {staleDiscounts.map(([brand, title, provider, checkedAt, status]) => (
                     <tr key={`${brand}-${title}`}>
-                      <td>{brand}</td>
-                      <td>{title}</td>
+                      <td className="fw-semibold">{brand}</td>
+                      <td className="text-truncate" style={{ maxWidth: "260px" }}>
+                        {title}
+                      </td>
                       <td>{provider}</td>
                       <td>{checkedAt}</td>
                       <td>
@@ -118,8 +120,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
         <div className="col-lg-6">
-          <div className="card">
-            <div className="card-header bg-white fw-semibold">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white fw-semibold py-3">
               최근 미지원 검색어
             </div>
             <div className="table-responsive">
@@ -134,8 +136,8 @@ export default function AdminDashboardPage() {
                 <tbody>
                   {recentUnmatched.map(([keyword, count, status]) => (
                     <tr key={keyword}>
-                      <td>{keyword}</td>
-                      <td>{count}</td>
+                      <td className="fw-semibold">{keyword}</td>
+                      <td className="text-end">{count}</td>
                       <td>
                         <StatusBadge status={status} />
                       </td>

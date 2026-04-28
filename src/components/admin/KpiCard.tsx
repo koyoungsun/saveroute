@@ -12,10 +12,10 @@ export function KpiCard({
   changeText,
 }: KpiCardProps) {
   return (
-    <div className={`card bg-${variant}-subtle h-100`}>
-      <div className="card-body">
-        <div className="text-muted small">{title}</div>
-        <div className="fs-3 fw-bold">{value}</div>
+    <div className={`card border-0 shadow-sm bg-${variant}-subtle h-100`}>
+      <div className="card-body d-flex flex-column justify-content-between" style={{ minHeight: "112px" }}>
+        <div className="text-muted small fw-semibold">{title}</div>
+        <div className="mt-1 display-6 fw-bold lh-1">{value}</div>
         {changeText ? <div className="small text-muted">{changeText}</div> : null}
       </div>
     </div>
