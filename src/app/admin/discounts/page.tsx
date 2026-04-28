@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { ConfidenceBadge } from "@/components/admin/ConfidenceBadge";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
@@ -8,6 +12,10 @@ const discounts = [
 ] as const;
 
 export default function AdminDiscountsPage() {
+  const [benefitScope, setBenefitScope] = useState<"provider_all" | "product_specific">(
+    "provider_all",
+  );
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -15,6 +23,62 @@ export default function AdminDiscountsPage() {
         <button type="button" className="btn btn-primary">
           + 할인 등록
         </button>
+      </div>
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <h2 className="h6 mb-3">할인 등록 (Mock)</h2>
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">적용 범위</label>
+              <div className="d-flex gap-3">
+                <label className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="benefit-scope"
+                    value="provider_all"
+                    checked={benefitScope === "provider_all"}
+                    onChange={() => setBenefitScope("provider_all")}
+                  />
+                  <span className="form-check-label">제공사 전체</span>
+                </label>
+                <label className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="benefit-scope"
+                    value="product_specific"
+                    checked={benefitScope === "product_specific"}
+                    onChange={() => setBenefitScope("product_specific")}
+                  />
+                  <span className="form-check-label">특정 혜택 상품</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">혜택 상품</label>
+              <select
+                className="form-select"
+                disabled={benefitScope === "provider_all"}
+                defaultValue=""
+              >
+                <option value="">
+                  {benefitScope === "provider_all"
+                    ? "제공사 전체 선택 시 비활성화"
+                    : "혜택 상품 선택"}
+                </option>
+                <option>KT VIP</option>
+                <option>T멤버십 VIP</option>
+                <option>신한카드 Deep Dream</option>
+              </select>
+              <div className="form-text">
+                제공사 전체 선택 시 benefit_product_id는 저장되지 않습니다.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="card mb-4">

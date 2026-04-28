@@ -4,6 +4,32 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 type CardType = "credit" | "debit" | "prepaid" | "unknown";
+type BenefitCategory = "telecom" | "card";
+
+type ProviderRow = {
+  id: string;
+  name: string;
+  category?: string | null;
+  provider_type?: string | null;
+  active?: boolean | null;
+  is_active?: boolean | null;
+};
+
+type BenefitProductRow = {
+  id: string;
+  provider_id: string;
+  name: string;
+  card_type?: CardType | null;
+  active?: boolean | null;
+  is_active?: boolean | null;
+};
+
+type UserBenefitRow = {
+  id?: string;
+  category: BenefitCategory;
+  provider_id: string;
+  benefit_product_id: string | null;
+};
 
 interface TelecomProvider {
   id: string;
@@ -33,108 +59,14 @@ interface CardProduct {
 }
 
 interface RegisteredBenefit {
-  id: string;
-  category: "telecom" | "card";
+  id: string; // stable UI key
+  category: BenefitCategory;
+  providerId: string;
   providerName: string;
+  benefitProductId: string | null;
   productName: string;
   badge?: string;
 }
-
-const telecomProviders: TelecomProvider[] = [
-  { id: "none", name: "통신사 없음", isMvno: false, isNone: true },
-  {
-    id: "mvno-unknown",
-    name: "알뜰요금제 사용 중이지만 혜택 확인 필요",
-    isMvno: true,
-  },
-  { id: "skt", name: "SKT", isMvno: false },
-  { id: "kt", name: "KT", isMvno: false },
-  { id: "lguplus", name: "LGU+", isMvno: false },
-  { id: "kt-m-mobile", name: "KT M모바일", isMvno: true },
-  { id: "sk-7mobile", name: "SK 7mobile", isMvno: true },
-  { id: "uplus-mvno", name: "U+ 알뜰모바일", isMvno: true },
-];
-
-const telecomProducts: TelecomProduct[] = [
-  {
-    id: "mvno-unknown-plan",
-    providerId: "mvno-unknown",
-    name: "혜택 확인 필요",
-    isMvno: true,
-  },
-  { id: "skt-vip", providerId: "skt", name: "T멤버십 VIP", isMvno: false },
-  { id: "skt-gold", providerId: "skt", name: "T멤버십 Gold", isMvno: false },
-  { id: "kt-vip", providerId: "kt", name: "KT VIP", isMvno: false },
-  { id: "kt-gold", providerId: "kt", name: "KT Gold", isMvno: false },
-  { id: "lguplus-vip", providerId: "lguplus", name: "U+ VIP", isMvno: false },
-  { id: "lguplus-basic", providerId: "lguplus", name: "U+ 일반", isMvno: false },
-  {
-    id: "kt-m-mobile-plan",
-    providerId: "kt-m-mobile",
-    name: "KT M모바일 요금제",
-    isMvno: true,
-  },
-  {
-    id: "sk-7mobile-plan",
-    providerId: "sk-7mobile",
-    name: "SK 7mobile 요금제",
-    isMvno: true,
-  },
-  {
-    id: "uplus-mvno-plan",
-    providerId: "uplus-mvno",
-    name: "U+ 알뜰모바일 요금제",
-    isMvno: true,
-  },
-];
-
-const cardCompanies: CardCompany[] = [
-  { id: "none", name: "카드 없음", isNone: true },
-  { id: "shinhan", name: "신한카드" },
-  { id: "samsung", name: "삼성카드" },
-  { id: "hyundai", name: "현대카드" },
-  { id: "kb", name: "국민카드" },
-  { id: "hana", name: "하나카드" },
-];
-
-const cardProducts: CardProduct[] = [
-  {
-    id: "shinhan-deep-dream",
-    companyId: "shinhan",
-    name: "신한 Deep Dream",
-    cardType: "credit",
-  },
-  {
-    id: "shinhan-s-line",
-    companyId: "shinhan",
-    name: "신한 S-Line 체크",
-    cardType: "debit",
-  },
-  {
-    id: "samsung-taptap-o",
-    companyId: "samsung",
-    name: "삼성 taptap O",
-    cardType: "credit",
-  },
-  {
-    id: "hyundai-zero",
-    companyId: "hyundai",
-    name: "현대카드 ZERO",
-    cardType: "credit",
-  },
-  {
-    id: "kb-nori",
-    companyId: "kb",
-    name: "KB국민 노리 체크카드",
-    cardType: "debit",
-  },
-  {
-    id: "hana-prepaid",
-    companyId: "hana",
-    name: "하나 선불카드",
-    cardType: "prepaid",
-  },
-];
 
 const cardTypeLabels: Record<CardType, string> = {
   credit: "신용카드",
@@ -143,15 +75,165 @@ const cardTypeLabels: Record<CardType, string> = {
   unknown: "기타",
 };
 
-export function BenefitForm() {
+type BenefitFormProps = {
+  providers: ProviderRow[];
+  benefitProducts: BenefitProductRow[];
+  initialUserBenefits: UserBenefitRow[];
+};
+
+function isTelecomProvider(provider: ProviderRow) {
+  const category = provider.category ?? "";
+  const type = provider.provider_type ?? "";
+  return category === "telecom" || type.startsWith("telecom");
+}
+
+function isCardProvider(provider: ProviderRow) {
+  const category = provider.category ?? "";
+  const type = provider.provider_type ?? "";
+  return category === "card" || type.startsWith("card");
+}
+
+function isMvnoProvider(provider: ProviderRow) {
+  const type = provider.provider_type ?? "";
+  return type.includes("mvno");
+}
+
+export function BenefitForm({
+  providers,
+  benefitProducts,
+  initialUserBenefits,
+}: BenefitFormProps) {
+  const telecomProviderIds = useMemo(() => {
+    return new Set(providers.filter(isTelecomProvider).map((provider) => provider.id));
+  }, [providers]);
+
+  const cardProviderIds = useMemo(() => {
+    return new Set(providers.filter(isCardProvider).map((provider) => provider.id));
+  }, [providers]);
+
+  const telecomProviders: TelecomProvider[] = useMemo(() => {
+    const rows = providers
+      .filter(isTelecomProvider)
+      .map((provider) => ({
+        id: provider.id,
+        name: provider.name,
+        isMvno: isMvnoProvider(provider),
+      }));
+
+    return [
+      { id: "none", name: "통신사 없음", isMvno: false, isNone: true },
+      {
+        id: "mvno-unknown",
+        name: "알뜰요금제 사용 중이지만 혜택 확인 필요",
+        isMvno: true,
+      },
+      ...rows,
+    ];
+  }, [providers]);
+
+  const telecomProducts: TelecomProduct[] = useMemo(() => {
+    const providerMap = new Map<string, ProviderRow>();
+    providers.forEach((provider) => providerMap.set(provider.id, provider));
+
+    const rows = benefitProducts
+      .filter((product) => telecomProviderIds.has(product.provider_id))
+      .map((product) => ({
+        id: product.id,
+        providerId: product.provider_id,
+        name: product.name,
+        isMvno: isMvnoProvider(providerMap.get(product.provider_id) ?? { id: "", name: "" }),
+      }));
+
+    return [
+      {
+        id: "mvno-unknown-plan",
+        providerId: "mvno-unknown",
+        name: "혜택 확인 필요",
+        isMvno: true,
+      },
+      ...rows,
+    ];
+  }, [benefitProducts, providers, telecomProviderIds]);
+
+  const cardCompanies: CardCompany[] = useMemo(() => {
+    const rows = providers
+      .filter(isCardProvider)
+      .map((provider) => ({
+        id: provider.id,
+        name: provider.name,
+      }));
+
+    return [{ id: "none", name: "카드 없음", isNone: true }, ...rows];
+  }, [providers]);
+
+  const cardProducts: CardProduct[] = useMemo(
+    () =>
+      benefitProducts
+        .filter((product) => cardProviderIds.has(product.provider_id))
+        .map((product) => ({
+        id: product.id,
+        companyId: product.provider_id,
+        name: product.name,
+        cardType: (product.card_type ?? "unknown") as CardType,
+      })),
+    [benefitProducts, cardProviderIds],
+  );
+
+  const providerById = useMemo(() => {
+    const map = new Map<string, ProviderRow>();
+    providers.forEach((provider) => map.set(provider.id, provider));
+    return map;
+  }, [providers]);
+
+  const benefitProductById = useMemo(() => {
+    const map = new Map<string, BenefitProductRow>();
+    benefitProducts.forEach((product) => map.set(product.id, product));
+    return map;
+  }, [benefitProducts]);
+
+  const [registeredBenefits, setRegisteredBenefits] = useState<RegisteredBenefit[]>(
+    () => {
+      if (!initialUserBenefits?.length) {
+        return [];
+      }
+
+      return initialUserBenefits.map((benefit) => {
+        const provider = providerById.get(benefit.provider_id);
+        const product = benefit.benefit_product_id
+          ? benefitProductById.get(benefit.benefit_product_id)
+          : null;
+
+        const providerName = provider?.name ?? "알 수 없는 제공사";
+        const productName =
+          product?.name ??
+          (benefit.category === "card" ? "카드상품 나중에 선택" : "혜택 선택");
+
+        const badge =
+          benefit.category === "card" && product?.card_type
+            ? cardTypeLabels[(product.card_type ?? "unknown") as CardType]
+            : undefined;
+
+        return {
+          id: `${benefit.category}-${benefit.provider_id}-${benefit.benefit_product_id ?? "provider"}`,
+          category: benefit.category,
+          providerId: benefit.provider_id,
+          providerName,
+          benefitProductId: benefit.benefit_product_id,
+          productName,
+          badge,
+        };
+      });
+    },
+  );
+
   const [selectedTelecomProviderId, setSelectedTelecomProviderId] =
     useState("none");
   const [selectedCardCompanyId, setSelectedCardCompanyId] = useState("none");
   const [selectedTelecomProductId, setSelectedTelecomProductId] = useState("");
   const [selectedCardProductId, setSelectedCardProductId] = useState("");
-  const [registeredBenefits, setRegisteredBenefits] = useState<
-    RegisteredBenefit[]
-  >([]);
+  const [saveStatus, setSaveStatus] = useState<
+    { kind: "idle" } | { kind: "saving" } | { kind: "error"; message: string } | { kind: "success"; empty: boolean }
+  >({ kind: "idle" });
 
   const filteredTelecomProducts = useMemo(
     () =>
@@ -220,9 +302,11 @@ export function BenefitForm() {
     setRegisteredBenefits((current) => [
       ...current,
       {
-        id: `telecom-${selectedTelecomProduct.id}`,
+        id: `telecom-${selectedTelecomProvider.id}-${selectedTelecomProduct.id}`,
         category: "telecom",
+        providerId: selectedTelecomProvider.id,
         providerName: selectedTelecomProvider.name,
+        benefitProductId: selectedTelecomProduct.id,
         productName: selectedTelecomProduct.name,
       },
     ]);
@@ -236,9 +320,11 @@ export function BenefitForm() {
     setRegisteredBenefits((current) => [
       ...current,
       {
-        id: `card-${selectedCardCompany.id}-${selectedCardProduct?.id ?? "later"}`,
+        id: `card-${selectedCardCompany.id}-${selectedCardProduct?.id ?? "provider"}`,
         category: "card",
+        providerId: selectedCardCompany.id,
         providerName: selectedCardCompany.name,
+        benefitProductId: selectedCardProduct?.id ?? null,
         productName: selectedCardProduct?.name ?? "카드상품 나중에 선택",
         badge: selectedCardProduct
           ? cardTypeLabels[selectedCardProduct.cardType]
@@ -253,13 +339,38 @@ export function BenefitForm() {
     );
   };
 
-  const handleSave = () => {
-    if (registeredBenefits.length === 0) {
-      alert("혜택 없이 저장되었습니다.");
-      return;
-    }
+  const handleSave = async () => {
+    setSaveStatus({ kind: "saving" });
 
-    alert("혜택이 저장되었습니다.");
+    try {
+      const response = await fetch("/api/user-benefits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          benefits: registeredBenefits.map((benefit) => ({
+            category: benefit.category,
+            provider_id: benefit.providerId,
+            benefit_product_id: benefit.benefitProductId,
+          })),
+        }),
+      });
+
+      const json = (await response.json()) as
+        | { success: true; empty: boolean }
+        | { error: string };
+
+      if (!response.ok || "error" in json) {
+        setSaveStatus({
+          kind: "error",
+          message: "error" in json ? json.error : "저장 실패",
+        });
+        return;
+      }
+
+      setSaveStatus({ kind: "success", empty: json.empty });
+    } catch {
+      setSaveStatus({ kind: "error", message: "저장 실패" });
+    }
   };
 
   return (
@@ -435,12 +546,25 @@ export function BenefitForm() {
         )}
       </section>
 
+      {saveStatus.kind === "saving" ? (
+        <p className="text-sm text-gray-500">저장 중...</p>
+      ) : null}
+      {saveStatus.kind === "error" ? (
+        <p className="text-sm text-red-600">{saveStatus.message || "저장 실패"}</p>
+      ) : null}
+      {saveStatus.kind === "success" ? (
+        <p className="text-sm text-blue-600">
+          {saveStatus.empty ? "혜택 없이 저장되었습니다." : "혜택이 저장되었습니다."}
+        </p>
+      ) : null}
+
       <button
         type="button"
         onClick={handleSave}
+        disabled={saveStatus.kind === "saving"}
         className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700"
       >
-        저장하기
+        {saveStatus.kind === "saving" ? "저장 중..." : "저장하기"}
       </button>
     </div>
   );
