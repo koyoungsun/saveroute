@@ -1,3 +1,4 @@
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const providers = [
@@ -8,6 +9,14 @@ const providers = [
   ["신한카드", "shinhan_card", "카드", "card_company", "active"],
   ["삼성카드", "samsung_card", "카드", "card_company", "active"],
   ["현대카드", "hyundai_card", "카드", "card_company", "active"],
+  ["국민카드", "kb_card", "카드", "card_company", "active"],
+  ["하나카드", "hana_card", "카드", "card_company", "active"],
+  ["롯데카드", "lotte_card", "카드", "card_company", "hidden"],
+  ["NH농협카드", "nh_card", "카드", "card_company", "active"],
+  ["BC카드", "bc_card", "카드", "card_company", "active"],
+  ["U+ 알뜰모바일", "uplus_mvno", "통신사", "telecom_mvno", "active"],
+  ["SK 7mobile", "sk_7mobile", "통신사", "telecom_mvno", "active"],
+  ["드래프트제공사", "draft_provider", "기타", "other", "draft"],
 ] as const;
 
 export default function ProvidersPage() {
@@ -20,40 +29,35 @@ export default function ProvidersPage() {
         </button>
       </div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>이름</th>
-                <th>code</th>
-                <th>category</th>
-                <th>provider_type</th>
-                <th>active</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {providers.map(([name, code, category, providerType, status]) => (
-                <tr key={code}>
-                  <td>{name}</td>
-                  <td>{code}</td>
-                  <td>{category}</td>
-                  <td>{providerType}</td>
-                  <td>
-                    <StatusBadge status={status} />
-                  </td>
-                  <td>
-                    <button type="button" className="btn btn-outline-primary btn-sm">
-                      수정
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="제공사 목록"
+        legendType="generic"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "이름" },
+          { header: "code" },
+          { header: "category" },
+          { header: "provider_type" },
+          { header: "상태" },
+          { header: "관리" },
+        ]}
+        rows={providers.map(([name, code, category, providerType, status]) => [
+          name,
+          code,
+          category,
+          providerType,
+          <StatusBadge key={`${code}-status`} status={status} />,
+          <button
+            key={`${code}-action`}
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+          >
+            수정
+          </button>,
+        ])}
+      />
     </>
   );
 }

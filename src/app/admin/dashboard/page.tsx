@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/AdminCharts";
 import { ChartCard } from "@/components/admin/ChartCard";
 import { KpiCard } from "@/components/admin/KpiCard";
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const kpis = [
@@ -24,12 +25,25 @@ const staleDiscounts = [
   ["롯데월드", "KT VIP", "KT", "2025-01-10", "active"],
   ["CGV", "SKT T멤버십", "SKT", "2025-01-08", "active"],
   ["스타벅스", "신한카드", "신한카드", "2025-01-03", "active"],
+  ["에버랜드", "KT VIP", "KT", "2025-01-02", "active"],
+  ["서울랜드", "SKT T멤버십", "SKT", "2025-01-01", "active"],
+  ["올리브영", "신한카드", "신한카드", "2024-12-28", "active"],
+  ["다이소", "삼성카드", "삼성카드", "2024-12-27", "active"],
+  ["노브랜드", "현대카드", "현대카드", "2024-12-26", "active"],
+  ["이케아", "하나카드", "하나카드", "2024-12-25", "active"],
+  ["쿠팡", "국민카드", "국민카드", "2024-12-24", "active"],
 ];
 
 const recentUnmatched = [
   ["올리브영", "28", "pending"],
   ["다이소", "21", "pending"],
   ["노브랜드", "15", "processing"],
+  ["이케아", "10", "pending"],
+  ["쿠팡", "8", "pending"],
+  ["버거킹", "7", "ignored"],
+  ["맥도날드", "6", "pending"],
+  ["롯데시네마", "5", "completed"],
+  ["메가박스", "4", "pending"],
 ];
 
 export default function AdminDashboardPage() {
@@ -85,68 +99,57 @@ export default function AdminDashboardPage() {
 
       <div className="row g-4 mt-1">
         <div className="col-lg-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white fw-semibold py-3">
-              업데이트 필요 할인
-            </div>
-            <div className="table-responsive">
-              <table className="table table-sm table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th>브랜드</th>
-                    <th>제목</th>
-                    <th>제공사</th>
-                    <th>최근 확인일</th>
-                    <th>상태</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staleDiscounts.map(([brand, title, provider, checkedAt, status]) => (
-                    <tr key={`${brand}-${title}`}>
-                      <td className="fw-semibold">{brand}</td>
-                      <td className="text-truncate" style={{ maxWidth: "260px" }}>
-                        {title}
-                      </td>
-                      <td>{provider}</td>
-                      <td>{checkedAt}</td>
-                      <td>
-                        <StatusBadge status={status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <PaginatedTable
+            title="업데이트 필요 할인"
+            legendType="discount"
+            pageSize={3}
+            fixedRows={3}
+            className="border-0 shadow-sm"
+            columns={[
+              { header: "브랜드" },
+              { header: "제목" },
+              { header: "제공사" },
+              { header: "최근 확인일" },
+              { header: "상태" },
+            ]}
+            rows={staleDiscounts.map(([brand, title, provider, checkedAt, status]) => {
+              const key = `${brand}-${title}`;
+              return [
+                <span key={`${key}-brand`} className="fw-semibold">
+                  {brand}
+                </span>,
+                <span
+                  key={`${key}-title`}
+                  className="text-truncate d-inline-block"
+                  style={{ maxWidth: "260px" }}
+                >
+                  {title}
+                </span>,
+                provider,
+                checkedAt,
+                <StatusBadge key={`${key}-status`} status={status} />,
+              ];
+            })}
+          />
         </div>
         <div className="col-lg-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white fw-semibold py-3">
-              최근 미지원 검색어
-            </div>
-            <div className="table-responsive">
-              <table className="table table-sm table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th>키워드</th>
-                    <th>검색 수</th>
-                    <th>상태</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentUnmatched.map(([keyword, count, status]) => (
-                    <tr key={keyword}>
-                      <td className="fw-semibold">{keyword}</td>
-                      <td className="text-end">{count}</td>
-                      <td>
-                        <StatusBadge status={status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <PaginatedTable
+            title="최근 미지원 검색어"
+            legendType="request"
+            pageSize={3}
+            fixedRows={3}
+            className="border-0 shadow-sm"
+            columns={[{ header: "키워드" }, { header: "검색 수" }, { header: "상태" }]}
+            rows={recentUnmatched.map(([keyword, count, status]) => [
+              <span key={`${keyword}-keyword`} className="fw-semibold">
+                {keyword}
+              </span>,
+              <span key={`${keyword}-count`} className="d-block text-end">
+                {count}
+              </span>,
+              <StatusBadge key={`${keyword}-status`} status={status} />,
+            ])}
+          />
         </div>
       </div>
     </>

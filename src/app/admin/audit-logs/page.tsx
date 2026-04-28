@@ -1,7 +1,21 @@
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
+
 const auditLogs = [
   ["01-15 14:32", "op1@coreroute.dev", "create", "discounts", "124"],
   ["01-15 13:20", "op1@coreroute.dev", "update", "brands", "12"],
   ["01-15 11:05", "admin@coreroute.dev", "status_change", "brand_requests", "8"],
+  ["01-15 10:55", "op2@coreroute.dev", "update", "providers", "4"],
+  ["01-15 10:40", "op1@coreroute.dev", "update", "benefit_products", "22"],
+  ["01-15 10:12", "op2@coreroute.dev", "create", "brands", "44"],
+  ["01-15 09:59", "admin@coreroute.dev", "update", "discounts", "210"],
+  ["01-15 09:40", "op1@coreroute.dev", "status_change", "accounts", "op2"],
+  ["01-15 09:10", "op2@coreroute.dev", "update", "brand_requests", "12"],
+  ["01-15 08:50", "admin@coreroute.dev", "create", "discounts", "211"],
+  ["01-15 08:20", "op1@coreroute.dev", "update", "brands", "45"],
+  ["01-15 08:00", "op2@coreroute.dev", "update", "discounts", "212"],
+  ["01-14 19:30", "op1@coreroute.dev", "create", "discounts", "213"],
+  ["01-14 19:10", "admin@coreroute.dev", "update", "providers", "6"],
+  ["01-14 18:40", "op2@coreroute.dev", "update", "benefit_categories", "2"],
 ] as const;
 
 export default function AuditLogsPage() {
@@ -9,7 +23,7 @@ export default function AuditLogsPage() {
     <>
       <h1 className="h3 mb-4">Audit Logs</h1>
 
-      <div className="card mb-4">
+      <div className="sr-block card">
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-3">
@@ -36,41 +50,39 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-header bg-white fw-semibold">Read-only</div>
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>시각</th>
-                <th>관리자</th>
-                <th>액션</th>
-                <th>대상 테이블</th>
-                <th>대상 ID</th>
-                <th>상세</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditLogs.map(([time, admin, action, table, targetId]) => (
-                <tr key={`${time}-${table}-${targetId}`}>
-                  <td>{time}</td>
-                  <td>{admin}</td>
-                  <td>
-                    <span className="badge bg-secondary">{action}</span>
-                  </td>
-                  <td>{table}</td>
-                  <td>{targetId}</td>
-                  <td>
-                    <button type="button" className="btn btn-outline-secondary btn-sm">
-                      보기
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="Audit Logs (Read-only)"
+        legendType="generic"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "시각" },
+          { header: "관리자" },
+          { header: "액션" },
+          { header: "대상 테이블" },
+          { header: "대상 ID" },
+          { header: "상세" },
+        ]}
+        rows={auditLogs.map(([time, admin, action, table, targetId]) => {
+          const key = `${time}-${table}-${targetId}`;
+          return [
+            time,
+            admin,
+            <span
+              key={`${key}-action`}
+              className="badge text-bg-light text-dark border px-2 py-1 fw-semibold"
+            >
+              {action}
+            </span>,
+            table,
+            targetId,
+            <button key={`${key}-detail`} type="button" className="btn btn-outline-secondary btn-sm">
+              보기
+            </button>,
+          ];
+        })}
+      />
     </>
   );
 }

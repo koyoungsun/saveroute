@@ -1,3 +1,4 @@
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const requests = [
@@ -5,6 +6,15 @@ const requests = [
   ["다이소", "다이소", 21, "pending", "2025-01-14"],
   ["노브랜드", "노브랜드", 15, "processing", "2025-01-13"],
   ["이케아", "이케아", 10, "completed", "2025-01-10"],
+  ["쿠팡", "쿠팡", 8, "pending", "2025-01-09"],
+  ["버거킹", "버거킹", 7, "ignored", "2025-01-08"],
+  ["맥도날드", "맥도날드", 6, "processing", "2025-01-07"],
+  ["롯데시네마", "롯데시네마", 5, "completed", "2025-01-06"],
+  ["메가박스", "메가박스", 4, "pending", "2025-01-05"],
+  ["이마트", "이마트", 3, "ignored", "2025-01-04"],
+  ["홈플러스", "홈플러스", 2, "pending", "2025-01-03"],
+  ["GS25", "gs25", 1, "pending", "2025-01-02"],
+  ["CU", "cu", 1, "pending", "2025-01-01"],
 ] as const;
 
 export default function BrandRequestsPage() {
@@ -12,7 +22,7 @@ export default function BrandRequestsPage() {
     <>
       <h1 className="h3 mb-4">Brand Requests</h1>
 
-      <div className="card mb-4">
+      <div className="sr-block card">
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-8">
@@ -30,40 +40,35 @@ export default function BrandRequestsPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>키워드</th>
-                <th>정규화 키워드</th>
-                <th>요청수</th>
-                <th>상태</th>
-                <th>최근 요청일</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map(([keyword, normalized, count, status, requestedAt]) => (
-                <tr key={keyword}>
-                  <td>{keyword}</td>
-                  <td>{normalized}</td>
-                  <td>{count}</td>
-                  <td>
-                    <StatusBadge status={status} />
-                  </td>
-                  <td>{requestedAt}</td>
-                  <td>
-                    <button type="button" className="btn btn-outline-primary btn-sm">
-                      처리
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="요청 목록"
+        legendType="request"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "키워드" },
+          { header: "정규화 키워드" },
+          { header: "요청수" },
+          { header: "상태" },
+          { header: "최근 요청일" },
+          { header: "관리" },
+        ]}
+        rows={requests.map(([keyword, normalized, count, status, requestedAt]) => [
+          keyword,
+          normalized,
+          count,
+          <StatusBadge key={`${keyword}-status`} status={status} />,
+          requestedAt,
+          <button
+            key={`${keyword}-action`}
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+          >
+            처리
+          </button>,
+        ])}
+      />
     </>
   );
 }

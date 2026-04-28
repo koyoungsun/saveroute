@@ -3,22 +3,22 @@ interface StatusBadgeProps {
 }
 
 const statusClassNames: Record<string, string> = {
-  active: "bg-success",
-  draft: "bg-secondary",
-  expired: "bg-danger",
-  hidden: "bg-dark",
-  pending: "bg-warning text-dark",
-  processing: "bg-info text-dark",
-  completed: "bg-success",
-  ignored: "bg-secondary",
-  inactive: "bg-secondary",
+  active: "text-bg-warning",
+  draft: "text-bg-light text-dark border",
+  expired: "text-bg-danger",
+  hidden: "text-bg-secondary",
+  pending: "text-bg-warning",
+  processing: "text-bg-warning",
+  completed: "text-bg-secondary",
+  ignored: "text-bg-light text-dark border",
+  inactive: "text-bg-light text-dark border",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <span
-      className={`badge rounded-pill px-2 py-1 fw-semibold ${statusClassNames[status] ?? "bg-secondary"}`}
-      style={{ minWidth: "72px", textTransform: "uppercase" }}
+      className={`badge px-2 py-1 fw-semibold ${statusClassNames[status] ?? "text-bg-light text-dark border"}`}
+      style={{ minWidth: "72px", textTransform: "uppercase", borderRadius: 4 }}
     >
       {status}
     </span>

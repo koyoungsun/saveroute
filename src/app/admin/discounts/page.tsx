@@ -3,12 +3,23 @@
 import { useState } from "react";
 
 import { ConfidenceBadge } from "@/components/admin/ConfidenceBadge";
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const discounts = [
   ["롯데월드", "KT VIP", "통신사", "KT", "20%", "앱예매", "active", "high", "2025-12-31"],
   ["롯데월드", "신한카드", "카드", "신한카드", "30%", "현장결제", "active", "medium", "없음"],
   ["CGV", "SKT", "통신사", "SKT", "15%", "현장결제", "active", "high", "2025-11-30"],
+  ["스타벅스", "신한카드 할인", "카드", "신한카드", "10%", "현장결제", "active", "low", "없음"],
+  ["에버랜드", "KT VIP", "통신사", "KT", "25%", "앱예매", "active", "high", "2025-10-10"],
+  ["서울랜드", "SKT", "통신사", "SKT", "12%", "현장결제", "active", "medium", "2025-09-01"],
+  ["올리브영", "삼성카드", "카드", "삼성카드", "5%", "현장결제", "active", "medium", "없음"],
+  ["다이소", "현대카드", "카드", "현대카드", "3%", "현장결제", "active", "low", "없음"],
+  ["노브랜드", "하나카드", "카드", "하나카드", "7%", "현장결제", "active", "medium", "없음"],
+  ["이케아", "국민카드", "카드", "국민카드", "8%", "현장결제", "active", "high", "없음"],
+  ["쿠팡", "신한카드", "카드", "신한카드", "6%", "현장결제", "hidden", "low", "없음"],
+  ["메가박스", "KT VIP", "통신사", "KT", "18%", "앱예매", "draft", "medium", "2025-08-01"],
+  ["롯데시네마", "SKT", "통신사", "SKT", "14%", "현장결제", "active", "high", "2025-07-31"],
 ] as const;
 
 export default function AdminDiscountsPage() {
@@ -25,7 +36,7 @@ export default function AdminDiscountsPage() {
         </button>
       </div>
 
-      <div className="card mb-4">
+      <div className="sr-block card">
         <div className="card-body">
           <h2 className="h6 mb-3">할인 등록 (Mock)</h2>
           <div className="row g-3">
@@ -81,7 +92,7 @@ export default function AdminDiscountsPage() {
         </div>
       </div>
 
-      <div className="card mb-4">
+      <div className="sr-block card">
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-4">
@@ -121,50 +132,42 @@ export default function AdminDiscountsPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>브랜드</th>
-                <th>제목</th>
-                <th>카테고리</th>
-                <th>제공사</th>
-                <th>할인값</th>
-                <th>방식</th>
-                <th>상태</th>
-                <th>신뢰도</th>
-                <th>만료일</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {discounts.map((discount) => (
-                <tr key={`${discount[0]}-${discount[1]}`}>
-                  <td>{discount[0]}</td>
-                  <td>{discount[1]}</td>
-                  <td>{discount[2]}</td>
-                  <td>{discount[3]}</td>
-                  <td>{discount[4]}</td>
-                  <td>{discount[5]}</td>
-                  <td>
-                    <StatusBadge status={discount[6]} />
-                  </td>
-                  <td>
-                    <ConfidenceBadge confidence={discount[7]} />
-                  </td>
-                  <td>{discount[8]}</td>
-                  <td>
-                    <button type="button" className="btn btn-outline-primary btn-sm">
-                      수정
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="할인 목록"
+        legendType="discount"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "브랜드" },
+          { header: "제목" },
+          { header: "카테고리" },
+          { header: "제공사" },
+          { header: "할인값" },
+          { header: "방식" },
+          { header: "상태" },
+          { header: "신뢰도" },
+          { header: "만료일" },
+          { header: "관리" },
+        ]}
+        rows={discounts.map((discount) => {
+          const key = `${discount[0]}-${discount[1]}`;
+          return [
+            discount[0],
+            discount[1],
+            discount[2],
+            discount[3],
+            discount[4],
+            discount[5],
+            <StatusBadge key={`${key}-status`} status={discount[6]} />,
+            <ConfidenceBadge key={`${key}-conf`} confidence={discount[7]} />,
+            discount[8],
+            <button key={`${key}-action`} type="button" className="btn btn-outline-secondary btn-sm">
+              수정
+            </button>,
+          ];
+        })}
+      />
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const categories = [
@@ -5,6 +6,14 @@ const categories = [
   ["card", "카드", "신용/체크/선불 카드", "active", 2],
   ["coupon", "쿠폰", "쿠폰 플랫폼", "active", 3],
   ["membership", "멤버십", "외부 멤버십", "active", 4],
+  ["food", "식음료", "식음료 카테고리", "active", 5],
+  ["leisure", "여가", "여가 카테고리", "active", 6],
+  ["shopping", "쇼핑", "쇼핑 카테고리", "active", 7],
+  ["transport", "교통", "교통 카테고리", "active", 8],
+  ["draft_cat", "드래프트", "임시 카테고리", "draft", 9],
+  ["hidden_cat", "숨김", "숨김 카테고리", "hidden", 10],
+  ["expired_cat", "만료", "만료 카테고리", "expired", 11],
+  ["etc1", "기타1", "기타", "active", 12],
 ] as const;
 
 export default function BenefitCategoriesPage() {
@@ -17,40 +26,35 @@ export default function BenefitCategoriesPage() {
         </button>
       </div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>code</th>
-                <th>name</th>
-                <th>description</th>
-                <th>active</th>
-                <th>sort_order</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map(([code, name, description, status, sortOrder]) => (
-                <tr key={code}>
-                  <td>{code}</td>
-                  <td>{name}</td>
-                  <td>{description}</td>
-                  <td>
-                    <StatusBadge status={status} />
-                  </td>
-                  <td>{sortOrder}</td>
-                  <td>
-                    <button type="button" className="btn btn-outline-primary btn-sm">
-                      수정
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="카테고리 목록"
+        legendType="generic"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "code" },
+          { header: "name" },
+          { header: "description" },
+          { header: "상태" },
+          { header: "sort_order" },
+          { header: "관리" },
+        ]}
+        rows={categories.map(([code, name, description, status, sortOrder]) => [
+          code,
+          name,
+          description,
+          <StatusBadge key={`${code}-status`} status={status} />,
+          sortOrder,
+          <button
+            key={`${code}-action`}
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+          >
+            수정
+          </button>,
+        ])}
+      />
     </>
   );
 }

@@ -1,9 +1,19 @@
+import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const accounts = [
   ["admin@coreroute.dev", "master", "active", "2025-01-15"],
   ["op1@coreroute.dev", "operator", "active", "2025-01-14"],
   ["op2@coreroute.dev", "operator", "inactive", "2024-12-01"],
+  ["op3@coreroute.dev", "operator", "active", "2025-01-13"],
+  ["op4@coreroute.dev", "operator", "active", "2025-01-12"],
+  ["op5@coreroute.dev", "operator", "inactive", "2024-11-20"],
+  ["op6@coreroute.dev", "operator", "active", "2025-01-11"],
+  ["op7@coreroute.dev", "operator", "active", "2025-01-10"],
+  ["op8@coreroute.dev", "operator", "inactive", "2024-10-10"],
+  ["op9@coreroute.dev", "operator", "active", "2025-01-09"],
+  ["op10@coreroute.dev", "operator", "active", "2025-01-08"],
+  ["op11@coreroute.dev", "operator", "active", "2025-01-07"],
 ] as const;
 
 export default function AccountsPage() {
@@ -16,46 +26,42 @@ export default function AccountsPage() {
         </button>
       </div>
 
-      <div className="alert alert-info">현재 운영자: 3 / 5명</div>
+      <div className="sr-block alert alert-info">현재 운영자: 3 / 5명</div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-hover table-sm align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>이메일</th>
-                <th>role</th>
-                <th>상태</th>
-                <th>최근 로그인</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map(([email, role, status, lastLogin]) => (
-                <tr key={email}>
-                  <td>{email}</td>
-                  <td>
-                    <span className="badge bg-primary">{role}</span>
-                  </td>
-                  <td>
-                    <StatusBadge status={status} />
-                  </td>
-                  <td>{lastLogin}</td>
-                  <td>
-                    {role === "master" ? (
-                      <span className="text-muted">-</span>
-                    ) : (
-                      <button type="button" className="btn btn-outline-secondary btn-sm">
-                        상태 변경
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PaginatedTable
+        title="운영자 목록"
+        legendType="account"
+        pageSize={10}
+        fixedRows={10}
+        className="sr-block"
+        columns={[
+          { header: "이메일" },
+          { header: "role" },
+          { header: "상태" },
+          { header: "최근 로그인" },
+          { header: "관리" },
+        ]}
+        rows={accounts.map(([email, role, status, lastLogin]) => [
+          email,
+          <span
+            key={`${email}-role`}
+            className="badge text-bg-light text-dark border px-2 py-1 fw-semibold"
+          >
+            {role}
+          </span>,
+          <StatusBadge key={`${email}-status`} status={status} />,
+          lastLogin,
+          role === "master" ? (
+            <span key={`${email}-none`} className="text-muted">
+              -
+            </span>
+          ) : (
+            <button key={`${email}-action`} type="button" className="btn btn-outline-secondary btn-sm">
+              상태 변경
+            </button>
+          ),
+        ])}
+      />
     </>
   );
 }
