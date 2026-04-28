@@ -1,0 +1,108 @@
+/* Admin-only design system (scoped by .sr-admin) */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+
+.sr-admin {
+  --sr-admin-black: #111827;
+  --sr-sidebar-black: #0f172a;
+  --sr-surface-dark: #1e293b;
+  --sr-accent: #f97316;
+  --sr-accent-soft: #ffedd5;
+  --sr-bg: #f8fafc;
+  --sr-text: #111827;
+  --sr-muted: #64748b;
+
+  font-family: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  letter-spacing: -0.7px;
+  background: var(--sr-bg);
+  color: var(--sr-text);
+}
+
+.sr-admin h1,
+.sr-admin h2,
+.sr-admin h3,
+.sr-admin .sr-page-title {
+  letter-spacing: -1.5px;
+}
+
+/* Sidebar */
+.sr-admin .sr-sidebar {
+  background: var(--sr-sidebar-black) !important;
+}
+
+.sr-admin .sr-sidebar .sr-sidebar-section-label {
+  font-size: 11px;
+  letter-spacing: -0.7px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sr-admin .sr-sidebar .sr-nav-link {
+  font-size: 14px;
+  letter-spacing: -0.7px;
+  color: rgba(255, 255, 255, 0.68);
+  border-left: 3px solid transparent;
+}
+
+.sr-admin .sr-sidebar .sr-nav-link:hover {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sr-admin .sr-sidebar .sr-nav-link.sr-active {
+  color: #fff;
+  background: rgba(249, 115, 22, 0.14);
+  border-left-color: var(--sr-accent);
+}
+
+.sr-admin .sr-sidebar .sr-nav-link .sr-nav-icon {
+  color: inherit;
+  opacity: 0.95;
+}
+
+/* Header */
+.sr-admin .sr-admin-header {
+  background: #fff;
+}
+
+.sr-admin .sr-role-badge {
+  background: rgba(249, 115, 22, 0.14) !important;
+  color: var(--sr-accent) !important;
+  border: 1px solid rgba(249, 115, 22, 0.22) !important;
+  font-weight: 700;
+}
+
+/* KPI cards */
+.sr-admin .sr-kpi-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.04), 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+.sr-admin .sr-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.16);
+  color: var(--sr-accent);
+}
+
+/* Chart cards */
+.sr-admin .sr-chart-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.04), 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+.sr-admin .sr-card-header {
+  border-bottom-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Tables */
+.sr-admin .table {
+  font-size: 13.5px;
+  letter-spacing: -0.7px;
+}
+
+.sr-admin .table thead th {
+  font-weight: 700;
+  color: #334155;
+}
+

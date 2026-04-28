@@ -12,12 +12,12 @@ import { KpiCard } from "@/components/admin/KpiCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const kpis = [
-  ["오늘 검색 수", "1,234", "primary"],
-  ["누적 검색 수", "48,290", "secondary"],
-  ["오늘 신규회원", "12", "success"],
-  ["활성 할인 수", "892", "primary"],
-  ["업데이트 필요", "47", "warning"],
-  ["미지원 요청", "134", "danger"],
+  ["오늘 검색 수", "1,234", "primary", "bi-search"],
+  ["누적 검색 수", "48,290", "secondary", "bi-search"],
+  ["오늘 신규회원", "12", "success", "bi-people"],
+  ["활성 할인 수", "892", "primary", "bi-tags"],
+  ["업데이트 필요", "47", "warning", "bi-tags"],
+  ["미지원 요청", "134", "danger", "bi-exclamation-circle"],
 ] as const;
 
 const staleDiscounts = [
@@ -37,47 +37,47 @@ export default function AdminDashboardPage() {
     <>
       <h1 className="h3 mb-4">Dashboard</h1>
 
-      <div className="row g-3 mb-4">
-        {kpis.map(([title, value, variant]) => (
+      <div className="row g-4 mb-5">
+        {kpis.map(([title, value, variant, icon]) => (
           <div key={title} className="col-6 col-md-4 col-xl-2">
-            <KpiCard title={title} value={value} variant={variant} />
+            <KpiCard title={title} value={value} variant={variant} icon={icon} />
           </div>
         ))}
       </div>
 
       <div className="row g-4">
-        <div className="col-md-6">
-          <ChartCard title="일별 검색 추이">
+        <div className="col-lg-6">
+          <ChartCard title="일별 검색 추이" description="최근 30일 검색량 추이" height={300}>
             <DailySearchLineChart />
           </ChartCard>
         </div>
-        <div className="col-md-6">
-          <ChartCard title="일별 신규회원">
+        <div className="col-lg-6">
+          <ChartCard title="일별 신규회원" description="최근 30일 가입자 추이" height={300}>
             <DailySignupLineChart />
           </ChartCard>
         </div>
-        <div className="col-md-6">
-          <ChartCard title="브랜드별 검색 TOP 10">
+        <div className="col-lg-6">
+          <ChartCard title="브랜드별 검색 TOP 10" description="검색량 상위 브랜드" height={300}>
             <BrandTopBarChart />
           </ChartCard>
         </div>
-        <div className="col-md-6">
-          <ChartCard title="미지원 요청 TOP 10">
+        <div className="col-lg-6">
+          <ChartCard title="미지원 요청 TOP 10" description="업데이트 요청이 많은 키워드" height={300}>
             <BrandRequestTopBarChart />
           </ChartCard>
         </div>
-        <div className="col-md-4">
-          <ChartCard title="성별 검색 분포">
+        <div className="col-lg-4">
+          <ChartCard title="성별 검색 분포" description="성별 기준 검색 비율" height={280}>
             <GenderDoughnutChart />
           </ChartCard>
         </div>
-        <div className="col-md-4">
-          <ChartCard title="연령대별 검색 분포">
+        <div className="col-lg-4">
+          <ChartCard title="연령대별 검색 분포" description="연령대 기준 검색량" height={280}>
             <AgeGroupBarChart />
           </ChartCard>
         </div>
-        <div className="col-md-4">
-          <ChartCard title="카테고리별 검색 비율">
+        <div className="col-lg-4">
+          <ChartCard title="카테고리별 검색 비율" description="카테고리별 검색 분포" height={280}>
             <CategoryPieChart />
           </ChartCard>
         </div>

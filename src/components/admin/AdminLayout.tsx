@@ -7,7 +7,7 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <div className="d-flex w-100 vh-100">
+    <div className="sr-admin d-flex w-100 vh-100">
       <AdminSidebar />
 
       <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>

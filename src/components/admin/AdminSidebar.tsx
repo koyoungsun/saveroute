@@ -5,18 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const menuItems = [
-  { label: "Dashboard", href: "/admin/dashboard" },
-  { label: "Brands", href: "/admin/brands" },
-  { label: "Discounts", href: "/admin/discounts" },
-  { label: "Benefit Categories", href: "/admin/benefit-categories" },
-  { label: "Providers", href: "/admin/providers" },
-  { label: "Benefit Products", href: "/admin/benefit-products" },
-  { label: "Brand Requests", href: "/admin/brand-requests" },
-  { label: "Update Check", href: "/admin/update-check" },
-  { label: "Search Logs", href: "/admin/search-logs" },
-  { label: "Stats", href: "/admin/stats" },
-  { label: "Accounts", href: "/admin/accounts" },
-  { label: "Audit Logs", href: "/admin/audit-logs" },
+  { label: "Dashboard", href: "/admin/dashboard", icon: "bi-speedometer2" },
+  { label: "Brands", href: "/admin/brands", icon: "bi-shop" },
+  { label: "Discounts", href: "/admin/discounts", icon: "bi-tags" },
+  { label: "Benefit Categories", href: "/admin/benefit-categories", icon: "bi-diagram-3" },
+  { label: "Providers", href: "/admin/providers", icon: "bi-building" },
+  { label: "Benefit Products", href: "/admin/benefit-products", icon: "bi-credit-card-2-front" },
+  { label: "Brand Requests", href: "/admin/brand-requests", icon: "bi-chat-dots" },
+  { label: "Update Check", href: "/admin/update-check", icon: "bi-arrow-repeat" },
+  { label: "Search Logs", href: "/admin/search-logs", icon: "bi-search" },
+  { label: "Stats", href: "/admin/stats", icon: "bi-bar-chart" },
+  { label: "Accounts", href: "/admin/accounts", icon: "bi-people" },
+  { label: "Audit Logs", href: "/admin/audit-logs", icon: "bi-shield-check" },
 ];
 
 export function AdminSidebar() {
@@ -24,28 +24,28 @@ export function AdminSidebar() {
 
   return (
     <aside
-      className="bg-dark text-white flex-shrink-0 vh-100 overflow-auto border-end border-dark"
+      className="sr-sidebar text-white flex-shrink-0 vh-100 overflow-auto border-end border-dark"
       style={{ width: "240px" }}
     >
       <div className="px-3 py-3 border-bottom border-secondary-subtle">
         <div className="fw-bold lh-1">SaveRoute</div>
-        <div className="text-white-50 small mt-1">Admin Console</div>
+        <div className="sr-sidebar-section-label mt-1">Admin Console</div>
       </div>
 
-      <nav className="nav nav-pills flex-column px-2 py-3 gap-1">
+      <nav className="nav flex-column px-2 py-3 gap-1">
+        <div className="px-2 pb-2 sr-sidebar-section-label">MENU</div>
         {menuItems.map((item) => (
           <div key={item.href} className="px-1">
           <Link
             href={item.href}
             className={[
-              "nav-link d-flex align-items-center justify-content-between px-3 py-2",
-              pathname === item.href
-                ? "active bg-primary text-white"
-                : "text-white-50",
+              "sr-nav-link sr-nav-link nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3",
+              pathname === item.href ? "sr-active" : "",
             ].join(" ")}
             aria-current={pathname === item.href ? "page" : undefined}
           >
-            <span className="small fw-semibold">{item.label}</span>
+            <i className={`bi ${item.icon} sr-nav-icon`} aria-hidden="true" />
+            <span className="fw-semibold">{item.label}</span>
           </Link>
           </div>
         ))}
