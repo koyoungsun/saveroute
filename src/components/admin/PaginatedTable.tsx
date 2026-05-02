@@ -86,7 +86,7 @@ export function PaginatedTable({
         </table>
       </div>
 
-      <div className="card-body d-flex justify-content-end">
+      <div className="card-body d-flex justify-content-center">
         <AdminPagination
           page={safePage}
           totalItems={rows.length}

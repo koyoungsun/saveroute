@@ -51,7 +51,7 @@ export default function SignupPage() {
     }
 
     alert("회원가입 성공");
-    router.push("/my-benefits");
+    router.push("/onboarding");
   };
 
   return (

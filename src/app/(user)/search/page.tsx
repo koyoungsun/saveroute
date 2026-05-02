@@ -319,7 +319,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   if (!keyword || !matchedBrand) {
-    return <EmptyState keyword={keyword} />;
+    return <EmptyState key={keyword} keyword={keyword} />;
   }
 
   const [{ data: discountRows }, { data: userBenefits }] = await Promise.all([
