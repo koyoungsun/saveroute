@@ -62,6 +62,57 @@ type UserBenefitRow = {
   benefit_product_id: number | null;
 };
 
+/** Supabase may infer FK embeds as single objects or arrays depending on typings; normalize to DiscountRow. */
+function asSingleOrNull<T>(value: T | T[] | null | undefined): T | null {
+  if (value == null) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function normalizeDiscountRow(row: {
+  id: number;
+  benefit_category_id: number;
+  provider_id: number;
+  benefit_product_id: number | null;
+  benefit_scope?: string | null;
+  title: string;
+  condition_text: string | null;
+  discount_value: number | string;
+  discount_unit: DiscountDetail["discountUnit"];
+  usage_type: string;
+  is_stackable: boolean;
+  stacking_note: string | null;
+  source_url: string | null;
+  last_checked_at: string;
+  valid_until: string | null;
+  has_no_expiry: boolean;
+  provider: { name: string } | { name: string }[] | null;
+  benefit_product:
+    | { is_mvno: boolean; mvno_notice_required: boolean }
+    | { is_mvno: boolean; mvno_notice_required: boolean }[]
+    | null;
+}): DiscountRow {
+  return {
+    id: row.id,
+    benefit_category_id: row.benefit_category_id,
+    provider_id: row.provider_id,
+    benefit_product_id: row.benefit_product_id,
+    benefit_scope: (row.benefit_scope as DiscountRow["benefit_scope"]) ?? null,
+    title: row.title,
+    condition_text: row.condition_text,
+    discount_value: row.discount_value,
+    discount_unit: row.discount_unit,
+    usage_type: row.usage_type,
+    is_stackable: row.is_stackable,
+    stacking_note: row.stacking_note,
+    source_url: row.source_url,
+    last_checked_at: row.last_checked_at,
+    valid_until: row.valid_until,
+    has_no_expiry: row.has_no_expiry,
+    provider: asSingleOrNull(row.provider),
+    benefit_product: asSingleOrNull(row.benefit_product),
+  };
+}
+
 function pickMatchedBrand(brands: BrandRow[], keyword: string, normalized: string) {
   const keywordLower = keyword.toLowerCase();
 
@@ -85,27 +136,28 @@ function matchDiscountToBenefits(discount: DiscountRow, benefits: UserBenefitRow
     discount.benefit_scope ??
     (discount.benefit_product_id == null ? "provider_all" : "product_specific");
 
-  return benefits.some((benefit) => {
+  return benefits.some((b) => {
     if (
-      benefit.benefit_category_id !== discount.benefit_category_id ||
-      benefit.provider_id !== discount.provider_id
+      b.benefit_category_id !== discount.benefit_category_id ||
+      b.provider_id !== discount.provider_id
     ) {
       return false;
     }
 
-    if (inferredScope === "product_specific") {
-      if (discount.benefit_product_id == null) {
-        return false;
-      }
-
-      return benefit.benefit_product_id === discount.benefit_product_id;
+    if (inferredScope === "provider_all") {
+      return true;
     }
 
-    return true;
+    if (discount.benefit_product_id == null) {
+      return false;
+    }
+
+    return b.benefit_product_id === discount.benefit_product_id;
   });
 }
 
 function sortMatchedDiscounts(discounts: DiscountRow[]) {
+  /** Order: percent (by value DESC) → won → special_price → others last */
   const unitPriority: Record<DiscountDetail["discountUnit"], number> = {
     percent: 0,
     won: 1,
@@ -296,6 +348,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       `,
       )
       .eq("brand_id", matchedBrand.id)
+      .eq("status", "active")
       .order("discount_unit", { ascending: true }),
     supabase
       .from("user_benefits")
@@ -304,7 +357,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       .eq("is_active", true),
   ]);
 
-  const activeDiscounts = (discountRows ?? []) as DiscountRow[];
+  const activeDiscounts = (discountRows ?? []).map(normalizeDiscountRow);
   const benefitList = (userBenefits ?? []) as UserBenefitRow[];
 
   const matchedDiscountRows = sortMatchedDiscounts(

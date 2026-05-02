@@ -7,7 +7,7 @@ import { StatusLegend } from "@/components/admin/StatusLegend";
 
 type LegendType = "discount" | "request" | "account" | "generic";
 
-export function PaginatedTable<T>({
+export function PaginatedTable({
   title,
   legendType,
   pageSize,
