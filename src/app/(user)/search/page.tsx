@@ -1,10 +1,7 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 
-import { DiscountDetail } from "@/components/search/DiscountDetailPanel";
-import { DiscountExpandSection } from "@/components/search/DiscountExpandSection";
-import { DiscountRankFirst } from "@/components/search/DiscountRankFirst";
-import { DiscountRankItem } from "@/components/search/DiscountRankItem";
 import { EmptyState } from "@/components/search/EmptyState";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -63,7 +60,7 @@ type DiscountRow = {
   title: string;
   condition_text: string | null;
   discount_value: number | string;
-  discount_unit: DiscountDetail["discountUnit"];
+  discount_unit: DiscountUnit;
   usage_type: string;
   is_stackable: boolean;
   stacking_note: string | null;
@@ -71,11 +68,20 @@ type DiscountRow = {
   last_checked_at: string;
   valid_until: string | null;
   has_no_expiry: boolean;
+  benefit_category: { name: string; code: string } | null;
   provider: { name: string } | null;
   benefit_product:
     | { name: string; is_mvno: boolean; mvno_notice_required: boolean }
     | null;
 };
+
+type DiscountUnit =
+  | "percent"
+  | "won"
+  | "amount"
+  | "special_price"
+  | "free"
+  | "unknown";
 
 type UserBenefitRow = {
   benefit_category_id: number;
@@ -97,7 +103,7 @@ function normalizeDiscountRow(row: {
   title: string;
   condition_text: string | null;
   discount_value: number | string;
-  discount_unit: DiscountDetail["discountUnit"];
+  discount_unit: DiscountUnit;
   usage_type: string;
   is_stackable: boolean;
   stacking_note: string | null;
@@ -105,6 +111,10 @@ function normalizeDiscountRow(row: {
   last_checked_at: string;
   valid_until: string | null;
   has_no_expiry: boolean;
+  benefit_category:
+    | { name: string; code: string }
+    | { name: string; code: string }[]
+    | null;
   provider: { name: string } | { name: string }[] | null;
   benefit_product:
     | { name: string; is_mvno: boolean; mvno_notice_required: boolean }
@@ -127,6 +137,7 @@ function normalizeDiscountRow(row: {
     last_checked_at: row.last_checked_at,
     valid_until: row.valid_until,
     has_no_expiry: row.has_no_expiry,
+    benefit_category: asSingleOrNull(row.benefit_category),
     provider: asSingleOrNull(row.provider),
     benefit_product: asSingleOrNull(row.benefit_product),
   };
@@ -218,9 +229,12 @@ function matchDiscountToBenefits(discount: DiscountRow, benefits: UserBenefitRow
 
 function sortMatchedDiscounts(discounts: DiscountRow[]) {
   return [...discounts].sort((a, b) => {
-    const aValue = Number(a.discount_value) || 0;
-    const bValue = Number(b.discount_value) || 0;
-    return bValue - aValue;
+    const scoreDiff = getDiscountScore(b) - getDiscountScore(a);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+
+    return (Number(b.discount_value) || 0) - (Number(a.discount_value) || 0);
   });
 }
 
@@ -232,30 +246,194 @@ function getCategoryName(category: BrandRow["brand_categories"]) {
   return category?.name ?? "";
 }
 
-function toDiscountDetail(discount: DiscountRow): DiscountDetail {
-  const mvno =
-    discount.benefit_product?.is_mvno ||
-    discount.benefit_product?.mvno_notice_required ||
-    false;
+function getDiscountScore(discount: DiscountRow) {
+  const value = Number(discount.discount_value) || 0;
 
-  return {
-    id: discount.id,
-    title: discount.benefit_product?.name
-      ? `${discount.benefit_product.name} · ${discount.title}`
-      : discount.title,
-    providerName: discount.provider?.name ?? "혜택 제공사",
-    discountValue: Number(discount.discount_value) || 0,
-    discountUnit: discount.discount_unit,
-    usageType: discount.usage_type,
-    isStackable: discount.is_stackable,
-    stackingNote: discount.stacking_note ?? undefined,
-    conditionText: discount.condition_text ?? undefined,
-    sourceUrl: discount.source_url ?? undefined,
-    lastCheckedAt: discount.last_checked_at,
-    validUntil: discount.valid_until ?? undefined,
-    hasNoExpiry: discount.has_no_expiry,
-    isMvno: mvno,
+  if (discount.discount_unit === "free") {
+    return 1_000_000_000;
+  }
+
+  if (discount.discount_unit === "percent") {
+    return value * 10_000;
+  }
+
+  if (discount.discount_unit === "won" || discount.discount_unit === "amount") {
+    return value;
+  }
+
+  if (discount.discount_unit === "special_price") {
+    return Math.max(0, 100_000 - value);
+  }
+
+  return value;
+}
+
+function formatDiscountValue(value: number | string, unit: DiscountUnit) {
+  const numberValue = Number(value) || 0;
+
+  if (unit === "percent") {
+    return `${numberValue}%`;
+  }
+
+  if (unit === "won" || unit === "amount") {
+    return `${numberValue.toLocaleString()}원 할인`;
+  }
+
+  if (unit === "special_price") {
+    return `${numberValue.toLocaleString()}원 특가`;
+  }
+
+  if (unit === "free") {
+    return "무료";
+  }
+
+  return "할인 혜택";
+}
+
+function getBenefitTypeLabel(discount: DiscountRow) {
+  const code = discount.benefit_category?.code;
+  const name = discount.benefit_category?.name;
+  const labels: Record<string, string> = {
+    card: "카드",
+    telecom: "통신사",
+    membership: "멤버십",
+    coupon: "쿠폰",
   };
+
+  return (code ? labels[code] : null) ?? name ?? "혜택";
+}
+
+function formatValidUntil(discount: DiscountRow) {
+  if (discount.has_no_expiry) {
+    return "상시";
+  }
+
+  return discount.valid_until ? `${discount.valid_until}까지` : "기간 확인 필요";
+}
+
+function ResultMeta({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium text-gray-400">{label}</dt>
+      <dd className="mt-0.5 truncate text-xs font-semibold text-gray-800">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function TopResultCard({
+  brandName,
+  discount,
+}: {
+  brandName: string;
+  discount: DiscountRow;
+}) {
+  return (
+    <article className="overflow-hidden rounded-[28px] bg-gray-950 text-white shadow-xl shadow-orange-950/10">
+      <div className="bg-gradient-to-br from-gray-950 via-gray-900 to-orange-600 px-5 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-orange-100 ring-1 ring-white/20">
+            {getBenefitTypeLabel(discount)}
+          </span>
+          <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-extrabold text-white">
+            BEST
+          </span>
+        </div>
+
+        <p className="mt-5 text-sm font-semibold text-white/70">{brandName}</p>
+        <h2 className="mt-1 break-keep text-xl font-extrabold leading-snug">
+          {discount.title}
+        </h2>
+        <p className="mt-4 text-4xl font-black tracking-tight text-orange-300">
+          {formatDiscountValue(discount.discount_value, discount.discount_unit)}
+        </p>
+      </div>
+
+      <div className="space-y-4 bg-white px-5 py-4 text-gray-900">
+        <dl className="grid grid-cols-2 gap-3">
+          <ResultMeta
+            label="혜택상품"
+            value={discount.benefit_product?.name ?? "전체 상품"}
+          />
+          <ResultMeta label="제공사" value={discount.provider?.name ?? "-"} />
+          <ResultMeta
+            label="카테고리"
+            value={discount.benefit_category?.name ?? "-"}
+          />
+          <ResultMeta label="유효기간" value={formatValidUntil(discount)} />
+        </dl>
+
+        {discount.condition_text ? (
+          <p className="line-clamp-3 rounded-2xl bg-orange-50 px-4 py-3 text-xs leading-5 text-gray-700">
+            {discount.condition_text}
+          </p>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function ResultCard({
+  brandName,
+  discount,
+  isBest,
+}: {
+  brandName: string;
+  discount: DiscountRow;
+  isBest: boolean;
+}) {
+  return (
+    <article className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="rounded-full bg-gray-950 px-3 py-1 text-xs font-bold text-white">
+          {getBenefitTypeLabel(discount)}
+        </span>
+        {isBest ? (
+          <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-extrabold text-white">
+            BEST
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-gray-500">{brandName}</p>
+          <h3 className="mt-1 break-keep text-base font-extrabold leading-snug text-gray-950">
+            {discount.title}
+          </h3>
+        </div>
+        <p className="shrink-0 text-2xl font-black tracking-tight text-orange-600">
+          {formatDiscountValue(discount.discount_value, discount.discount_unit)}
+        </p>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-gray-50 p-3">
+        <ResultMeta
+          label="혜택상품"
+          value={discount.benefit_product?.name ?? "전체 상품"}
+        />
+        <ResultMeta label="제공사" value={discount.provider?.name ?? "-"} />
+        <ResultMeta
+          label="카테고리"
+          value={discount.benefit_category?.name ?? "-"}
+        />
+        <ResultMeta label="유효기간" value={formatValidUntil(discount)} />
+      </dl>
+
+      {discount.condition_text ? (
+        <p className="mt-3 line-clamp-3 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs leading-5 text-gray-700">
+          {discount.condition_text}
+        </p>
+      ) : null}
+    </article>
+  );
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
@@ -479,6 +657,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       last_checked_at,
       valid_until,
       has_no_expiry,
+      benefit_category:benefit_categories(name,code),
       provider:providers(name),
       benefit_product:benefit_products(name,is_mvno,mvno_notice_required)
     `,
@@ -527,13 +706,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       : activeDiscounts,
   );
 
-  const matchedDiscounts = matchedDiscountRows.map(toDiscountDetail);
-  const allDiscounts = activeDiscounts.map(toDiscountDetail);
-
-  const hasMvnoDiscount = allDiscounts.some((discount) => discount.isMvno);
-
-  const topMatched = matchedDiscounts.slice(0, 3);
-  const [firstDiscount, ...restDiscounts] = topMatched;
+  const hasMvnoDiscount = activeDiscounts.some(
+    (discount) =>
+      discount.benefit_product?.is_mvno ||
+      discount.benefit_product?.mvno_notice_required,
+  );
+  const bestDiscountId = matchedDiscountRows[0]?.id ?? null;
+  const [topDiscount, ...otherDiscounts] = matchedDiscountRows;
 
   return (
     <div className="px-4 py-4">
@@ -559,39 +738,49 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         ) : null}
       </section>
 
-      <section className="mt-6 space-y-3">
-        <p className="text-xs font-medium text-gray-400">내 할인 베스트</p>
+      <section className="mt-6 space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">
+              Best discounts
+            </p>
+            <h2 className="mt-1 text-lg font-extrabold text-gray-950">
+              지금 받을 수 있는 할인
+            </h2>
+          </div>
+          <p className="shrink-0 text-xs font-semibold text-gray-400">
+            {matchedDiscountRows.length}개
+          </p>
+        </div>
 
-        {!firstDiscount ? (
+        {!topDiscount ? (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-700 shadow-sm">
             내 혜택과 매칭되는 할인이 없습니다.
           </div>
         ) : (
-          <DiscountRankFirst
-            providerName={firstDiscount.providerName}
-            productName={firstDiscount.title}
-            discountValue={firstDiscount.discountValue}
-            discountUnit={firstDiscount.discountUnit}
-            usageType={firstDiscount.usageType}
+          <TopResultCard
+            brandName={matchedBrand.name}
+            discount={topDiscount}
           />
         )}
 
-        {restDiscounts.map((discount, index) => (
-          <DiscountRankItem
-            key={discount.id}
-            rank={index + 2}
-            providerName={discount.providerName}
-            productName={discount.title}
-            discountValue={discount.discountValue}
-            discountUnit={discount.discountUnit}
-            usageType={discount.usageType}
-          />
-        ))}
+        <div className="space-y-3">
+          {otherDiscounts.map((discount) => (
+            <ResultCard
+              key={discount.id}
+              brandName={matchedBrand.name}
+              discount={discount}
+              isBest={discount.id === bestDiscountId}
+            />
+          ))}
+        </div>
 
-        <DiscountExpandSection
-          discounts={allDiscounts}
-          hasMvnoDiscount={hasMvnoDiscount}
-        />
+        {hasMvnoDiscount ? (
+          <p className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-xs leading-5 text-orange-800">
+            알뜰요금제 혜택은 통신사/요금제별로 다를 수 있어 실제 적용 여부
+            확인이 필요합니다.
+          </p>
+        ) : null}
       </section>
     </div>
   );
