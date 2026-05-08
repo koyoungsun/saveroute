@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { DiscountDetail } from "@/components/search/DiscountDetailPanel";
@@ -7,6 +6,7 @@ import { DiscountExpandSection } from "@/components/search/DiscountExpandSection
 import { DiscountRankFirst } from "@/components/search/DiscountRankFirst";
 import { DiscountRankItem } from "@/components/search/DiscountRankItem";
 import { EmptyState } from "@/components/search/EmptyState";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SearchPageProps = {
@@ -27,10 +27,32 @@ function normalizeKeyword(keyword: string) {
   return keyword.trim().toLowerCase().replace(/[^가-힣a-zA-Z0-9]/g, "");
 }
 
+function isOrderedSubsequence(needle: string, haystack: string) {
+  if (!needle) return false;
+
+  let needleIndex = 0;
+  for (const character of haystack) {
+    if (character === needle[needleIndex]) {
+      needleIndex += 1;
+      if (needleIndex === needle.length) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function getBroadSearchTerm(normalized: string) {
+  return normalized.length >= 2 ? normalized.slice(0, 2) : normalized;
+}
+
 type BrandRow = {
   id: number;
   name: string;
+  slug: string;
   aliases: string[] | null;
+  brand_categories: { name: string } | { name: string }[] | null;
 };
 
 type DiscountRow = {
@@ -38,7 +60,6 @@ type DiscountRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
-  benefit_scope?: "provider_all" | "product_specific" | null;
   title: string;
   condition_text: string | null;
   discount_value: number | string;
@@ -52,7 +73,7 @@ type DiscountRow = {
   has_no_expiry: boolean;
   provider: { name: string } | null;
   benefit_product:
-    | { is_mvno: boolean; mvno_notice_required: boolean }
+    | { name: string; is_mvno: boolean; mvno_notice_required: boolean }
     | null;
 };
 
@@ -73,7 +94,6 @@ function normalizeDiscountRow(row: {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
-  benefit_scope?: string | null;
   title: string;
   condition_text: string | null;
   discount_value: number | string;
@@ -87,8 +107,8 @@ function normalizeDiscountRow(row: {
   has_no_expiry: boolean;
   provider: { name: string } | { name: string }[] | null;
   benefit_product:
-    | { is_mvno: boolean; mvno_notice_required: boolean }
-    | { is_mvno: boolean; mvno_notice_required: boolean }[]
+    | { name: string; is_mvno: boolean; mvno_notice_required: boolean }
+    | { name: string; is_mvno: boolean; mvno_notice_required: boolean }[]
     | null;
 }): DiscountRow {
   return {
@@ -96,7 +116,6 @@ function normalizeDiscountRow(row: {
     benefit_category_id: row.benefit_category_id,
     provider_id: row.provider_id,
     benefit_product_id: row.benefit_product_id,
-    benefit_scope: (row.benefit_scope as DiscountRow["benefit_scope"]) ?? null,
     title: row.title,
     condition_text: row.condition_text,
     discount_value: row.discount_value,
@@ -120,6 +139,10 @@ function pickMatchedBrand(brands: BrandRow[], keyword: string, normalized: strin
     brands.find((brand) => brand.name.toLowerCase() === keywordLower) ?? null;
   if (exactName) return exactName;
 
+  const exactSlug =
+    brands.find((brand) => normalizeKeyword(brand.slug) === normalized) ?? null;
+  if (exactSlug) return exactSlug;
+
   const exactAlias =
     brands.find((brand) =>
       (brand.aliases ?? []).some(
@@ -128,13 +151,50 @@ function pickMatchedBrand(brands: BrandRow[], keyword: string, normalized: strin
     ) ?? null;
   if (exactAlias) return exactAlias;
 
-  return brands[0] ?? null;
+  const normalizedName =
+    brands.find((brand) => normalizeKeyword(brand.name).includes(normalized)) ??
+    null;
+  if (normalizedName) return normalizedName;
+
+  const normalizedSlug =
+    brands.find((brand) => normalizeKeyword(brand.slug).includes(normalized)) ??
+    null;
+  if (normalizedSlug) return normalizedSlug;
+
+  const normalizedAlias =
+    brands.find((brand) =>
+      (brand.aliases ?? []).some((alias) =>
+        normalizeKeyword(alias).includes(normalized),
+      ),
+    ) ?? null;
+  if (normalizedAlias) return normalizedAlias;
+
+  const looseName =
+    brands.find((brand) =>
+      isOrderedSubsequence(normalized, normalizeKeyword(brand.name)),
+    ) ?? null;
+  if (looseName) return looseName;
+
+  const looseSlug =
+    brands.find((brand) =>
+      isOrderedSubsequence(normalized, normalizeKeyword(brand.slug)),
+    ) ?? null;
+  if (looseSlug) return looseSlug;
+
+  const looseAlias =
+    brands.find((brand) =>
+      (brand.aliases ?? []).some((alias) =>
+        isOrderedSubsequence(normalized, normalizeKeyword(alias)),
+      ),
+    ) ?? null;
+  if (looseAlias) return looseAlias;
+
+  return null;
 }
 
 function matchDiscountToBenefits(discount: DiscountRow, benefits: UserBenefitRow[]) {
   const inferredScope: "provider_all" | "product_specific" =
-    discount.benefit_scope ??
-    (discount.benefit_product_id == null ? "provider_all" : "product_specific");
+    discount.benefit_product_id == null ? "provider_all" : "product_specific";
 
   return benefits.some((b) => {
     if (
@@ -157,23 +217,19 @@ function matchDiscountToBenefits(discount: DiscountRow, benefits: UserBenefitRow
 }
 
 function sortMatchedDiscounts(discounts: DiscountRow[]) {
-  /** Order: percent (by value DESC) → won → special_price → others last */
-  const unitPriority: Record<DiscountDetail["discountUnit"], number> = {
-    percent: 0,
-    won: 1,
-    special_price: 2,
-    free: 3,
-    unknown: 4,
-  };
-
   return [...discounts].sort((a, b) => {
-    const unitDiff = unitPriority[a.discount_unit] - unitPriority[b.discount_unit];
-    if (unitDiff !== 0) return unitDiff;
-
     const aValue = Number(a.discount_value) || 0;
     const bValue = Number(b.discount_value) || 0;
     return bValue - aValue;
   });
+}
+
+function getCategoryName(category: BrandRow["brand_categories"]) {
+  if (Array.isArray(category)) {
+    return category[0]?.name ?? "";
+  }
+
+  return category?.name ?? "";
 }
 
 function toDiscountDetail(discount: DiscountRow): DiscountDetail {
@@ -184,7 +240,9 @@ function toDiscountDetail(discount: DiscountRow): DiscountDetail {
 
   return {
     id: discount.id,
-    title: discount.title,
+    title: discount.benefit_product?.name
+      ? `${discount.benefit_product.name} · ${discount.title}`
+      : discount.title,
     providerName: discount.provider?.name ?? "혜택 제공사",
     discountValue: Number(discount.discount_value) || 0,
     discountUnit: discount.discount_unit,
@@ -205,38 +263,77 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const keyword = getKeyword(params.keyword);
   const normalized = normalizeKeyword(keyword);
 
-  const supabase = await createServerSupabaseClient();
-  const { data } = await supabase.auth.getSession();
-
-  if (!data.session) {
-    const redirectTo = `/search?keyword=${encodeURIComponent(keyword)}`;
-    redirect(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`);
+  if (!keyword) {
+    return <EmptyState key={keyword} keyword={keyword} />;
   }
 
-  const userId = data.session.user.id;
+  const supabase = await createServerSupabaseClient();
+  const searchSupabase = createSupabaseAdminClient();
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id ?? null;
+  const aliasTerms = Array.from(new Set([keyword, normalized].filter(Boolean)));
+  const broadSearchTerm = getBroadSearchTerm(normalized);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("gender_group,age_group")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data: profile } = userId
+    ? await supabase
+        .from("profiles")
+        .select("gender_group,age_group")
+        .eq("id", userId)
+        .maybeSingle()
+    : { data: null };
 
-  const [{ data: nameMatches }, { data: aliasMatches }] = await Promise.all([
+  const [
+    { count: anonVisibleBrandCount, error: anonBrandCountError },
+    {
+      data: recentBrands,
+      count: adminBrandCount,
+      error: recentBrandsError,
+    },
+    { data: nameMatches, error: nameError },
+    { data: slugMatches, error: slugError },
+    { data: aliasMatches, error: aliasError },
+    { data: broadNameMatches, error: broadNameError },
+  ] = await Promise.all([
     supabase
       .from("brands")
-      .select("id,name,aliases")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true),
+    searchSupabase
+      .from("brands")
+      .select("id,name,is_active", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .limit(10),
+    searchSupabase
+      .from("brands")
+      .select("id,name,slug,aliases,brand_categories(name)")
       .ilike("name", `%${keyword}%`)
+      .eq("is_active", true)
       .limit(20),
-    supabase
+    searchSupabase
       .from("brands")
-      .select("id,name,aliases")
-      .contains("aliases", [keyword])
+      .select("id,name,slug,aliases,brand_categories(name)")
+      .ilike("slug", `%${normalized}%`)
+      .eq("is_active", true)
+      .limit(20),
+    searchSupabase
+      .from("brands")
+      .select("id,name,slug,aliases,brand_categories(name)")
+      .overlaps("aliases", aliasTerms)
+      .eq("is_active", true)
+      .limit(20),
+    searchSupabase
+      .from("brands")
+      .select("id,name,slug,aliases,brand_categories(name)")
+      .ilike("name", `%${broadSearchTerm}%`)
+      .eq("is_active", true)
       .limit(20),
   ]);
 
   const brandCandidates = [
     ...(nameMatches ?? []),
+    ...(slugMatches ?? []),
     ...(aliasMatches ?? []),
+    ...(broadNameMatches ?? []),
   ].reduce<BrandRow[]>((unique, brand) => {
     if (unique.some((item) => item.id === brand.id)) {
       return unique;
@@ -250,6 +347,39 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     keyword,
     normalized,
   );
+
+  console.log("[search debug] brands visibility", {
+    keyword,
+    anonVisibleActiveBrandCount: anonVisibleBrandCount,
+    adminBrandCount,
+    recentBrands:
+      recentBrands?.map((brand) => ({
+        id: brand.id,
+        name: brand.name,
+        isActive: brand.is_active,
+      })) ?? [],
+    errors: {
+      anonBrandCount: anonBrandCountError?.code ?? null,
+      recentBrands: recentBrandsError?.code ?? null,
+    },
+  });
+
+  console.log("[search debug] brand lookup", {
+    keyword,
+    normalized,
+    nameMatches: nameMatches?.length ?? 0,
+    slugMatches: slugMatches?.length ?? 0,
+    aliasMatches: aliasMatches?.length ?? 0,
+    broadNameMatches: broadNameMatches?.length ?? 0,
+    matchedBrands: brandCandidates.length,
+    matchedBrandId: matchedBrand?.id ?? null,
+    errors: {
+      name: nameError?.code ?? null,
+      slug: slugError?.code ?? null,
+      alias: aliasError?.code ?? null,
+      broadName: broadNameError?.code ?? null,
+    },
+  });
 
   const resultStatus = matchedBrand ? "matched" : "unmatched";
 
@@ -318,50 +448,83 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     // Logging/stat failures should not block search results.
   }
 
-  if (!keyword || !matchedBrand) {
+  if (!matchedBrand) {
+    console.log("[search debug] discount lookup", {
+      keyword,
+      matchedBrandId: null,
+      discounts: 0,
+      status: "active",
+      skipped: "no matched brand",
+    });
+
     return <EmptyState key={keyword} keyword={keyword} />;
   }
 
-  const [{ data: discountRows }, { data: userBenefits }] = await Promise.all([
-    supabase
-      .from("discounts")
-      .select(
-        `
-        id,
-        benefit_category_id,
-        provider_id,
-        benefit_product_id,
-        benefit_scope,
-        title,
-        condition_text,
-        discount_value,
-        discount_unit,
-        usage_type,
-        is_stackable,
-        stacking_note,
-        source_url,
-        last_checked_at,
-        valid_until,
-        has_no_expiry,
-        provider:providers(name),
-        benefit_product:benefit_products(is_mvno,mvno_notice_required)
-      `,
-      )
-      .eq("brand_id", matchedBrand.id)
-      .eq("status", "active")
-      .order("discount_unit", { ascending: true }),
-    supabase
+  const { data: discountRows, error: discountError } = await searchSupabase
+    .from("discounts")
+    .select(
+      `
+      id,
+      benefit_category_id,
+      provider_id,
+      benefit_product_id,
+      title,
+      condition_text,
+      discount_value,
+      discount_unit,
+      usage_type,
+      is_stackable,
+      stacking_note,
+      source_url,
+      last_checked_at,
+      valid_until,
+      has_no_expiry,
+      provider:providers(name),
+      benefit_product:benefit_products(name,is_mvno,mvno_notice_required)
+    `,
+    )
+    .eq("brand_id", matchedBrand.id)
+    .eq("status", "active")
+    .order("discount_value", { ascending: false });
+
+  console.log("[search debug] discount lookup", {
+    keyword,
+    matchedBrandId: matchedBrand.id,
+    discounts: discountRows?.length ?? 0,
+    status: "active",
+    error: discountError
+      ? {
+          code: discountError.code,
+          message: discountError.message,
+          details: discountError.details,
+          hint: discountError.hint,
+        }
+      : null,
+  });
+
+  const activeDiscounts = sortMatchedDiscounts(
+    (discountRows ?? []).map(normalizeDiscountRow),
+  );
+
+  if (activeDiscounts.length === 0) {
+    return <EmptyState key={keyword} keyword={keyword} />;
+  }
+
+  const { data: userBenefits } = userId
+    ? await supabase
       .from("user_benefits")
       .select("benefit_category_id,provider_id,benefit_product_id")
       .eq("user_id", userId)
-      .eq("is_active", true),
-  ]);
-
-  const activeDiscounts = (discountRows ?? []).map(normalizeDiscountRow);
+      .eq("is_active", true)
+    : { data: null };
   const benefitList = (userBenefits ?? []) as UserBenefitRow[];
 
   const matchedDiscountRows = sortMatchedDiscounts(
-    activeDiscounts.filter((discount) => matchDiscountToBenefits(discount, benefitList)),
+    userId
+      ? activeDiscounts.filter((discount) =>
+          matchDiscountToBenefits(discount, benefitList),
+        )
+      : activeDiscounts,
   );
 
   const matchedDiscounts = matchedDiscountRows.map(toDiscountDetail);
@@ -389,7 +552,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <section className="mt-8">
         <h1 className="text-xl font-bold text-gray-900">{matchedBrand.name}</h1>
-        <p className="mt-1 text-xs text-gray-500">여가</p>
+        {getCategoryName(matchedBrand.brand_categories) ? (
+          <p className="mt-1 text-xs text-gray-500">
+            {getCategoryName(matchedBrand.brand_categories)}
+          </p>
+        ) : null}
       </section>
 
       <section className="mt-6 space-y-3">

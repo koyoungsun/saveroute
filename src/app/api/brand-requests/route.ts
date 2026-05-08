@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const { data: sessionData } = await supabase.auth.getSession();
 
   if (!sessionData.session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ request_count: 0 });
   }
 
   const keyword = request.nextUrl.searchParams.get("keyword") ?? "";

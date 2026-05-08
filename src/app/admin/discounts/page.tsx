@@ -1,95 +1,145 @@
-"use client";
-
-import { useState } from "react";
+import Link from "next/link";
 
 import { ConfidenceBadge } from "@/components/admin/ConfidenceBadge";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const discounts = [
-  ["롯데월드", "KT VIP", "통신사", "KT", "20%", "앱예매", "active", "high", "2025-12-31"],
-  ["롯데월드", "신한카드", "카드", "신한카드", "30%", "현장결제", "active", "medium", "없음"],
-  ["CGV", "SKT", "통신사", "SKT", "15%", "현장결제", "active", "high", "2025-11-30"],
-  ["스타벅스", "신한카드 할인", "카드", "신한카드", "10%", "현장결제", "active", "low", "없음"],
-  ["에버랜드", "KT VIP", "통신사", "KT", "25%", "앱예매", "active", "high", "2025-10-10"],
-  ["서울랜드", "SKT", "통신사", "SKT", "12%", "현장결제", "active", "medium", "2025-09-01"],
-  ["올리브영", "삼성카드", "카드", "삼성카드", "5%", "현장결제", "active", "medium", "없음"],
-  ["다이소", "현대카드", "카드", "현대카드", "3%", "현장결제", "active", "low", "없음"],
-  ["노브랜드", "하나카드", "카드", "하나카드", "7%", "현장결제", "active", "medium", "없음"],
-  ["이케아", "국민카드", "카드", "국민카드", "8%", "현장결제", "active", "high", "없음"],
-  ["쿠팡", "신한카드", "카드", "신한카드", "6%", "현장결제", "hidden", "low", "없음"],
-  ["메가박스", "KT VIP", "통신사", "KT", "18%", "앱예매", "draft", "medium", "2025-08-01"],
-  ["롯데시네마", "SKT", "통신사", "SKT", "14%", "현장결제", "active", "high", "2025-07-31"],
-] as const;
+import { hideDiscountAction } from "./actions";
 
-export default function AdminDiscountsPage() {
-  const [benefitScope, setBenefitScope] = useState<"provider_all" | "product_specific">(
-    "provider_all",
-  );
+type DiscountRow = {
+  id: number;
+  title: string;
+  discount_value: number | string;
+  discount_unit: string;
+  usage_type: string;
+  status: string;
+  data_confidence: "high" | "medium" | "low";
+  valid_until: string | null;
+  brand: { name: string } | { name: string }[] | null;
+  benefit_category: { name: string } | { name: string }[] | null;
+  provider: { name: string } | { name: string }[] | null;
+  benefit_product: { name: string } | { name: string }[] | null;
+};
+
+function getRelationName(
+  relation: { name: string } | { name: string }[] | null,
+) {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name ?? "-";
+  }
+
+  return relation?.name ?? "-";
+}
+
+function formatDiscountValue(value: number | string, unit: string) {
+  const suffixByUnit: Record<string, string> = {
+    percent: "%",
+    won: "원",
+    special_price: "원 특가",
+    free: "무료",
+    unknown: "",
+  };
+
+  if (unit === "free") {
+    return "무료";
+  }
+
+  return `${value}${suffixByUnit[unit] ?? ""}`;
+}
+
+function formatUsageType(usageType: string) {
+  const labels: Record<string, string> = {
+    onsite_payment: "현장결제",
+    app_booking: "앱예매",
+    online_booking: "온라인예매",
+    coupon_code: "쿠폰코드",
+    membership_app: "멤버십앱",
+    unknown: "미정",
+  };
+
+  return labels[usageType] ?? usageType;
+}
+
+export default async function AdminDiscountsPage() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("discounts")
+    .select(
+      `
+      id,
+      title,
+      discount_value,
+      discount_unit,
+      usage_type,
+      status,
+      data_confidence,
+      valid_until,
+      brand:brands(name),
+      benefit_category:benefit_categories(name),
+      provider:providers(name),
+      benefit_product:benefit_products(name)
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load discounts: ${error.message}`);
+  }
+
+  const discounts = (data ?? []) as DiscountRow[];
+
+  const rows = discounts.map((discount) => {
+    const key = `${discount.id}-${discount.title}`;
+    return [
+      getRelationName(discount.brand),
+      discount.title,
+      getRelationName(discount.benefit_category),
+      getRelationName(discount.provider),
+      getRelationName(discount.benefit_product),
+      formatDiscountValue(discount.discount_value, discount.discount_unit),
+      formatUsageType(discount.usage_type),
+      <StatusBadge key={`${key}-status`} status={discount.status} />,
+      <ConfidenceBadge
+        key={`${key}-conf`}
+        confidence={discount.data_confidence}
+      />,
+      discount.valid_until ?? "없음",
+      <div key={`${key}-actions`} className="d-flex gap-2">
+        <Link
+          href={`/admin/discounts/${discount.id}/edit`}
+          className="btn btn-outline-secondary btn-sm"
+        >
+          수정
+        </Link>
+        <form action={hideDiscountAction}>
+          <input type="hidden" name="discount_id" value={discount.id} />
+          <button
+            type="submit"
+            className="btn btn-outline-danger btn-sm"
+            disabled={discount.status === "hidden"}
+          >
+            숨김
+          </button>
+        </form>
+      </div>,
+    ];
+  });
+
+  const categoryNames = Array.from(
+    new Set(discounts.map((discount) => getRelationName(discount.benefit_category))),
+  ).filter((name) => name !== "-");
+  const providerNames = Array.from(
+    new Set(discounts.map((discount) => getRelationName(discount.provider))),
+  ).filter((name) => name !== "-");
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">Discounts</h1>
-        <button type="button" className="btn btn-primary">
+        <Link href="/admin/discounts/new" className="btn btn-primary">
           + 할인 등록
-        </button>
-      </div>
-
-      <div className="sr-block card">
-        <div className="card-body">
-          <h2 className="h6 mb-3">할인 등록 (Mock)</h2>
-          <div className="row g-3">
-            <div className="col-md-4">
-              <label className="form-label">적용 범위</label>
-              <div className="d-flex gap-3">
-                <label className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="benefit-scope"
-                    value="provider_all"
-                    checked={benefitScope === "provider_all"}
-                    onChange={() => setBenefitScope("provider_all")}
-                  />
-                  <span className="form-check-label">제공사 전체</span>
-                </label>
-                <label className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="benefit-scope"
-                    value="product_specific"
-                    checked={benefitScope === "product_specific"}
-                    onChange={() => setBenefitScope("product_specific")}
-                  />
-                  <span className="form-check-label">특정 혜택 상품</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">혜택 상품</label>
-              <select
-                className="form-select"
-                disabled={benefitScope === "provider_all"}
-                defaultValue=""
-              >
-                <option value="">
-                  {benefitScope === "provider_all"
-                    ? "제공사 전체 선택 시 비활성화"
-                    : "혜택 상품 선택"}
-                </option>
-                <option>KT VIP</option>
-                <option>T멤버십 VIP</option>
-                <option>신한카드 Deep Dream</option>
-              </select>
-              <div className="form-text">
-                제공사 전체 선택 시 benefit_product_id는 저장되지 않습니다.
-              </div>
-            </div>
-          </div>
-        </div>
+        </Link>
       </div>
 
       <div className="sr-block card">
@@ -101,16 +151,17 @@ export default function AdminDiscountsPage() {
             <div className="col-md-2">
               <select className="form-select" defaultValue="">
                 <option value="">카테고리</option>
-                <option>통신사</option>
-                <option>카드</option>
+                {categoryNames.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
               </select>
             </div>
             <div className="col-md-2">
               <select className="form-select" defaultValue="">
                 <option value="">제공사</option>
-                <option>KT</option>
-                <option>SKT</option>
-                <option>신한카드</option>
+                {providerNames.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
               </select>
             </div>
             <div className="col-md-2">
@@ -118,6 +169,8 @@ export default function AdminDiscountsPage() {
                 <option value="">상태</option>
                 <option>active</option>
                 <option>draft</option>
+                <option>hidden</option>
+                <option>expired</option>
               </select>
             </div>
             <div className="col-md-2">
@@ -143,6 +196,7 @@ export default function AdminDiscountsPage() {
           { header: "제목" },
           { header: "카테고리" },
           { header: "제공사" },
+          { header: "혜택상품" },
           { header: "할인값" },
           { header: "방식" },
           { header: "상태" },
@@ -150,23 +204,7 @@ export default function AdminDiscountsPage() {
           { header: "만료일" },
           { header: "관리" },
         ]}
-        rows={discounts.map((discount) => {
-          const key = `${discount[0]}-${discount[1]}`;
-          return [
-            discount[0],
-            discount[1],
-            discount[2],
-            discount[3],
-            discount[4],
-            discount[5],
-            <StatusBadge key={`${key}-status`} status={discount[6]} />,
-            <ConfidenceBadge key={`${key}-conf`} confidence={discount[7]} />,
-            discount[8],
-            <button key={`${key}-action`} type="button" className="btn btn-outline-secondary btn-sm">
-              수정
-            </button>,
-          ];
-        })}
+        rows={rows}
       />
     </>
   );

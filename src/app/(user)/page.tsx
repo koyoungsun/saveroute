@@ -46,7 +46,7 @@ export default async function HomePage() {
                 어디에서 가장 싸게 쓸 수 있을까요?
               </p>
             </div>
-            <SearchBar isLoggedIn />
+            <SearchBar />
           </>
         ) : (
           <>
@@ -66,7 +66,7 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-6">
-              <SearchBar isLoggedIn={false} />
+              <SearchBar />
             </div>
           </>
         )}
