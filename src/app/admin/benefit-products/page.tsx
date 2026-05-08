@@ -11,7 +11,6 @@ type RelationName = { name: string } | { name: string }[] | null;
 type BenefitProductRow = {
   id: number;
   name: string;
-  description: string | null;
   is_active: boolean;
   is_mvno: boolean;
   mvno_notice_required: boolean;
@@ -39,7 +38,6 @@ export default async function BenefitProductsPage() {
       `
       id,
       name,
-      description,
       is_active,
       is_mvno,
       mvno_notice_required,
@@ -74,7 +72,6 @@ export default async function BenefitProductsPage() {
           { header: "카테고리" },
           { header: "제공사" },
           { header: "상품명" },
-          { header: "설명" },
           { header: "상태" },
           { header: "알뜰폰" },
           { header: "알뜰폰 안내" },
@@ -86,7 +83,6 @@ export default async function BenefitProductsPage() {
             getRelationName(product.benefit_category),
             getRelationName(product.provider),
             product.name,
-            product.description || "-",
             <StatusBadge
               key={`${key}-status`}
               status={product.is_active ? "active" : "inactive"}

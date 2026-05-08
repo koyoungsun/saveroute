@@ -10,7 +10,6 @@ export type BenefitProductFormValues = {
   benefit_category_id: number;
   provider_id: number;
   name: string;
-  description: string | null;
   is_active: boolean;
   is_mvno: boolean;
   mvno_notice_required: boolean;
@@ -171,20 +170,6 @@ export function BenefitProductForm({
                 {state.fieldErrors.name}
               </div>
             ) : null}
-          </div>
-
-          <div className="col-12">
-            <label className="form-label fw-semibold" htmlFor="description">
-              설명
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              className="form-control"
-              defaultValue={initialValues?.description ?? ""}
-              placeholder="상품 설명 또는 내부 참고 내용을 입력합니다."
-              rows={4}
-            />
           </div>
 
           <div className="col-md-4">

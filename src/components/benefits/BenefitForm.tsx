@@ -1,571 +1,311 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { X } from "lucide-react";
 
-type CardType = "credit" | "debit" | "prepaid" | "unknown";
-type BenefitCategory = "telecom" | "card";
+import {
+  addUserBenefitAction,
+  deactivateUserBenefitAction,
+  type BenefitActionState,
+} from "@/app/(user)/my-benefits/actions";
 
-type ProviderRow = {
-  id: string;
+export type BenefitCategoryOption = {
+  id: number;
   name: string;
-  category?: string | null;
-  provider_type?: string | null;
-  active?: boolean | null;
-  is_active?: boolean | null;
+  code: string;
 };
 
-type BenefitProductRow = {
-  id: string;
-  provider_id: string;
+export type ProviderOption = {
+  id: number;
   name: string;
-  card_type?: CardType | null;
-  active?: boolean | null;
-  is_active?: boolean | null;
+  benefit_category_id: number;
 };
 
-type UserBenefitRow = {
-  id?: string;
-  category: BenefitCategory;
-  provider_id: string;
-  benefit_product_id: string | null;
+export type BenefitProductOption = {
+  id: number;
+  name: string;
+  benefit_category_id: number;
+  provider_id: number;
 };
 
-interface TelecomProvider {
-  id: string;
-  name: string;
-  isMvno: boolean;
-  isNone?: boolean;
-}
-
-interface TelecomProduct {
-  id: string;
-  providerId: string;
-  name: string;
-  isMvno: boolean;
-}
-
-interface CardCompany {
-  id: string;
-  name: string;
-  isNone?: boolean;
-}
-
-interface CardProduct {
-  id: string;
-  companyId: string;
-  name: string;
-  cardType: CardType;
-}
-
-interface RegisteredBenefit {
-  id: string; // stable UI key
-  category: BenefitCategory;
-  providerId: string;
-  providerName: string;
-  benefitProductId: string | null;
-  productName: string;
-  badge?: string;
-}
-
-const cardTypeLabels: Record<CardType, string> = {
-  credit: "신용카드",
-  debit: "체크카드",
-  prepaid: "선불카드",
-  unknown: "기타",
+export type RegisteredUserBenefit = {
+  id: number;
+  benefit_category_id: number;
+  provider_id: number;
+  benefit_product_id: number | null;
+  created_at: string;
+  benefit_category: { name: string } | { name: string }[] | null;
+  provider: { name: string } | { name: string }[] | null;
+  benefit_product: { name: string } | { name: string }[] | null;
 };
 
 type BenefitFormProps = {
-  providers: ProviderRow[];
-  benefitProducts: BenefitProductRow[];
-  initialUserBenefits: UserBenefitRow[];
+  categories: BenefitCategoryOption[];
+  providers: ProviderOption[];
+  benefitProducts: BenefitProductOption[];
+  userBenefits: RegisteredUserBenefit[];
 };
 
-function isTelecomProvider(provider: ProviderRow) {
-  const category = provider.category ?? "";
-  const type = provider.provider_type ?? "";
-  return category === "telecom" || type.startsWith("telecom");
+const initialState: BenefitActionState = {};
+
+function relationName(relation: { name: string } | { name: string }[] | null) {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name ?? "-";
+  }
+
+  return relation?.name ?? "-";
 }
 
-function isCardProvider(provider: ProviderRow) {
-  const category = provider.category ?? "";
-  const type = provider.provider_type ?? "";
-  return category === "card" || type.startsWith("card");
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
 }
 
-function isMvnoProvider(provider: ProviderRow) {
-  const type = provider.provider_type ?? "";
-  return type.includes("mvno");
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full rounded-xl bg-gray-950 py-3 text-base font-semibold text-white hover:bg-gray-900 disabled:opacity-50"
+    >
+      {pending ? "저장 중..." : "혜택 저장"}
+    </button>
+  );
+}
+
+function DeleteButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      aria-label={`${label} 삭제`}
+      disabled={pending}
+      className="shrink-0 rounded-full p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+    >
+      <X className="size-4" aria-hidden="true" />
+    </button>
+  );
 }
 
 export function BenefitForm({
+  categories,
   providers,
   benefitProducts,
-  initialUserBenefits,
+  userBenefits,
 }: BenefitFormProps) {
-  const telecomProviderIds = useMemo(() => {
-    return new Set(providers.filter(isTelecomProvider).map((provider) => provider.id));
-  }, [providers]);
+  const [state, formAction] = useActionState(addUserBenefitAction, initialState);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedProviderId, setSelectedProviderId] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
 
-  const cardProviderIds = useMemo(() => {
-    return new Set(providers.filter(isCardProvider).map((provider) => provider.id));
-  }, [providers]);
-
-  const telecomProviders: TelecomProvider[] = useMemo(() => {
-    const rows = providers
-      .filter(isTelecomProvider)
-      .map((provider) => ({
-        id: provider.id,
-        name: provider.name,
-        isMvno: isMvnoProvider(provider),
-      }));
-
-    return [
-      { id: "none", name: "통신사 없음", isMvno: false, isNone: true },
-      {
-        id: "mvno-unknown",
-        name: "알뜰요금제 사용 중이지만 혜택 확인 필요",
-        isMvno: true,
-      },
-      ...rows,
-    ];
-  }, [providers]);
-
-  const telecomProducts: TelecomProduct[] = useMemo(() => {
-    const providerMap = new Map<string, ProviderRow>();
-    providers.forEach((provider) => providerMap.set(provider.id, provider));
-
-    const rows = benefitProducts
-      .filter((product) => telecomProviderIds.has(product.provider_id))
-      .map((product) => ({
-        id: product.id,
-        providerId: product.provider_id,
-        name: product.name,
-        isMvno: isMvnoProvider(providerMap.get(product.provider_id) ?? { id: "", name: "" }),
-      }));
-
-    return [
-      {
-        id: "mvno-unknown-plan",
-        providerId: "mvno-unknown",
-        name: "혜택 확인 필요",
-        isMvno: true,
-      },
-      ...rows,
-    ];
-  }, [benefitProducts, providers, telecomProviderIds]);
-
-  const cardCompanies: CardCompany[] = useMemo(() => {
-    const rows = providers
-      .filter(isCardProvider)
-      .map((provider) => ({
-        id: provider.id,
-        name: provider.name,
-      }));
-
-    return [{ id: "none", name: "카드 없음", isNone: true }, ...rows];
-  }, [providers]);
-
-  const cardProducts: CardProduct[] = useMemo(
+  const filteredProviders = useMemo(
     () =>
-      benefitProducts
-        .filter((product) => cardProviderIds.has(product.provider_id))
-        .map((product) => ({
-        id: product.id,
-        companyId: product.provider_id,
-        name: product.name,
-        cardType: (product.card_type ?? "unknown") as CardType,
-      })),
-    [benefitProducts, cardProviderIds],
+      selectedCategoryId
+        ? providers.filter(
+            (provider) =>
+              provider.benefit_category_id === Number(selectedCategoryId),
+          )
+        : [],
+    [providers, selectedCategoryId],
   );
 
-  const providerById = useMemo(() => {
-    const map = new Map<string, ProviderRow>();
-    providers.forEach((provider) => map.set(provider.id, provider));
-    return map;
-  }, [providers]);
-
-  const benefitProductById = useMemo(() => {
-    const map = new Map<string, BenefitProductRow>();
-    benefitProducts.forEach((product) => map.set(product.id, product));
-    return map;
-  }, [benefitProducts]);
-
-  const [registeredBenefits, setRegisteredBenefits] = useState<RegisteredBenefit[]>(
-    () => {
-      if (!initialUserBenefits?.length) {
-        return [];
-      }
-
-      return initialUserBenefits.map((benefit) => {
-        const provider = providerById.get(benefit.provider_id);
-        const product = benefit.benefit_product_id
-          ? benefitProductById.get(benefit.benefit_product_id)
-          : null;
-
-        const providerName = provider?.name ?? "알 수 없는 제공사";
-        const productName =
-          product?.name ??
-          (benefit.category === "card" ? "카드상품 나중에 선택" : "혜택 선택");
-
-        const badge =
-          benefit.category === "card" && product?.card_type
-            ? cardTypeLabels[(product.card_type ?? "unknown") as CardType]
-            : undefined;
-
-        return {
-          id: `${benefit.category}-${benefit.provider_id}-${benefit.benefit_product_id ?? "provider"}`,
-          category: benefit.category,
-          providerId: benefit.provider_id,
-          providerName,
-          benefitProductId: benefit.benefit_product_id,
-          productName,
-          badge,
-        };
-      });
-    },
-  );
-
-  const [selectedTelecomProviderId, setSelectedTelecomProviderId] =
-    useState("none");
-  const [selectedCardCompanyId, setSelectedCardCompanyId] = useState("none");
-  const [selectedTelecomProductId, setSelectedTelecomProductId] = useState("");
-  const [selectedCardProductId, setSelectedCardProductId] = useState("");
-  const [saveStatus, setSaveStatus] = useState<
-    { kind: "idle" } | { kind: "saving" } | { kind: "error"; message: string } | { kind: "success"; empty: boolean }
-  >({ kind: "idle" });
-
-  const filteredTelecomProducts = useMemo(
+  const filteredProducts = useMemo(
     () =>
-      telecomProducts.filter(
-        (product) => product.providerId === selectedTelecomProviderId,
-      ),
-    [selectedTelecomProviderId],
+      selectedCategoryId && selectedProviderId
+        ? benefitProducts.filter(
+            (product) =>
+              product.benefit_category_id === Number(selectedCategoryId) &&
+              product.provider_id === Number(selectedProviderId),
+          )
+        : [],
+    [benefitProducts, selectedCategoryId, selectedProviderId],
   );
-
-  const filteredCardProducts = useMemo(
-    () =>
-      cardProducts.filter(
-        (product) => product.companyId === selectedCardCompanyId,
-      ),
-    [selectedCardCompanyId],
-  );
-
-  const selectedTelecomProvider = telecomProviders.find(
-    (provider) => provider.id === selectedTelecomProviderId,
-  );
-  const selectedTelecomProduct = telecomProducts.find(
-    (product) => product.id === selectedTelecomProductId,
-  );
-  const selectedCardCompany = cardCompanies.find(
-    (company) => company.id === selectedCardCompanyId,
-  );
-  const selectedCardProduct = cardProducts.find(
-    (product) => product.id === selectedCardProductId,
-  );
-  const shouldShowMvnoNotice =
-    selectedTelecomProvider?.isMvno || selectedTelecomProduct?.isMvno;
-  const hasTelecomProviderSelected =
-    Boolean(selectedTelecomProvider) && !selectedTelecomProvider?.isNone;
-  const hasCardCompanySelected =
-    Boolean(selectedCardCompany) && !selectedCardCompany?.isNone;
-  const telecomBenefitCount = registeredBenefits.filter(
-    (benefit) => benefit.category === "telecom",
-  ).length;
-  const cardBenefitCount = registeredBenefits.filter(
-    (benefit) => benefit.category === "card",
-  ).length;
-
-  const handleTelecomProviderChange = (providerId: string) => {
-    setSelectedTelecomProviderId(providerId);
-    setSelectedTelecomProductId(
-      telecomProducts.find((product) => product.providerId === providerId)
-        ?.id ?? "",
-    );
-  };
-
-  const handleCardCompanyChange = (companyId: string) => {
-    setSelectedCardCompanyId(companyId);
-    setSelectedCardProductId("");
-  };
-
-  const addTelecomBenefit = () => {
-    if (
-      telecomBenefitCount >= 2 ||
-      !hasTelecomProviderSelected ||
-      !selectedTelecomProvider ||
-      !selectedTelecomProduct
-    ) {
-      return;
-    }
-
-    setRegisteredBenefits((current) => [
-      ...current,
-      {
-        id: `telecom-${selectedTelecomProvider.id}-${selectedTelecomProduct.id}`,
-        category: "telecom",
-        providerId: selectedTelecomProvider.id,
-        providerName: selectedTelecomProvider.name,
-        benefitProductId: selectedTelecomProduct.id,
-        productName: selectedTelecomProduct.name,
-      },
-    ]);
-  };
-
-  const addCardBenefit = () => {
-    if (cardBenefitCount >= 3 || !hasCardCompanySelected || !selectedCardCompany) {
-      return;
-    }
-
-    setRegisteredBenefits((current) => [
-      ...current,
-      {
-        id: `card-${selectedCardCompany.id}-${selectedCardProduct?.id ?? "provider"}`,
-        category: "card",
-        providerId: selectedCardCompany.id,
-        providerName: selectedCardCompany.name,
-        benefitProductId: selectedCardProduct?.id ?? null,
-        productName: selectedCardProduct?.name ?? "카드상품 나중에 선택",
-        badge: selectedCardProduct
-          ? cardTypeLabels[selectedCardProduct.cardType]
-          : undefined,
-      },
-    ]);
-  };
-
-  const removeBenefit = (benefitId: string) => {
-    setRegisteredBenefits((current) =>
-      current.filter((benefit) => benefit.id !== benefitId),
-    );
-  };
-
-  const handleSave = async () => {
-    setSaveStatus({ kind: "saving" });
-
-    try {
-      const response = await fetch("/api/user-benefits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          benefits: registeredBenefits.map((benefit) => ({
-            category: benefit.category,
-            provider_id: benefit.providerId,
-            benefit_product_id: benefit.benefitProductId,
-          })),
-        }),
-      });
-
-      const json = (await response.json()) as
-        | { success: true; empty: boolean }
-        | { error: string };
-
-      if (!response.ok || "error" in json) {
-        setSaveStatus({
-          kind: "error",
-          message: "error" in json ? json.error : "저장 실패",
-        });
-        return;
-      }
-
-      setSaveStatus({ kind: "success", empty: json.empty });
-    } catch {
-      setSaveStatus({ kind: "error", message: "저장 실패" });
-    }
-  };
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-gray-800">통신사</h2>
-        <p className="mt-1 text-xs text-gray-400">
-          통신사 혜택이 없다면 ‘통신사 없음’을 선택해도 됩니다.
-        </p>
+    <div className="space-y-5">
+      <form action={formAction} className="rounded-3xl bg-white p-5 shadow-sm">
+        <div>
+          <h2 className="text-base font-bold text-gray-950">혜택상품 등록</h2>
+          <p className="mt-1 text-xs leading-5 text-gray-500">
+            보유 중인 카드, 통신사 멤버십, 쿠폰, 멤버십 상품을 등록하면 검색
+            결과에서 내 혜택을 먼저 보여드려요.
+          </p>
+        </div>
 
-        <label
-          htmlFor="telecom-provider"
-          className="mt-4 block text-sm font-medium text-gray-700"
-        >
-          통신사
-        </label>
-        <select
-          id="telecom-provider"
-          value={selectedTelecomProviderId}
-          onChange={(event) => handleTelecomProviderChange(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {telecomProviders.map((provider) => (
-            <option key={provider.id} value={provider.id}>
-              {provider.name}
-            </option>
-          ))}
-        </select>
-
-        <label
-          htmlFor="telecom-product"
-          className="mt-4 block text-sm font-medium text-gray-700"
-        >
-          등급 / 요금제
-        </label>
-        <select
-          id="telecom-product"
-          value={selectedTelecomProductId}
-          onChange={(event) => setSelectedTelecomProductId(event.target.value)}
-          disabled={!hasTelecomProviderSelected}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-        >
-          {!hasTelecomProviderSelected ? (
-            <option value="">통신사를 먼저 선택해주세요</option>
-          ) : null}
-          {filteredTelecomProducts.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
-
-        {shouldShowMvnoNotice ? (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-            알뜰요금제 혜택은 통신사/요금제별로 다를 수 있어 실제 적용 여부
-            확인이 필요합니다.
+        {state.message ? (
+          <p className="mt-4 rounded-2xl bg-orange-50 px-4 py-3 text-sm font-medium text-orange-700">
+            {state.message}
           </p>
         ) : null}
 
-        <button
-          type="button"
-          onClick={addTelecomBenefit}
-          disabled={telecomBenefitCount >= 2 || !hasTelecomProviderSelected}
-          className="mt-4 text-sm font-medium text-blue-600 disabled:text-gray-400"
-        >
-          + 통신사 추가
-        </button>
-      </section>
+        <div className="mt-5 space-y-4">
+          <div>
+            <label
+              htmlFor="benefit_category_id"
+              className="text-sm font-semibold text-gray-800"
+            >
+              혜택 카테고리
+            </label>
+            <select
+              id="benefit_category_id"
+              name="benefit_category_id"
+              value={selectedCategoryId}
+              onChange={(event) => {
+                setSelectedCategoryId(event.target.value);
+                setSelectedProviderId("");
+                setSelectedProductId("");
+              }}
+              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
+              required
+            >
+              <option value="" disabled>
+                카테고리 선택
+              </option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {state.fieldErrors?.benefit_category_id ? (
+              <p className="mt-1 text-xs text-red-600">
+                {state.fieldErrors.benefit_category_id}
+              </p>
+            ) : null}
+          </div>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-gray-800">카드</h2>
-        <p className="mt-1 text-xs text-gray-400">
-          정확한 카드명을 모르면 카드사만 선택해도 됩니다.
-        </p>
+          <div>
+            <label
+              htmlFor="provider_id"
+              className="text-sm font-semibold text-gray-800"
+            >
+              제공사
+            </label>
+            <select
+              id="provider_id"
+              name="provider_id"
+              value={selectedProviderId}
+              onChange={(event) => {
+                setSelectedProviderId(event.target.value);
+                setSelectedProductId("");
+              }}
+              disabled={!selectedCategoryId}
+              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400"
+              required
+            >
+              <option value="" disabled>
+                {selectedCategoryId ? "제공사 선택" : "카테고리 먼저 선택"}
+              </option>
+              {filteredProviders.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                </option>
+              ))}
+            </select>
+            {state.fieldErrors?.provider_id ? (
+              <p className="mt-1 text-xs text-red-600">
+                {state.fieldErrors.provider_id}
+              </p>
+            ) : null}
+          </div>
 
-        <label
-          htmlFor="card-company"
-          className="mt-4 block text-sm font-medium text-gray-700"
-        >
-          카드사
-        </label>
-        <select
-          id="card-company"
-          value={selectedCardCompanyId}
-          onChange={(event) => handleCardCompanyChange(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {cardCompanies.map((company) => (
-            <option key={company.id} value={company.id}>
-              {company.name}
-            </option>
-          ))}
-        </select>
+          <div>
+            <label
+              htmlFor="benefit_product_id"
+              className="text-sm font-semibold text-gray-800"
+            >
+              혜택상품
+            </label>
+            <select
+              id="benefit_product_id"
+              name="benefit_product_id"
+              value={selectedProductId}
+              onChange={(event) => setSelectedProductId(event.target.value)}
+              disabled={!selectedProviderId}
+              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400"
+              required
+            >
+              <option value="" disabled>
+                {selectedProviderId ? "혜택상품 선택" : "제공사 먼저 선택"}
+              </option>
+              {filteredProducts.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+            {state.fieldErrors?.benefit_product_id ? (
+              <p className="mt-1 text-xs text-red-600">
+                {state.fieldErrors.benefit_product_id}
+              </p>
+            ) : null}
+          </div>
 
-        <label
-          htmlFor="card-product"
-          className="mt-4 block text-sm font-medium text-gray-700"
-        >
-          카드 선택
-        </label>
-        <select
-          id="card-product"
-          value={selectedCardProductId}
-          onChange={(event) => setSelectedCardProductId(event.target.value)}
-          disabled={!hasCardCompanySelected}
-          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-        >
-          <option value="">
-            {hasCardCompanySelected
-              ? "카드상품은 나중에 선택"
-              : "카드사를 먼저 선택해주세요"}
-          </option>
-          {filteredCardProducts.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
+          <SubmitButton />
+        </div>
+      </form>
 
-        {selectedCardProduct ? (
-          <span className="mt-3 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-            {cardTypeLabels[selectedCardProduct.cardType]}
+      <section className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-gray-950">등록된 혜택</h2>
+          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">
+            {userBenefits.length}개
           </span>
-        ) : null}
+        </div>
 
-        <button
-          type="button"
-          onClick={addCardBenefit}
-          disabled={cardBenefitCount >= 3 || !hasCardCompanySelected}
-          className="mt-4 block text-sm font-medium text-blue-600 disabled:text-gray-400"
-        >
-          + 카드 추가
-        </button>
-      </section>
+        {userBenefits.length > 0 ? (
+          <ul className="mt-4 divide-y divide-gray-100">
+            {userBenefits.map((benefit) => {
+              const productName = relationName(benefit.benefit_product);
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-gray-800">등록된 혜택</h2>
-
-        {registeredBenefits.length > 0 ? (
-          <ul className="mt-3 divide-y divide-gray-100">
-            {registeredBenefits.map((benefit) => (
-              <li
-                key={benefit.id}
-                className="flex items-center justify-between gap-3 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-800">
-                    {benefit.productName}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {benefit.providerName}
-                    {benefit.badge ? ` · ${benefit.badge}` : ""}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeBenefit(benefit.id)}
-                  aria-label={`${benefit.productName} 삭제`}
-                  className="shrink-0 text-gray-400 hover:text-red-500"
+              return (
+                <li
+                  key={benefit.id}
+                  className="flex items-center justify-between gap-3 py-4"
                 >
-                  <X className="size-4" aria-hidden="true" />
-                </button>
-              </li>
-            ))}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-gray-950">
+                      {productName}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {relationName(benefit.benefit_category)} ·{" "}
+                      {relationName(benefit.provider)}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      등록일 {formatDate(benefit.created_at)}
+                    </p>
+                  </div>
+                  <form action={deactivateUserBenefitAction}>
+                    <input
+                      type="hidden"
+                      name="user_benefit_id"
+                      value={benefit.id}
+                    />
+                    <DeleteButton label={productName} />
+                  </form>
+                </li>
+              );
+            })}
           </ul>
         ) : (
-          <div className="mt-3 space-y-1">
-            <p className="text-sm text-gray-500">등록된 혜택이 없습니다.</p>
-            <p className="text-xs text-gray-400">
-              통신사나 카드를 등록하면 검색 결과가 더 정확해져요.
+          <div className="mt-4 rounded-2xl bg-gray-50 p-4">
+            <p className="text-sm font-medium text-gray-700">
+              등록된 혜택이 없습니다.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              혜택상품을 등록하면 검색 결과에서 보유 혜택을 더 쉽게 찾을 수
+              있어요.
             </p>
           </div>
         )}
       </section>
-
-      {saveStatus.kind === "saving" ? (
-        <p className="text-sm text-gray-500">저장 중...</p>
-      ) : null}
-      {saveStatus.kind === "error" ? (
-        <p className="text-sm text-red-600">{saveStatus.message || "저장 실패"}</p>
-      ) : null}
-      {saveStatus.kind === "success" ? (
-        <p className="text-sm text-blue-600">
-          {saveStatus.empty ? "혜택 없이 저장되었습니다." : "혜택이 저장되었습니다."}
-        </p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saveStatus.kind === "saving"}
-        className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700"
-      >
-        {saveStatus.kind === "saving" ? "저장 중..." : "저장하기"}
-      </button>
     </div>
   );
 }

@@ -50,7 +50,6 @@ export default async function EditBenefitProductPage({
         benefit_category_id,
         provider_id,
         name,
-        description,
         is_active,
         is_mvno,
         mvno_notice_required

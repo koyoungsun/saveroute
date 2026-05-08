@@ -2,20 +2,15 @@ import { NextResponse } from "next/server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-type BenefitCategory = "telecom" | "card";
-
 type UserBenefitPayload = {
-  category: BenefitCategory;
-  provider_id: string;
-  benefit_product_id: string | null;
+  benefit_category_id: number;
+  provider_id: number;
+  benefit_product_id: number;
 };
 
-function isBenefitCategory(value: unknown): value is BenefitCategory {
-  return value === "telecom" || value === "card";
-}
-
-function asString(value: unknown) {
-  return typeof value === "string" ? value : null;
+function asPositiveInteger(value: unknown) {
+  const numberValue = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(numberValue) && numberValue > 0 ? numberValue : null;
 }
 
 export async function GET() {
@@ -29,8 +24,9 @@ export async function GET() {
   const userId = sessionData.session.user.id;
   const { data, error } = await supabase
     .from("user_benefits")
-    .select("id,category,provider_id,benefit_product_id")
-    .eq("user_id", userId);
+    .select("id,benefit_category_id,provider_id,benefit_product_id,is_active")
+    .eq("user_id", userId)
+    .eq("is_active", true);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -63,42 +59,34 @@ export async function POST(request: Request) {
 
   const benefits: UserBenefitPayload[] = [];
   for (const item of benefitsRaw) {
-    const category = (item as { category?: unknown })?.category;
-    const providerId = asString((item as { provider_id?: unknown })?.provider_id);
-    const benefitProductIdRaw = (item as { benefit_product_id?: unknown })
-      ?.benefit_product_id;
-    const benefitProductId =
-      benefitProductIdRaw === null ? null : asString(benefitProductIdRaw);
+    const benefitCategoryId = asPositiveInteger(
+      (item as { benefit_category_id?: unknown })?.benefit_category_id,
+    );
+    const providerId = asPositiveInteger(
+      (item as { provider_id?: unknown })?.provider_id,
+    );
+    const benefitProductId = asPositiveInteger(
+      (item as { benefit_product_id?: unknown })?.benefit_product_id,
+    );
 
-    if (!isBenefitCategory(category) || !providerId) {
+    if (!benefitCategoryId || !providerId || !benefitProductId) {
       return NextResponse.json({ error: "Invalid benefit item" }, { status: 400 });
     }
 
     benefits.push({
-      category,
+      benefit_category_id: benefitCategoryId,
       provider_id: providerId,
       benefit_product_id: benefitProductId,
     });
   }
 
-  if (benefits.filter((b) => b.category === "telecom").length > 2) {
-    return NextResponse.json(
-      { error: "telecom benefits max is 2" },
-      { status: 400 },
-    );
-  }
-
-  if (benefits.filter((b) => b.category === "card").length > 3) {
-    return NextResponse.json({ error: "card benefits max is 3" }, { status: 400 });
-  }
-
-  const { error: deleteError } = await supabase
+  const { error: deactivateError } = await supabase
     .from("user_benefits")
-    .delete()
+    .update({ is_active: false })
     .eq("user_id", userId);
 
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  if (deactivateError) {
+    return NextResponse.json({ error: deactivateError.message }, { status: 500 });
   }
 
   if (benefits.length === 0) {
@@ -107,12 +95,17 @@ export async function POST(request: Request) {
 
   const rowsToInsert = benefits.map((benefit) => ({
     user_id: userId,
-    category: benefit.category,
+    benefit_category_id: benefit.benefit_category_id,
     provider_id: benefit.provider_id,
     benefit_product_id: benefit.benefit_product_id,
+    is_active: true,
   }));
 
-  const { error: insertError } = await supabase.from("user_benefits").insert(rowsToInsert);
+  const { error: insertError } = await supabase
+    .from("user_benefits")
+    .upsert(rowsToInsert, {
+      onConflict: "user_id,benefit_category_id,provider_id,benefit_product_id",
+    });
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });

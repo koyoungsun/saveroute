@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { EmptyState } from "@/components/search/EmptyState";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SearchPageProps = {
@@ -331,9 +330,11 @@ function ResultMeta({
 function TopResultCard({
   brandName,
   discount,
+  isOwned,
 }: {
   brandName: string;
   discount: DiscountRow;
+  isOwned: boolean;
 }) {
   return (
     <article className="overflow-hidden rounded-[28px] bg-gray-950 text-white shadow-xl shadow-orange-950/10">
@@ -346,6 +347,11 @@ function TopResultCard({
             BEST
           </span>
         </div>
+        {isOwned ? (
+          <span className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-extrabold text-gray-950">
+            보유 혜택
+          </span>
+        ) : null}
 
         <p className="mt-5 text-sm font-semibold text-white/70">{brandName}</p>
         <h2 className="mt-1 break-keep text-xl font-extrabold leading-snug">
@@ -384,10 +390,12 @@ function ResultCard({
   brandName,
   discount,
   isBest,
+  isOwned,
 }: {
   brandName: string;
   discount: DiscountRow;
   isBest: boolean;
+  isOwned: boolean;
 }) {
   return (
     <article className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -398,6 +406,11 @@ function ResultCard({
         {isBest ? (
           <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-extrabold text-white">
             BEST
+          </span>
+        ) : null}
+        {isOwned ? (
+          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-600">
+            보유 혜택
           </span>
         ) : null}
       </div>
@@ -446,7 +459,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const searchSupabase = createSupabaseAdminClient();
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user.id ?? null;
   const aliasTerms = Array.from(new Set([keyword, normalized].filter(Boolean)));
@@ -476,30 +488,30 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       .from("brands")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true),
-    searchSupabase
+    supabase
       .from("brands")
       .select("id,name,is_active", { count: "exact" })
       .order("created_at", { ascending: false })
       .limit(10),
-    searchSupabase
+    supabase
       .from("brands")
       .select("id,name,slug,aliases,brand_categories(name)")
       .ilike("name", `%${keyword}%`)
       .eq("is_active", true)
       .limit(20),
-    searchSupabase
+    supabase
       .from("brands")
       .select("id,name,slug,aliases,brand_categories(name)")
       .ilike("slug", `%${normalized}%`)
       .eq("is_active", true)
       .limit(20),
-    searchSupabase
+    supabase
       .from("brands")
       .select("id,name,slug,aliases,brand_categories(name)")
       .overlaps("aliases", aliasTerms)
       .eq("is_active", true)
       .limit(20),
-    searchSupabase
+    supabase
       .from("brands")
       .select("id,name,slug,aliases,brand_categories(name)")
       .ilike("name", `%${broadSearchTerm}%`)
@@ -638,7 +650,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return <EmptyState key={keyword} keyword={keyword} />;
   }
 
-  const { data: discountRows, error: discountError } = await searchSupabase
+  const { data: discountRows, error: discountError } = await supabase
     .from("discounts")
     .select(
       `
@@ -698,13 +710,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     : { data: null };
   const benefitList = (userBenefits ?? []) as UserBenefitRow[];
 
-  const matchedDiscountRows = sortMatchedDiscounts(
+  const ownedDiscountIds = new Set(
     userId
-      ? activeDiscounts.filter((discount) =>
-          matchDiscountToBenefits(discount, benefitList),
-        )
-      : activeDiscounts,
+      ? activeDiscounts
+          .filter((discount) => matchDiscountToBenefits(discount, benefitList))
+          .map((discount) => discount.id)
+      : [],
   );
+
+  const matchedDiscountRows = sortMatchedDiscounts(activeDiscounts).sort((a, b) => {
+    const ownedDiff =
+      Number(ownedDiscountIds.has(b.id)) - Number(ownedDiscountIds.has(a.id));
+    if (ownedDiff !== 0) {
+      return ownedDiff;
+    }
+
+    return getDiscountScore(b) - getDiscountScore(a);
+  });
 
   const hasMvnoDiscount = activeDiscounts.some(
     (discount) =>
@@ -761,6 +783,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <TopResultCard
             brandName={matchedBrand.name}
             discount={topDiscount}
+            isOwned={ownedDiscountIds.has(topDiscount.id)}
           />
         )}
 
@@ -771,6 +794,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               brandName={matchedBrand.name}
               discount={discount}
               isBest={discount.id === bestDiscountId}
+              isOwned={ownedDiscountIds.has(discount.id)}
             />
           ))}
         </div>

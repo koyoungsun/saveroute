@@ -25,7 +25,6 @@ type FieldName =
   | "benefit_category_id"
   | "provider_id"
   | "name"
-  | "description"
   | "is_active"
   | "is_mvno"
   | "mvno_notice_required";
@@ -39,7 +38,6 @@ type ValidatedProductInput = {
   benefitCategoryId: number;
   providerId: number;
   name: string;
-  description: string | null;
   isActive: boolean;
   isMvno: boolean;
   mvnoNoticeRequired: boolean;
@@ -109,7 +107,6 @@ async function validateBenefitProductForm(
   const benefitCategoryIdValue = readString(formData, "benefit_category_id");
   const providerIdValue = readString(formData, "provider_id");
   const name = readString(formData, "name");
-  const description = readString(formData, "description") || null;
   const isActive = formData.get("is_active") === "on";
   const isMvno = formData.get("is_mvno") === "on";
   const mvnoNoticeRequired = formData.get("mvno_notice_required") === "on";
@@ -211,7 +208,6 @@ async function validateBenefitProductForm(
       benefitCategoryId: benefitCategoryId!,
       providerId: providerId!,
       name,
-      description,
       isActive,
       isMvno,
       mvnoNoticeRequired,
@@ -236,7 +232,6 @@ export async function createBenefitProductAction(
     benefit_category_id: product.benefitCategoryId,
     provider_id: product.providerId,
     name: product.name,
-    description: product.description,
     code: generateProductCode(product.name),
     product_type: product.productType,
     is_active: product.isActive,
@@ -279,7 +274,6 @@ export async function updateBenefitProductAction(
       benefit_category_id: product.benefitCategoryId,
       provider_id: product.providerId,
       name: product.name,
-      description: product.description,
       product_type: product.productType,
       is_active: product.isActive,
       is_mvno: product.isMvno,
