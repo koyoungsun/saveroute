@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-async-client-component */
 "use client";
 
 import Link from "next/link";
@@ -11,6 +10,7 @@ const menuItems = [
   { label: "Benefit Categories", href: "/admin/benefit-categories", icon: "bi-diagram-3" },
   { label: "Providers", href: "/admin/providers", icon: "bi-building" },
   { label: "Benefit Products", href: "/admin/benefit-products", icon: "bi-credit-card-2-front" },
+  { label: "Data Seed Guide", href: "/admin/data-seed-guide", icon: "bi-clipboard-data" },
   { label: "Brand Requests", href: "/admin/brand-requests", icon: "bi-chat-dots" },
   { label: "Update Check", href: "/admin/update-check", icon: "bi-arrow-repeat" },
   { label: "Search Logs", href: "/admin/search-logs", icon: "bi-search" },
