@@ -1,32 +1,67 @@
+import Link from "next/link";
+
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const products = [
-  ["KT VIP", "KT", "telecom_membership", "VIP", "-", "No", "active"],
-  ["SKT T멤버십", "SKT", "telecom_membership", "VIP", "-", "No", "active"],
-  ["KT M모바일 요금제", "KT M모바일", "telecom_mvno_plan", "-", "-", "Yes", "active"],
-  ["신한 Deep Dream", "신한카드", "credit_card", "-", "credit", "No", "active"],
-  ["삼성 iD ON", "삼성카드", "credit_card", "-", "credit", "No", "active"],
-  ["현대 ZERO", "현대카드", "credit_card", "-", "credit", "No", "active"],
-  ["KB 노리", "국민카드", "debit_card", "-", "debit", "No", "active"],
-  ["하나 1Q", "하나카드", "credit_card", "-", "credit", "No", "active"],
-  ["U+ MVNO 요금제", "U+ 알뜰모바일", "telecom_mvno_plan", "-", "-", "Yes", "active"],
-  ["SK 7mobile 요금제", "SK 7mobile", "telecom_mvno_plan", "-", "-", "Yes", "active"],
-  ["쿠폰A", "쿠폰플랫폼", "coupon", "-", "-", "No", "active"],
-  ["멤버십A", "멤버십", "membership", "Gold", "-", "No", "hidden"],
-  ["드래프트상품", "KT", "telecom_membership", "-", "-", "No", "draft"],
-  ["선불카드A", "하나카드", "prepaid_card", "-", "prepaid", "No", "active"],
-  ["체크카드B", "신한카드", "debit_card", "-", "debit", "No", "active"],
-] as const;
+import { deactivateBenefitProductAction } from "./actions";
 
-export default function BenefitProductsPage() {
+type RelationName = { name: string } | { name: string }[] | null;
+
+type BenefitProductRow = {
+  id: number;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  is_mvno: boolean;
+  mvno_notice_required: boolean;
+  benefit_category: RelationName;
+  provider: RelationName;
+};
+
+function getRelationName(relation: RelationName) {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name ?? "-";
+  }
+
+  return relation?.name ?? "-";
+}
+
+function formatBoolean(value: boolean) {
+  return value ? "Yes" : "No";
+}
+
+export default async function BenefitProductsPage() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("benefit_products")
+    .select(
+      `
+      id,
+      name,
+      description,
+      is_active,
+      is_mvno,
+      mvno_notice_required,
+      benefit_category:benefit_categories(name),
+      provider:providers(name)
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load benefit products: ${error.message}`);
+  }
+
+  const products = (data ?? []) as BenefitProductRow[];
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">Benefit Products</h1>
-        <button type="button" className="btn btn-primary">
-          + 등록
-        </button>
+        <Link href="/admin/benefit-products/new" className="btn btn-primary">
+          + 상품 등록
+        </Link>
       </div>
 
       <PaginatedTable
@@ -36,32 +71,50 @@ export default function BenefitProductsPage() {
         fixedRows={10}
         className="sr-block"
         columns={[
-          { header: "이름" },
+          { header: "카테고리" },
           { header: "제공사" },
-          { header: "product_type" },
-          { header: "grade" },
-          { header: "card_type" },
-          { header: "MVNO" },
+          { header: "상품명" },
+          { header: "설명" },
           { header: "상태" },
+          { header: "알뜰폰" },
+          { header: "알뜰폰 안내" },
           { header: "관리" },
         ]}
         rows={products.map((product) => {
-          const key = `${product[1]}-${product[0]}`;
+          const key = `${product.id}-${product.name}`;
           return [
-            product[0],
-            product[1],
-            product[2],
-            product[3],
-            product[4],
-            product[5],
-            <StatusBadge key={`${key}-status`} status={product[6]} />,
-            <button
-              key={`${key}-action`}
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-            >
-              수정
-            </button>,
+            getRelationName(product.benefit_category),
+            getRelationName(product.provider),
+            product.name,
+            product.description || "-",
+            <StatusBadge
+              key={`${key}-status`}
+              status={product.is_active ? "active" : "inactive"}
+            />,
+            formatBoolean(product.is_mvno),
+            formatBoolean(product.mvno_notice_required),
+            <div key={`${key}-actions`} className="d-flex gap-2">
+              <Link
+                href={`/admin/benefit-products/${product.id}/edit`}
+                className="btn btn-outline-secondary btn-sm"
+              >
+                수정
+              </Link>
+              <form action={deactivateBenefitProductAction}>
+                <input
+                  type="hidden"
+                  name="benefit_product_id"
+                  value={product.id}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-outline-danger btn-sm"
+                  disabled={!product.is_active}
+                >
+                  비활성화
+                </button>
+              </form>
+            </div>,
           ];
         })}
       />
