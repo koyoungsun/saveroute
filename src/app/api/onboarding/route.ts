@@ -21,13 +21,16 @@ function parseAge(value: unknown): string | null {
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (!sessionData.session) {
+  if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = sessionData.session.user.id;
+  const userId = user.id;
 
   let body: unknown;
   try {

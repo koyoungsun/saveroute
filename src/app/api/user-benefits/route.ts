@@ -16,13 +16,16 @@ function asPositiveInteger(value: unknown) {
 
 export async function GET() {
   const supabase = await createServerSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (!sessionData.session) {
+  if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = sessionData.session.user.id;
+  const userId = user.id;
   const { data, error } = await supabase
     .from("user_benefits")
     .select("id,benefit_category_id,provider_id,benefit_product_id,is_active")
@@ -38,13 +41,16 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (!sessionData.session) {
+  if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = sessionData.session.user.id;
+  const userId = user.id;
 
   let body: unknown;
   try {

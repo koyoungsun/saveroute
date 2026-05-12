@@ -126,7 +126,7 @@ export function SearchResultCard({
 
           <div className="relative flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
 
-            <span className="rounded-md bg-black/15 px-2 py-0.5 text-[11px] font-black tracking-[0.28em] text-white drop-shadow-sm">
+            <span className="rounded-md bg-black/15 px-2 py-0.5 text-xs font-black tracking-[0.28em] text-white drop-shadow-sm">
 
               BEST
 
@@ -138,7 +138,7 @@ export function SearchResultCard({
 
             </span>
 
-            <span className="hidden text-[11px] font-medium text-white/85 sm:inline">
+            <span className="hidden text-xs font-medium text-white/85 sm:inline">
 
               이 브랜드에서 가장 유리한 조건
 
@@ -156,7 +156,7 @@ export function SearchResultCard({
 
         <div className="flex flex-wrap items-center gap-2">
 
-          <span className="rounded-full bg-gray-100 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+          <span className="rounded-full bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
 
             {getBenefitTypeLabel(discount)}
 
@@ -164,7 +164,7 @@ export function SearchResultCard({
 
           {matchesUserBenefit ? (
 
-            <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-950 ring-1 ring-amber-300/90 ring-inset dark:bg-amber-950/35 dark:text-amber-100 dark:ring-amber-600/60">
+            <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-950 ring-1 ring-amber-300/90 ring-inset dark:bg-amber-950/35 dark:text-amber-100 dark:ring-amber-600/60">
 
               내 할인 가능
 
@@ -216,7 +216,7 @@ export function SearchResultCard({
 
 
 
-        <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+        <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-snug text-gray-500 dark:text-gray-400">
 
           <span className="font-medium text-gray-600 dark:text-gray-300">{providerLabel}</span>
 

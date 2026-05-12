@@ -35,11 +35,82 @@ type ActiveDiscountScopeRow = {
   benefit_product_id: number | null;
 };
 
+/** 통신 혜택 등록 1차 선택 (이동통신 3사 + 알뜰폰) */
+export type TelecomFirstChoiceId = "skt" | "kt" | "lguplus" | "mvno";
+
+export const TELECOM_FIRST_CHOICES: { id: TelecomFirstChoiceId; label: string }[] = [
+  { id: "skt", label: "SKT" },
+  { id: "kt", label: "KT" },
+  { id: "lguplus", label: "LG U+" },
+  { id: "mvno", label: "알뜰폰" },
+];
+
+export type TelecomMembershipOption = {
+  id: number;
+  name: string;
+  grade: string | null;
+  providerCode: string;
+};
+
+export type MvnoBrandOption = {
+  providerId: number;
+  name: string;
+  code: string;
+  defaultProductId: number;
+};
+
+/** 알뜰폰 브랜드 드롭다운 정렬용 (DB 이름과 동일) */
+export const MVNO_BRAND_DISPLAY_ORDER: string[] = [
+  "KT엠모바일",
+  "SK세븐모바일",
+  "LG헬로모바일",
+  "U+유모바일",
+  "프리티",
+  "티플러스",
+  "모빙",
+  "이야기모바일",
+  "리브모바일",
+  "스노우맨",
+  "스마텔",
+  "아이즈모바일",
+  "에넥스텔레콤",
+  "안심모바일",
+  "우체국 알뜰폰",
+  "스카이라이프모바일",
+  "토스모바일",
+];
+
+const GRADE_ORDER = ["일반", "VIP", "VVIP"];
+
+export function sortTelecomMembershipOptions(rows: TelecomMembershipOption[]): TelecomMembershipOption[] {
+  return [...rows].sort((a, b) => {
+    const ai = GRADE_ORDER.indexOf(a.grade ?? "");
+    const bi = GRADE_ORDER.indexOf(b.grade ?? "");
+    const as = ai === -1 ? 99 : ai;
+    const bs = bi === -1 ? 99 : bi;
+    if (as !== bs) return as - bs;
+    return a.name.localeCompare(b.name, "ko");
+  });
+}
+
+export function sortMvnoBrandOptions(rows: MvnoBrandOption[]): MvnoBrandOption[] {
+  return [...rows].sort((a, b) => {
+    const ai = MVNO_BRAND_DISPLAY_ORDER.indexOf(a.name);
+    const bi = MVNO_BRAND_DISPLAY_ORDER.indexOf(b.name);
+    if (ai === -1 && bi === -1) return a.name.localeCompare(b.name, "ko");
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+
 export type BenefitsRegistrationPayload = {
   telecomCategoryId: number;
+  /** null 이면 DB 에 mvno 행이 없음 · 아래 brand 옵션은 provider_type 로만 로드 */
+  mvnoCategoryId: number | null;
   cardCategoryId: number;
-  /** 활성 MVNO 요금제 상품 id (통신사 ‘알뜰폰’ 선택 시 일괄 등록·판별용) */
-  mvnoProductIds: number[];
+  telecomMembershipProducts: TelecomMembershipOption[];
+  mvnoBrandOptions: MvnoBrandOption[];
   cardProviders: CardProviderOption[];
   cardProducts: CardProductOption[];
   userBenefits: LoadedUserBenefitRow[];
@@ -53,78 +124,70 @@ function relationOne<T>(relation: T | T[] | null): T | null {
   return relation ?? null;
 }
 
-/** 통신사 단일 선택 UI 후보 (대표 멤버십 상품 코드) */
-export const TELECOM_PRESETS = [
-  { carrierKey: "skt", label: "SKT", hint: "T 멤버십", productCode: "skt_tmembership" },
-  { carrierKey: "kt", label: "KT", hint: "VIP 등", productCode: "kt_vip" },
-  { carrierKey: "lguplus", label: "LG U+", hint: "U+ 멤버십", productCode: "lguplus_vip" },
-  { carrierKey: "mvno", label: "알뜰폰", hint: "MVNO", productCode: null },
-] as const;
-
-export type TelecomCarrierKey = (typeof TELECOM_PRESETS)[number]["carrierKey"];
-
-export function inferTelecomCarrierKey(
-  benefits: LoadedUserBenefitRow[],
-  telecomCategoryId: number,
-  mvnoProductIdSet: Set<number>,
-): TelecomCarrierKey | null {
-  const telecomRows = benefits.filter((b) => b.benefit_category_id === telecomCategoryId);
-
-  const mvnoHits = telecomRows.filter(
-    (b) =>
-      b.benefit_product_id !== null &&
-      mvnoProductIdSet.has(b.benefit_product_id),
-  );
-
-  if (mvnoHits.length > 0) {
-    return "mvno";
-  }
-
-  const code = telecomRows
-    .map((b) => relationOne(b.benefit_product)?.code)
-    .find((c) => typeof c === "string");
-
-  if (!code) {
-    return null;
-  }
-
-  const preset = TELECOM_PRESETS.find((p) => p.productCode === code);
-  return preset?.carrierKey ?? null;
-}
-
 export async function loadBenefitsRegistrationData(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<BenefitsRegistrationPayload> {
-  const [{ data: telecomCat, error: telecomCatError }, { data: cardCat, error: cardCatError }] =
-    await Promise.all([
-      supabase.from("benefit_categories").select("id").eq("code", "telecom").maybeSingle(),
-      supabase.from("benefit_categories").select("id").eq("code", "card").maybeSingle(),
-    ]);
+  const [
+    { data: telecomCat, error: telecomCatError },
+    { data: mvnoCat, error: mvnoCatError },
+    { data: cardCat, error: cardCatError },
+  ] = await Promise.all([
+    supabase.from("benefit_categories").select("id").eq("code", "telecom").maybeSingle(),
+    supabase.from("benefit_categories").select("id").eq("code", "mvno").maybeSingle(),
+    supabase.from("benefit_categories").select("id").eq("code", "card").maybeSingle(),
+  ]);
 
   if (telecomCatError || !telecomCat) {
-    throw new Error(`Telecom category missing: ${telecomCatError?.message}`);
+    throw new Error(`Telecom category missing: ${telecomCatError?.message ?? "no row"}`);
+  }
+  if (mvnoCatError) {
+    throw new Error(`MVNO category query failed: ${mvnoCatError.message}`);
   }
   if (cardCatError || !cardCat) {
-    throw new Error(`Card category missing: ${cardCatError?.message}`);
+    throw new Error(`Card category missing: ${cardCatError?.message ?? "no row"}`);
   }
 
   const telecomCategoryId = telecomCat.id;
+  const mvnoCategoryId: number | null = mvnoCat?.id ?? null;
   const cardCategoryId = cardCat.id;
 
+  const mvnoProviderQuery = mvnoCategoryId
+    ? supabase
+        .from("providers")
+        .select("id,name,code")
+        .eq("benefit_category_id", mvnoCategoryId)
+        .eq("provider_type", "telecom_mvno")
+        .eq("is_active", true)
+    : supabase
+        .from("providers")
+        .select("id,name,code")
+        .eq("provider_type", "telecom_mvno")
+        .eq("is_active", true);
+
   const [
-    { data: mvnoProviders, error: mvnoProvError },
+    { data: membershipRaw, error: membershipError },
+    { data: mvnoProvidersRaw, error: mvnoProvidersError },
     { data: cardProvidersRaw, error: cardProvidersError },
     { data: cardProductsRaw, error: cardProdError },
     { data: userBenefits, error: ubError },
     { data: activeCardDiscounts, error: activeCardDiscountsError },
   ] = await Promise.all([
     supabase
-      .from("providers")
-      .select("id")
+      .from("benefit_products")
+      .select(
+        `
+        id,
+        name,
+        grade,
+        provider_id,
+        provider:providers!inner(code)
+      `,
+      )
       .eq("benefit_category_id", telecomCategoryId)
-      .eq("provider_type", "telecom_mvno")
+      .eq("product_type", "telecom_membership")
       .eq("is_active", true),
+    mvnoProviderQuery,
     supabase
       .from("providers")
       .select("id,name,code")
@@ -171,8 +234,11 @@ export async function loadBenefitsRegistrationData(
       .eq("status", "active"),
   ]);
 
-  if (mvnoProvError) {
-    throw new Error(mvnoProvError.message);
+  if (membershipError) {
+    throw new Error(membershipError.message);
+  }
+  if (mvnoProvidersError) {
+    throw new Error(mvnoProvidersError.message);
   }
   if (cardProvidersError) {
     throw new Error(cardProvidersError.message);
@@ -187,22 +253,61 @@ export async function loadBenefitsRegistrationData(
     throw new Error(activeCardDiscountsError.message);
   }
 
-  const mvnoProviderIds = (mvnoProviders ?? []).map((p) => p.id);
+  const telecomMembershipProducts: TelecomMembershipOption[] = sortTelecomMembershipOptions(
+    (membershipRaw ?? []).map((row: Record<string, unknown>) => {
+      const provider = relationOne(row.provider as { code?: string } | null);
+      return {
+        id: row.id as number,
+        name: row.name as string,
+        grade: (row.grade as string | null) ?? null,
+        providerCode: provider?.code ?? "",
+      };
+    }),
+  );
 
-  let mvnoProductIds: number[] = [];
+  const mvnoProviderIds = (mvnoProvidersRaw ?? []).map((p) => p.id);
+
+  let defaultLineByProvider = new Map<number, number>();
   if (mvnoProviderIds.length > 0) {
-    const { data: mvnoProducts, error: mvnoProdError } = await supabase
+    const { data: mvnoProducts, error: dlError } = await supabase
       .from("benefit_products")
-      .select("id")
+      .select("id,provider_id,code")
       .in("provider_id", mvnoProviderIds)
       .eq("is_active", true);
 
-    if (mvnoProdError) {
-      throw new Error(mvnoProdError.message);
+    if (dlError) {
+      throw new Error(dlError.message);
     }
 
-    mvnoProductIds = (mvnoProducts ?? []).map((row) => row.id);
+    const defaultSuffix = "_default_line";
+    for (const row of mvnoProducts ?? []) {
+      const code = row.code as string;
+      if (typeof code !== "string" || !code.endsWith(defaultSuffix)) {
+        continue;
+      }
+      const pid = row.provider_id as number;
+      if (!defaultLineByProvider.has(pid)) {
+        defaultLineByProvider.set(pid, row.id as number);
+      }
+    }
   }
+
+  const mvnoBrandOptions: MvnoBrandOption[] = sortMvnoBrandOptions(
+    (mvnoProvidersRaw ?? [])
+      .map((p) => {
+        const defaultProductId = defaultLineByProvider.get(p.id);
+        if (!defaultProductId) {
+          return null;
+        }
+        return {
+          providerId: p.id,
+          name: p.name,
+          code: p.code,
+          defaultProductId,
+        };
+      })
+      .filter((x): x is MvnoBrandOption => x !== null),
+  );
 
   const cardProducts: CardProductOption[] = (cardProductsRaw ?? []).map((row: Record<string, unknown>) => {
     const provider = relationOne(row.provider as { name?: string } | null);
@@ -269,8 +374,10 @@ export async function loadBenefitsRegistrationData(
 
   return {
     telecomCategoryId,
+    mvnoCategoryId,
     cardCategoryId,
-    mvnoProductIds,
+    telecomMembershipProducts,
+    mvnoBrandOptions,
     cardProviders,
     cardProducts,
     userBenefits: benefitsWithDiscountCounts,

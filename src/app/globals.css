@@ -28,18 +28,19 @@
   --font-sans: "Spoqa Han Sans Neo", var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 
-  /* 모든 본문·유틸 폰트 하한 11px (루트 축소 시에도 준수) */
-  --text-xs: max(11px, 0.75rem);
+  /* 최소 12px; xs/sm/base 유틸은 하한 + 약간 상향 */
+  --text-xs: max(12px, 0.8125rem);
   --text-xs--line-height: 1.45;
-  --text-sm: max(11px, 0.875rem);
+  --text-sm: max(12px, 0.9375rem);
   --text-sm--line-height: 1.43;
-  --text-base: max(11px, 1rem);
+  --text-base: max(12px, 1rem);
   --text-base--line-height: calc(1.5 / 1);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-size: max(12px, 100%);
   font-family: "Spoqa Han Sans Neo", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
 }

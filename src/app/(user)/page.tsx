@@ -17,7 +17,7 @@ import {
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const popularBrands = ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"];
-const telecomCategoryCodes = new Set(["telecom", "membership"]);
+const telecomCategoryCodes = new Set(["telecom", "membership", "mvno"]);
 const cardCategoryCodes = new Set(["card"]);
 
 type Relation<T> = T | T[] | null;
@@ -109,13 +109,14 @@ function getBestDiscounts(
 export default async function HomePage() {
   const supabase = await createServerSupabaseClient();
   const nowIso = new Date().toISOString();
-  const [{ data: sessionData }, { data: promoSlotData, error: promoSlotError }] =
-    await Promise.all([
-      supabase.auth.getSession(),
-      supabase
-        .from("promo_slots")
-        .select(
-          `
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [{ data: promoSlotData, error: promoSlotError }] = await Promise.all([
+    supabase
+      .from("promo_slots")
+      .select(
+        `
           id,
           title,
           description,
@@ -130,21 +131,20 @@ export default async function HomePage() {
           is_sponsored,
           sponsor_name
         `,
-        )
-        .eq("is_active", true)
-        .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
-        .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
-        .order("priority", { ascending: false }),
-    ]);
-  const session = sessionData.session;
-  const displayName = getUserDisplayName(session?.user?.email);
+      )
+      .eq("is_active", true)
+      .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+      .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+      .order("priority", { ascending: false }),
+  ]);
+  const displayName = getUserDisplayName(user?.email);
   const promoSlots = promoSlotError
     ? []
     : ((promoSlotData ?? []) as HomePromoSlotRow[]).map(toHomePromoSlot);
   let userBenefits: UserBenefitRow[] = [];
   let activeDiscounts: DiscountRow[] = [];
 
-  if (session) {
+  if (user) {
     const [
       { data: benefitData },
       { data: discountData },
@@ -159,7 +159,7 @@ export default async function HomePage() {
           benefit_category:benefit_categories(code,name)
         `,
         )
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .eq("is_active", true),
       supabase
         .from("discounts")
@@ -210,7 +210,7 @@ export default async function HomePage() {
       </section>
 
       <div className="mx-auto mt-10 w-full max-w-2xl">
-        {session ? (
+        {user ? (
           <>
             <div className="mb-4 space-y-1">
               <p className="text-lg font-semibold text-gray-900">
@@ -266,7 +266,7 @@ export default async function HomePage() {
         <NoticeSection />
       </div>
 
-      {session ? (
+      {user ? (
         <div className="mt-8">
           <PopularBrandChips brands={popularBrands} />
         </div>

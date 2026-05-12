@@ -9,13 +9,16 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export default async function OnboardingPage() {
   const supabase = await createServerSupabaseClient();
-  const { data } = await supabase.auth.getSession();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (!data.session) {
+  if (authError || !user) {
     redirect("/auth/login?redirect=/onboarding");
   }
 
-  const userId = data.session.user.id;
+  const userId = user.id;
 
   const existingCount = await countActiveUserBenefits(supabase, userId);
   if (existingCount > 0) {

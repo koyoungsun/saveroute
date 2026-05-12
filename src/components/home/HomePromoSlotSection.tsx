@@ -82,7 +82,7 @@ export function HomePromoSlotSection({ slots }: { slots: HomePromoSlot[] }) {
                   {slot.badge}
                 </p>
                 {slot.isSponsored ? (
-                  <span className="relative rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white/80">
+                  <span className="relative rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white/80">
                     스폰서
                   </span>
                 ) : null}
@@ -99,7 +99,7 @@ export function HomePromoSlotSection({ slots }: { slots: HomePromoSlot[] }) {
                     {slot.hashtags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white/75"
+                        className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold text-white/75"
                       >
                         {tag}
                       </span>
