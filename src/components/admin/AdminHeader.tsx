@@ -1,4 +1,6 @@
-export function AdminHeader() {
+import type { AdminUser } from "@/lib/admin/auth";
+
+export function AdminHeader({ adminUser }: { adminUser: AdminUser }) {
   return (
     <header className="sr-admin-header navbar navbar-light border-bottom px-4 py-2">
       <div className="d-flex align-items-center gap-3">
@@ -9,9 +11,11 @@ export function AdminHeader() {
       </div>
 
       <div className="d-flex align-items-center gap-2">
-        <span className="text-muted small d-none d-md-inline">admin@example.com</span>
+        <span className="text-muted small d-none d-md-inline">
+          {adminUser.email ?? adminUser.userId}
+        </span>
         <span className="sr-role-badge badge rounded-pill px-3 py-2">
-          master
+          {adminUser.role}
         </span>
         <button type="button" className="btn btn-outline-secondary btn-sm">
           Logout

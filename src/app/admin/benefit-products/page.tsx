@@ -77,6 +77,7 @@ export default async function BenefitProductsPage() {
           { header: "알뜰폰 안내" },
           { header: "관리" },
         ]}
+        rowKeys={products.map((product) => product.id)}
         rows={products.map((product) => {
           const key = `${product.id}-${product.name}`;
           return [

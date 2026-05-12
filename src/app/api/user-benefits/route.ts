@@ -6,6 +6,7 @@ type UserBenefitPayload = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number;
+  benefit_type?: "credit" | "debit" | null;
 };
 
 function asPositiveInteger(value: unknown) {
@@ -68,6 +69,11 @@ export async function POST(request: Request) {
     const benefitProductId = asPositiveInteger(
       (item as { benefit_product_id?: unknown })?.benefit_product_id,
     );
+    const benefitTypeRaw = (item as { benefit_type?: unknown })?.benefit_type;
+    const benefitType =
+      benefitTypeRaw === "credit" || benefitTypeRaw === "debit"
+        ? benefitTypeRaw
+        : null;
 
     if (!benefitCategoryId || !providerId || !benefitProductId) {
       return NextResponse.json({ error: "Invalid benefit item" }, { status: 400 });
@@ -77,6 +83,7 @@ export async function POST(request: Request) {
       benefit_category_id: benefitCategoryId,
       provider_id: providerId,
       benefit_product_id: benefitProductId,
+      benefit_type: benefitType,
     });
   }
 
@@ -98,6 +105,7 @@ export async function POST(request: Request) {
     benefit_category_id: benefit.benefit_category_id,
     provider_id: benefit.provider_id,
     benefit_product_id: benefit.benefit_product_id,
+    benefit_type: benefit.benefit_type ?? null,
     is_active: true,
   }));
 

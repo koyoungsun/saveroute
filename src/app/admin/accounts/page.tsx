@@ -1,32 +1,50 @@
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { describeSupabaseQueryFailure } from "@/lib/admin/format-db-error";
 
-const accounts = [
-  ["admin@coreroute.dev", "master", "active", "2025-01-15"],
-  ["op1@coreroute.dev", "operator", "active", "2025-01-14"],
-  ["op2@coreroute.dev", "operator", "inactive", "2024-12-01"],
-  ["op3@coreroute.dev", "operator", "active", "2025-01-13"],
-  ["op4@coreroute.dev", "operator", "active", "2025-01-12"],
-  ["op5@coreroute.dev", "operator", "inactive", "2024-11-20"],
-  ["op6@coreroute.dev", "operator", "active", "2025-01-11"],
-  ["op7@coreroute.dev", "operator", "active", "2025-01-10"],
-  ["op8@coreroute.dev", "operator", "inactive", "2024-10-10"],
-  ["op9@coreroute.dev", "operator", "active", "2025-01-09"],
-  ["op10@coreroute.dev", "operator", "active", "2025-01-08"],
-  ["op11@coreroute.dev", "operator", "active", "2025-01-07"],
-] as const;
+type AccountRow = {
+  user_id: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+};
 
-export default function AccountsPage() {
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+  }).format(new Date(value));
+}
+
+export default async function AccountsPage() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("admin_accounts")
+    .select("user_id,email,role,is_active,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(
+      describeSupabaseQueryFailure(
+        `admin_accounts 운영자 목록 (컬럼: user_id, email, role, is_active, created_at)`,
+        error,
+      ),
+    );
+  }
+
+  const accounts = (data ?? []) as AccountRow[];
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">Accounts</h1>
-        <button type="button" className="btn btn-primary">
-          + 운영자 초대
-        </button>
+        <span className="badge text-bg-light text-dark border">admin_accounts 기준</span>
       </div>
 
-      <div className="sr-block alert alert-info">현재 운영자: 3 / 5명</div>
+      <div className="sr-block alert alert-info">
+        등록된 관리자 계정: {accounts.length.toLocaleString("ko-KR")}명
+      </div>
 
       <PaginatedTable
         title="운영자 목록"
@@ -38,28 +56,21 @@ export default function AccountsPage() {
           { header: "이메일" },
           { header: "role" },
           { header: "상태" },
-          { header: "최근 로그인" },
-          { header: "관리" },
+          { header: "등록일" },
         ]}
-        rows={accounts.map(([email, role, status, lastLogin]) => [
-          email,
+        rows={accounts.map((account) => [
+          account.email,
           <span
-            key={`${email}-role`}
+            key={`${account.user_id}-role`}
             className="badge text-bg-light text-dark border px-2 py-1 fw-semibold"
           >
-            {role}
+            {account.role}
           </span>,
-          <StatusBadge key={`${email}-status`} status={status} />,
-          lastLogin,
-          role === "master" ? (
-            <span key={`${email}-none`} className="text-muted">
-              -
-            </span>
-          ) : (
-            <button key={`${email}-action`} type="button" className="btn btn-outline-secondary btn-sm">
-              상태 변경
-            </button>
-          ),
+          <StatusBadge
+            key={`${account.user_id}-active`}
+            status={account.is_active ? "active" : "inactive"}
+          />,
+          formatDate(account.created_at),
         ])}
       />
     </>

@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
 
-import {
-  BenefitForm,
-  type BenefitCategoryOption,
-  type BenefitProductOption,
-  type ProviderOption,
-  type RegisteredUserBenefit,
-} from "@/components/benefits/BenefitForm";
+import { BenefitsPicker } from "@/components/benefits/BenefitsPicker";
+import { loadBenefitsRegistrationData } from "@/lib/benefits/load-registration-data";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export default async function MyBenefitsPage() {
@@ -18,69 +13,19 @@ export default async function MyBenefitsPage() {
   }
 
   const userId = sessionData.session.user.id;
-
-  const [
-    { data: categories, error: categoryError },
-    { data: providers, error: providerError },
-    { data: benefitProducts, error: productError },
-    { data: userBenefits, error: userBenefitError },
-  ] = await Promise.all([
-    supabase
-      .from("benefit_categories")
-      .select("id,name,code")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("providers")
-      .select("id,name,benefit_category_id")
-      .eq("is_active", true)
-      .order("name", { ascending: true }),
-    supabase
-      .from("benefit_products")
-      .select("id,name,benefit_category_id,provider_id")
-      .eq("is_active", true)
-      .order("name", { ascending: true }),
-    supabase
-      .from("user_benefits")
-      .select(
-        `
-        id,
-        benefit_category_id,
-        provider_id,
-        benefit_product_id,
-        created_at,
-        benefit_category:benefit_categories(name),
-        provider:providers(name),
-        benefit_product:benefit_products(name)
-      `,
-      )
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false }),
-  ]);
-
-  const loadError =
-    categoryError ?? providerError ?? productError ?? userBenefitError;
-  if (loadError) {
-    throw new Error(`Failed to load user benefits: ${loadError.message}`);
-  }
+  const payload = await loadBenefitsRegistrationData(supabase, userId);
 
   return (
-    <div className="px-4 py-6">
-      <div>
-        <h1 className="text-xl font-extrabold text-gray-950">내 혜택 설정</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          보유 혜택을 등록하면 검색 결과에서 매칭되는 할인을 먼저 보여드려요.
+    <div className="mx-auto w-full max-w-lg px-4 py-6 pb-28 md:max-w-xl md:py-10 md:pb-12">
+      <header className="mb-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#409A53]">My Benefits</p>
+        <h1 className="mt-2 text-2xl font-black tracking-tight text-gray-950">내 혜택</h1>
+        <p className="mt-2 text-sm leading-relaxed text-gray-500">
+          내 혜택을 등록하면 검색 결과에서 받을 수 있는 할인을 먼저 보여드려요.
         </p>
-      </div>
-      <div className="mt-5">
-        <BenefitForm
-          categories={(categories ?? []) as BenefitCategoryOption[]}
-          providers={(providers ?? []) as ProviderOption[]}
-          benefitProducts={(benefitProducts ?? []) as BenefitProductOption[]}
-          userBenefits={(userBenefits ?? []) as RegisteredUserBenefit[]}
-        />
-      </div>
+      </header>
+
+      <BenefitsPicker mode="my-benefits" payload={payload} />
     </div>
   );
 }

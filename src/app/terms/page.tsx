@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { UserShell } from "@/components/layout/UserShell";
 
 const sections = [
   {
@@ -34,31 +33,29 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[430px] bg-surface-muted px-4 py-6">
-      <Link
-        href="/mypage"
-        className="inline-flex items-center gap-1 text-sm text-gray-600"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        뒤로
-      </Link>
+    <UserShell>
+      <div className="px-4 py-8">
+        <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h1 className="text-xl font-bold text-gray-900">이용약관</h1>
+          <p className="mt-2 rounded-xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-800">
+            본 문서는 MVP 검토를 위한 서비스 이용약관 초안이며, 법적 완성본이
+            아닙니다.
+          </p>
 
-      <article className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">이용약관</h1>
-
-        <div className="mt-6 space-y-5">
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2 className="text-base font-semibold text-gray-800">
-                {section.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-gray-600">
-                {section.body}
-              </p>
-            </section>
-          ))}
-        </div>
-      </article>
-    </main>
+          <div className="mt-6 space-y-5">
+            {sections.map((section) => (
+              <section key={section.title}>
+                <h2 className="text-base font-semibold text-gray-800">
+                  {section.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  {section.body}
+                </p>
+              </section>
+            ))}
+          </div>
+        </article>
+      </div>
+    </UserShell>
   );
 }

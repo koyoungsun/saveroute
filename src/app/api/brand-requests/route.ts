@@ -1,16 +1,38 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function normalizeKeyword(keyword: string) {
   return keyword.trim().toLowerCase().replace(/[^가-힣a-zA-Z0-9]/g, "");
 }
 
+/** 로그인 사용자의 업데이트 요청 참여 로그 (마이페이지 집계용, 실패 시 무시) */
+async function recordBrandRequestParticipation(normalizedKeyword: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from("user_brand_request_events").insert({
+      user_id: user.id,
+      normalized_keyword: normalizedKeyword,
+    });
+  } catch {
+    /* noop — 집계 테이블 미적용 등으로 본 요청은 성공 처리 유지 */
+  }
+}
+
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!sessionData.session) {
+  if (!user) {
     return NextResponse.json({ request_count: 0 });
   }
 
@@ -35,11 +57,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!sessionData.session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  /** 비로그인 시 brand_requests 는 anon 에게 SELECT/UPDATE 가 없으므로 서버에서만 처리 */
+  const db = user ? supabase : createSupabaseAdminClient();
 
   let body: unknown;
   try {
@@ -59,7 +82,7 @@ export async function POST(request: Request) {
 
   const now = new Date().toISOString();
 
-  const { data: existing, error: selectError } = await supabase
+  const { data: existing, error: selectError } = await db
     .from("brand_requests")
     .select("id, request_count")
     .eq("normalized_keyword", normalized)
@@ -70,7 +93,7 @@ export async function POST(request: Request) {
   }
 
   if (!existing) {
-    const { error: insertError } = await supabase.from("brand_requests").insert({
+    const { error: insertError } = await db.from("brand_requests").insert({
       keyword: raw || normalized,
       normalized_keyword: normalized,
       request_count: 1,
@@ -80,11 +103,12 @@ export async function POST(request: Request) {
 
     if (insertError) {
       if (insertError.code === "23505") {
-        return handleConcurrentExisting(supabase, normalized, raw, now);
+        return handleConcurrentExisting(db, normalized, raw, now);
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
+    await recordBrandRequestParticipation(normalized);
     return NextResponse.json({ ok: true, request_count: 1 });
   }
 
@@ -97,7 +121,7 @@ export async function POST(request: Request) {
   }
 
   const nextCount = existing.request_count + 1;
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from("brand_requests")
     .update({
       request_count: nextCount,
@@ -111,16 +135,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
+  await recordBrandRequestParticipation(normalized);
   return NextResponse.json({ ok: true, request_count: nextCount });
 }
 
 async function handleConcurrentExisting(
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  client: SupabaseClient,
   normalized: string,
   raw: string,
   now: string,
 ) {
-  const { data: row, error } = await supabase
+  const { data: row, error } = await client
     .from("brand_requests")
     .select("id, request_count")
     .eq("normalized_keyword", normalized)
@@ -139,7 +164,7 @@ async function handleConcurrentExisting(
   }
 
   const nextCount = row.request_count + 1;
-  const { error: updateError } = await supabase
+  const { error: updateError } = await client
     .from("brand_requests")
     .update({
       request_count: nextCount,
@@ -153,5 +178,6 @@ async function handleConcurrentExisting(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
+  await recordBrandRequestParticipation(normalized);
   return NextResponse.json({ ok: true, request_count: nextCount });
 }

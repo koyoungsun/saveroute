@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:qa": "node scripts/seed-personalization-qa.cjs",
+    "check:anon": "node scripts/check-anon-brands.cjs",
+    "check:brand-requests": "node scripts/check-brand-requests-data.cjs",
+    "test:search": "tsx src/lib/search/match-brand.pool.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -17,6 +21,7 @@
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "react": "19.2.4",
@@ -34,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

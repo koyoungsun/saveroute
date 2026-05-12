@@ -14,6 +14,7 @@ export function PaginatedTable({
   fixedRows,
   columns,
   rows,
+  rowKeys,
   className,
 }: {
   title: string;
@@ -22,6 +23,7 @@ export function PaginatedTable({
   fixedRows: number;
   columns: { header: string; className?: string }[];
   rows: ReactNode[][];
+  rowKeys?: (string | number)[];
   className?: string;
 }) {
   const [page, setPage] = useState(1);
@@ -63,9 +65,10 @@ export function PaginatedTable({
           </thead>
           <tbody>
             {paged.map((cells, i) => {
+              const rowIndex = baseNo + i;
               return (
-                <tr key={baseNo + i + 1}>
-                  <td className="text-center">{baseNo + i + 1}</td>
+                <tr key={rowKeys?.[rowIndex] ?? rowIndex}>
+                  <td className="text-center">{rowIndex + 1}</td>
                   {cells.map((cell, idx) => (
                     <td key={idx}>{cell}</td>
                   ))}

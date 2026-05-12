@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
+import { saveRecentSearch } from "./recentSearchesStorage";
+
 interface PopularBrandChipsProps {
   brands: string[];
 }
@@ -10,6 +12,7 @@ export function PopularBrandChips({ brands }: PopularBrandChipsProps) {
   const router = useRouter();
 
   const handleClick = (brand: string) => {
+    saveRecentSearch(brand);
     router.push(`/search?keyword=${encodeURIComponent(brand)}`);
   };
 
@@ -22,7 +25,7 @@ export function PopularBrandChips({ brands }: PopularBrandChipsProps) {
             key={brand}
             type="button"
             onClick={() => handleClick(brand)}
-            className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm"
+            className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-orange-200 hover:text-orange-600"
           >
             {brand}
           </button>

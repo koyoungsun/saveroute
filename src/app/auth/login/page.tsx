@@ -1,26 +1,49 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
+import { AuthBrand } from "@/components/auth/AuthBrand";
+import {
+  getOAuthCallbackUrl,
+  stashOAuthReturnPath,
+} from "@/lib/auth/oauth-return-path";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const signupHref = "/auth/signup";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<null | "google">(null);
+
+  const handleGoogle = async () => {
+    setError("");
+    setOauthLoading("google");
+    await stashOAuthReturnPath("/");
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: getOAuthCallbackUrl() },
+    });
+    setOauthLoading(null);
+    if (oauthError) {
+      setError(oauthError.message);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!email.trim() || !password) {
-      setError("이메일과 비밀번호를 입력해주세요.");
+      setError("* 이메일과 비밀번호를 입력해주세요.");
       return;
     }
 
@@ -28,10 +51,11 @@ function LoginForm() {
     setIsLoading(true);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { data: authData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
     setIsLoading(false);
 
@@ -40,58 +64,26 @@ function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("redirect") ?? "/");
+    if (!authData.user) {
+      setError("* 로그인에 실패했습니다. 다시 시도해 주세요.");
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
   };
 
   return (
-    <main className="px-4 py-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-gray-600"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        뒤로
-      </Link>
+    <main className="mx-auto w-full max-w-xl px-4 py-10 md:py-16">
+      <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+        <AuthBrand />
 
-      <section className="mt-10 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h1 className="text-center text-xl font-extrabold text-blue-600">
-          SaveRoute
-        </h1>
-
-        <div className="mt-8 space-y-2">
-          <button
-            type="button"
-            onClick={() => alert("구글 로그인은 준비 중입니다.")}
-            className="w-full rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-900 hover:bg-gray-50"
-          >
-            Google로 계속하기
-          </button>
-          <button
-            type="button"
-            onClick={() => alert("카카오 로그인은 준비 중입니다.")}
-            className="w-full rounded-xl border border-gray-200 bg-[#FEE500] py-3 font-semibold text-[#191600] hover:brightness-95"
-          >
-            카카오로 계속하기
-          </button>
-          <button
-            type="button"
-            onClick={() => alert("네이버 로그인은 추후 지원 예정입니다.")}
-            aria-disabled="true"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 font-semibold text-gray-400"
-          >
-            네이버 (추후 지원)
-          </button>
-        </div>
-
-        <div className="mt-8 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-200" />
-          <p className="shrink-0 text-xs font-medium text-gray-400">
-            또는 이메일로 계속하기
+        <div className="mt-6 text-center">
+          <p className="text-sm leading-6 text-gray-600">
+            내 혜택 기준으로 더 정확한 할인을 확인해보세요.
           </p>
-          <div className="h-px flex-1 bg-gray-200" />
         </div>
 
-        {/* Login redirects to ?redirect=... when provided, otherwise home. */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <label
@@ -103,10 +95,11 @@ function LoginForm() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="example@email.com"
-              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -121,9 +114,10 @@ function LoginForm() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button
                 type="button"
@@ -145,15 +139,40 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
+            className="mx-auto flex h-12 w-full max-w-[280px] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover disabled:bg-gray-300 md:w-[70%]"
           >
-            {isLoading ? "로그인 중..." : "로그인"}
+            {isLoading ? "로그인 중..." : "이메일로 로그인"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          계정이 없으신가요?{" "}
-          <Link href="/auth/signup" className="font-medium text-blue-600">
+        <div className="mt-8 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <p className="shrink-0 text-xs font-medium text-gray-400">또는</p>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => void handleGoogle()}
+            disabled={oauthLoading !== null}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-gray-200 bg-white font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <Image
+              src="/icons/icon_google.png"
+              alt=""
+              width={20}
+              height={20}
+              style={{ height: "20px", width: "20px" }}
+              aria-hidden="true"
+            />
+            {oauthLoading === "google" ? "이동 중..." : "Google로 계속하기"}
+          </button>
+        </div>
+
+        <p className="mt-8 text-center text-sm text-gray-500">
+          아직 계정이 없나요?{" "}
+          <Link href={signupHref} className="font-semibold text-orange-600">
             회원가입
           </Link>
         </p>
@@ -164,7 +183,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-xl px-4 py-16 text-center text-sm text-gray-500">
+          불러오는 중…
+        </main>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

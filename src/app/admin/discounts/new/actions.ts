@@ -222,7 +222,7 @@ export async function createDiscountAction(
     }
   }
 
-  const { data: discount, error } = await supabase
+  const { error } = await supabase
     .from("discounts")
     .insert({
       brand_id: brandId,
@@ -246,21 +246,13 @@ export async function createDiscountAction(
       last_checked_at: today(),
       data_confidence: "medium",
       status: isActive ? "active" : "hidden",
-    })
-    .select("id,brand_id,status")
-    .single();
+    });
 
   if (error) {
     return {
       message: `할인 등록에 실패했습니다: ${error.message}`,
     };
   }
-
-  console.log("[admin debug] discount created", {
-    discountId: discount.id,
-    brandId: discount.brand_id,
-    status: discount.status,
-  });
 
   revalidatePath("/admin/discounts");
   redirect("/admin/discounts");

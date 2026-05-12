@@ -9,9 +9,14 @@ const statusClassNames: Record<string, string> = {
   hidden: "text-bg-secondary",
   pending: "text-bg-warning",
   processing: "text-bg-warning",
-  completed: "text-bg-secondary",
+  reviewing: "text-bg-info",
+  completed: "text-bg-success",
   ignored: "text-bg-light text-dark border",
+  rejected: "text-bg-secondary",
   inactive: "text-bg-light text-dark border",
+  scheduled: "text-bg-info",
+  view_detail: "text-bg-info",
+  use_discount: "text-bg-warning",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

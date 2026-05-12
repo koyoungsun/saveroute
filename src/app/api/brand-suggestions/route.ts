@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type BrandSuggestionRow = {
   id: number;
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ suggestions: [] });
   }
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = await createServerSupabaseClient();
   const pattern = `%${query}%`;
   const normalizedPattern = `%${normalized}%`;
 
@@ -88,12 +88,6 @@ export async function GET(request: NextRequest) {
   ]);
 
   if (nameError || slugError || aliasError) {
-    console.error("Failed to load brand suggestions.", {
-      name: nameError?.code ?? null,
-      slug: slugError?.code ?? null,
-      alias: aliasError?.code ?? null,
-    });
-
     return NextResponse.json({ suggestions: [] });
   }
 

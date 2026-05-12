@@ -1,19 +1,48 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
+
+export type EmptyStateVariant =
+  | "default"
+  | "unregistered_brand"
+  | "no_registered_benefits";
 
 interface EmptyStateProps {
   keyword?: string;
+  variant?: EmptyStateVariant;
 }
 
 type Feedback = "idle" | "loading" | "success" | "max_reached" | "error";
 
-export function EmptyState({ keyword }: EmptyStateProps) {
+const COPY: Record<
+  EmptyStateVariant,
+  { title: string; subtitle: string }
+> = {
+  default: {
+    title: "아직 할인 정보가 없어요.",
+    subtitle: "요청하시면 업데이트 후보에 반영할게요.",
+  },
+  unregistered_brand: {
+    title: "아직 등록되지 않은 브랜드입니다.",
+    subtitle: "원하시는 브랜드를 알려주시면 업데이트 검토에 참고할게요.",
+  },
+  no_registered_benefits: {
+    title: "등록된 보유혜택이 없습니다.",
+    subtitle: "내 혜택을 추가하면 맞춤 할인을 볼 수 있어요.",
+  },
+};
+
+export function EmptyState({ keyword, variant = "default" }: EmptyStateProps) {
   const [requestCount, setRequestCount] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback>("idle");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (variant === "no_registered_benefits") {
+      return;
+    }
+
     const q = keyword?.trim();
     if (!q) {
       return;
@@ -39,7 +68,7 @@ export function EmptyState({ keyword }: EmptyStateProps) {
     return () => {
       cancelled = true;
     };
-  }, [keyword]);
+  }, [keyword, variant]);
 
   const handleRequest = async () => {
     const q = keyword?.trim();
@@ -100,26 +129,43 @@ export function EmptyState({ keyword }: EmptyStateProps) {
   const count = requestCount ?? 0;
   const highlightPopular = count >= 3;
 
+  const copy = COPY[variant];
+
   return (
     <div className="flex flex-col items-center px-4 pt-16 text-center">
-      <div className="mb-4 text-4xl" aria-hidden="true">
-        🔍
+      <div className="mb-4 w-[500px] max-w-full">
+        <Image
+          src="/icons/icon_noimg.png"
+          alt=""
+          width={500}
+          height={500}
+          className="h-auto w-full object-contain"
+          sizes="500px"
+          aria-hidden
+        />
       </div>
-      <h1 className="text-lg font-semibold text-gray-800">
-        아직 할인 정보가 없어요.
+      <h1 className="-mt-[30px] text-[1.6875rem] font-semibold leading-snug text-[#409A53]">
+        {copy.title}
       </h1>
-      <p className="mt-2 text-sm text-gray-500">
-        요청하시면 업데이트 후보에 반영할게요.
-      </p>
+      <p className="mt-2 text-sm text-gray-500">{copy.subtitle}</p>
 
-      <button
-        type="button"
-        onClick={() => void handleRequest()}
-        disabled={submitting}
-        className="mt-6 w-full max-w-xs rounded-xl border border-blue-600 py-3 font-medium text-blue-600 disabled:opacity-50"
-      >
-        업데이트 요청하기
-      </button>
+      {variant === "no_registered_benefits" ? (
+        <a
+          href="/my-benefits"
+          className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover"
+        >
+          내 혜택 추가하기
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void handleRequest()}
+          disabled={submitting}
+          className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover disabled:opacity-50"
+        >
+          업데이트 요청하기
+        </button>
+      )}
 
       {feedbackText ? (
         <p
@@ -131,16 +177,18 @@ export function EmptyState({ keyword }: EmptyStateProps) {
         </p>
       ) : null}
 
-      <p
-        className={
-          highlightPopular
-            ? "mt-3 text-xs font-semibold text-orange-600"
-            : "mt-3 text-xs text-gray-400"
-        }
-      >
-        요청 수가 많은 업체부터 먼저 확인합니다.
-        {count > 0 ? ` (현재 요청 ${count}회)` : null}
-      </p>
+      {variant === "no_registered_benefits" ? null : (
+        <p
+          className={
+            highlightPopular
+              ? "mt-3 text-xs font-semibold text-orange-600"
+              : "mt-3 text-xs text-gray-400"
+          }
+        >
+          요청 수가 많은 업체부터 먼저 확인합니다.
+          {count > 0 ? ` (현재 요청 ${count}회)` : null}
+        </p>
+      )}
     </div>
   );
 }

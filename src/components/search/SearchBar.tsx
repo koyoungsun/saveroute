@@ -9,6 +9,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { saveRecentSearch } from "./recentSearchesStorage";
+
 interface SearchBarProps {
   defaultValue?: string;
 }
@@ -70,6 +72,7 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
     }
 
     setShowSuggestions(false);
+    saveRecentSearch(nextKeyword);
     router.push(`/search?keyword=${encodeURIComponent(nextKeyword)}`);
   };
 
@@ -134,8 +137,8 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
   const shouldShowDropdown = showSuggestions && canSuggest;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="flex flex-col">
+      <div className="relative mx-auto w-[70%]">
         <input
           type="search"
           value={keyword}
@@ -145,8 +148,8 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
             if (canSuggest) setShowSuggestions(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="어디에서 가장 싸게 쓸 수 있을까요?"
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="할인받고 싶은 브랜드를 입력하세요!"
+          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-center text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
           aria-autocomplete="list"
           aria-controls="brand-suggestions"
         />
@@ -166,7 +169,7 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
                   type="button"
                   className={
                     index === activeIndex
-                      ? "block w-full bg-blue-50 px-4 py-3 text-left text-sm text-blue-700"
+                      ? "block w-full bg-orange-50 px-4 py-3 text-left text-sm text-orange-700"
                       : "block w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                   }
                   onMouseDown={(event) => {
@@ -193,7 +196,7 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
 
       <button
         type="submit"
-        className="mt-2 w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+        className="mx-auto mt-2 flex h-12 w-[70%] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover"
       >
         검색
       </button>

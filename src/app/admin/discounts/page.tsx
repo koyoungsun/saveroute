@@ -204,6 +204,7 @@ export default async function AdminDiscountsPage() {
           { header: "만료일" },
           { header: "관리" },
         ]}
+        rowKeys={discounts.map((discount) => discount.id)}
         rows={rows}
       />
     </>

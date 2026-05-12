@@ -1,11 +1,9 @@
+import { UserShell } from "@/components/layout/UserShell";
+
 export default function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-surface-muted">
-      {children}
-    </div>
-  );
+  return <UserShell>{children}</UserShell>;
 }

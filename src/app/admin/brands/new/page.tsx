@@ -9,7 +9,13 @@ type BrandCategoryOption = {
   name: string;
 };
 
-export default async function NewBrandPage() {
+type PageProps = {
+  searchParams: Promise<{ keyword?: string }>;
+};
+
+export default async function NewBrandPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const initialBrandName = (sp.keyword ?? "").trim();
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("brand_categories")
@@ -45,7 +51,7 @@ export default async function NewBrandPage() {
         </div>
       ) : null}
 
-      <BrandForm categories={categories} />
+      <BrandForm categories={categories} initialBrandName={initialBrandName || undefined} />
     </>
   );
 }

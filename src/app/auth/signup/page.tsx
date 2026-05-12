@@ -1,36 +1,60 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
+import { AuthBrand } from "@/components/auth/AuthBrand";
+import {
+  getOAuthCallbackUrl,
+  stashOAuthReturnPath,
+} from "@/lib/auth/oauth-return-path";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const loginHref = "/auth/login";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<null | "google">(null);
+
+  const handleGoogle = async () => {
+    setError("");
+    setOauthLoading("google");
+    await stashOAuthReturnPath("/");
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: getOAuthCallbackUrl() },
+    });
+    setOauthLoading(null);
+    if (oauthError) {
+      setError(oauthError.message);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!email.trim()) {
-      setError("이메일을 입력해주세요.");
+      setError("* 이메일을 입력해주세요.");
       return;
     }
 
     if (password.length < 8) {
-      setError("비밀번호는 8자 이상이어야 합니다.");
+      setError("* 비밀번호는 8자 이상이어야 합니다.");
       return;
     }
 
     if (password !== passwordConfirm) {
-      setError("비밀번호가 일치하지 않습니다.");
+      setError("* 비밀번호가 일치하지 않습니다.");
       return;
     }
 
@@ -50,54 +74,20 @@ export default function SignupPage() {
       return;
     }
 
-    alert("회원가입 성공");
-    router.push("/onboarding");
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
   };
 
   return (
-    <main className="px-4 py-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-gray-600"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        뒤로
-      </Link>
+    <main className="mx-auto w-full max-w-xl px-4 py-10 md:py-16">
+      <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+        <AuthBrand />
 
-      <section className="mt-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">회원가입</h1>
-
-        <div className="mt-6 space-y-2">
-          <button
-            type="button"
-            onClick={() => alert("구글 로그인은 준비 중입니다.")}
-            className="w-full rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-900 hover:bg-gray-50"
-          >
-            Google로 계속하기
-          </button>
-          <button
-            type="button"
-            onClick={() => alert("카카오 로그인은 준비 중입니다.")}
-            className="w-full rounded-xl border border-gray-200 bg-[#FEE500] py-3 font-semibold text-[#191600] hover:brightness-95"
-          >
-            카카오로 계속하기
-          </button>
-          <button
-            type="button"
-            onClick={() => alert("네이버 로그인은 추후 지원 예정입니다.")}
-            aria-disabled="true"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 font-semibold text-gray-400"
-          >
-            네이버 (추후 지원)
-          </button>
-        </div>
-
-        <div className="mt-8 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-200" />
-          <p className="shrink-0 text-xs font-medium text-gray-400">
-            또는 이메일로 계속하기
+        <div className="mt-6 text-center">
+          <p className="text-sm leading-6 text-gray-600">
+            통신사와 카드를 등록하면 받을 수 있는 할인을 먼저 보여드려요.
           </p>
-          <div className="h-px flex-1 bg-gray-200" />
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -111,10 +101,11 @@ export default function SignupPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="example@email.com"
-              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -129,9 +120,10 @@ export default function SignupPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button
                 type="button"
@@ -158,30 +150,69 @@ export default function SignupPage() {
             <input
               id="password-confirm"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               value={passwordConfirm}
               onChange={(event) => setPasswordConfirm(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300"
+            className="mx-auto flex h-12 w-full max-w-[280px] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover disabled:bg-gray-300 md:w-[70%]"
           >
-            {isLoading ? "가입 중..." : "회원가입"}
+            {isLoading ? "가입 중..." : "이메일로 가입하기"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-8 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <p className="shrink-0 text-xs font-medium text-gray-400">또는</p>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => void handleGoogle()}
+            disabled={oauthLoading !== null}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-gray-200 bg-white font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <Image
+              src="/icons/icon_google.png"
+              alt=""
+              width={20}
+              height={20}
+              style={{ height: "20px", width: "20px" }}
+              aria-hidden="true"
+            />
+            {oauthLoading === "google" ? "이동 중..." : "Google로 계속하기"}
+          </button>
+        </div>
+
+        <p className="mt-8 text-center text-sm text-gray-500">
           이미 계정이 있으신가요?{" "}
-          <Link href="/auth/login" className="font-medium text-blue-600">
+          <Link href={loginHref} className="font-semibold text-orange-600">
             로그인
           </Link>
         </p>
       </section>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-xl px-4 py-16 text-center text-sm text-gray-500">
+          불러오는 중…
+        </main>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

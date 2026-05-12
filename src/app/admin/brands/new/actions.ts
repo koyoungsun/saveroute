@@ -72,18 +72,14 @@ export async function createBrandAction(
   }
 
   const supabase = createSupabaseAdminClient();
-  const { data: brand, error } = await supabase
-    .from("brands")
-    .insert({
-      name,
-      slug,
-      category_id: categoryId,
-      admin_memo: description || null,
-      official_url: websiteUrl,
-      is_active: isActive,
-    })
-    .select("id,is_active")
-    .single();
+  const { error } = await supabase.from("brands").insert({
+    name,
+    slug,
+    category_id: categoryId,
+    admin_memo: description || null,
+    official_url: websiteUrl,
+    is_active: isActive,
+  });
 
   if (error) {
     if (error.code === "23505") {
@@ -98,11 +94,6 @@ export async function createBrandAction(
       message: `브랜드 등록에 실패했습니다: ${error.message}`,
     };
   }
-
-  console.log("[admin debug] brand created", {
-    brandId: brand.id,
-    isActive: brand.is_active,
-  });
 
   revalidatePath("/admin/brands");
   redirect("/admin/brands");

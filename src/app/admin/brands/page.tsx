@@ -1,8 +1,11 @@
 import Link from "next/link";
 
+import { BrandFavicon } from "@/components/brand/BrandFavicon";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+import { deactivateBrandAction } from "./actions";
 
 type BrandRow = {
   id: number;
@@ -11,6 +14,7 @@ type BrandRow = {
   is_active: boolean;
   admin_memo: string | null;
   official_url: string | null;
+  aliases: string[] | null;
   brand_categories: { name: string } | { name: string }[] | null;
 };
 
@@ -34,7 +38,7 @@ export default async function AdminBrandsPage() {
       supabase
         .from("brands")
         .select(
-          "id,name,slug,is_active,admin_memo,official_url,brand_categories(name)",
+          "id,name,slug,aliases,is_active,admin_memo,official_url,brand_categories(name)",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -94,19 +98,32 @@ export default async function AdminBrandsPage() {
           { header: "브랜드명" },
           { header: "slug" },
           { header: "카테고리" },
+          { header: "별칭" },
           { header: "설명" },
           { header: "웹사이트" },
           { header: "상태" },
           { header: "관리" },
         ]}
+        rowKeys={brands.map((brand) => brand.id)}
         rows={brands.map((brand) => [
-          brand.name,
+          <div
+            key={`${brand.id}-name`}
+            className="d-inline-flex align-items-center gap-2 text-start"
+          >
+            <BrandFavicon
+              brandName={brand.name}
+              officialUrl={brand.official_url}
+              size={28}
+            />
+            <span>{brand.name}</span>
+          </div>,
           brand.slug,
           getCategoryName(brand.brand_categories),
+          brand.aliases?.length ? brand.aliases.join(", ") : "-",
           brand.admin_memo ?? "-",
           brand.official_url ? (
             <a
-              key={`${brand.slug}-url`}
+              key={`${brand.id}-url`}
               href={brand.official_url}
               target="_blank"
               rel="noreferrer"
@@ -117,16 +134,27 @@ export default async function AdminBrandsPage() {
             "-"
           ),
           <StatusBadge
-            key={`${brand.slug}-status`}
+            key={`${brand.id}-status`}
             status={brand.is_active ? "active" : "hidden"}
           />,
-          <button
-            key={`${brand.slug}-action`}
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-          >
-            수정
-          </button>,
+          <div key={`${brand.id}-actions`} className="d-flex gap-2">
+            <Link
+              href={`/admin/brands/${brand.id}/edit`}
+              className="btn btn-outline-secondary btn-sm"
+            >
+              수정
+            </Link>
+            <form action={deactivateBrandAction}>
+              <input type="hidden" name="brand_id" value={brand.id} />
+              <button
+                type="submit"
+                className="btn btn-outline-danger btn-sm"
+                disabled={!brand.is_active}
+              >
+                숨김
+              </button>
+            </form>
+          </div>,
         ])}
       />
     </>
