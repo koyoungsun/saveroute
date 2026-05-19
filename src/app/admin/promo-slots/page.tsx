@@ -112,9 +112,14 @@ export default async function AdminPromoSlotsPage() {
             홈 하단 추천 할인 구좌를 운영합니다. 큰 우선순위가 먼저 노출됩니다.
           </p>
         </div>
-        <Link href="/admin/promo-slots/new" className="btn btn-primary">
-          + 구좌 등록
-        </Link>
+        <div className="d-flex gap-2">
+          <Link href="/admin/promo-slots/history" className="btn btn-outline-secondary">
+            종료 히스토리
+          </Link>
+          <Link href="/admin/promo-slots/new" className="btn btn-primary">
+            + 구좌 등록
+          </Link>
+        </div>
       </div>
 
       <PaginatedTable

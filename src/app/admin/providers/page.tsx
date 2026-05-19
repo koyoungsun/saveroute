@@ -1,32 +1,50 @@
+import Link from "next/link";
+
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const providers = [
-  ["KT", "kt", "통신사", "telecom_major", "active"],
-  ["SKT", "skt", "통신사", "telecom_major", "active"],
-  ["LGU+", "lguplus", "통신사", "telecom_major", "active"],
-  ["KT M모바일", "kt_m_mobile", "통신사", "telecom_mvno", "active"],
-  ["신한카드", "shinhan_card", "카드", "card_company", "active"],
-  ["삼성카드", "samsung_card", "카드", "card_company", "active"],
-  ["현대카드", "hyundai_card", "카드", "card_company", "active"],
-  ["국민카드", "kb_card", "카드", "card_company", "active"],
-  ["하나카드", "hana_card", "카드", "card_company", "active"],
-  ["롯데카드", "lotte_card", "카드", "card_company", "hidden"],
-  ["NH농협카드", "nh_card", "카드", "card_company", "active"],
-  ["BC카드", "bc_card", "카드", "card_company", "active"],
-  ["U+ 알뜰모바일", "uplus_mvno", "통신사", "telecom_mvno", "active"],
-  ["SK 7mobile", "sk_7mobile", "통신사", "telecom_mvno", "active"],
-  ["드래프트제공사", "draft_provider", "기타", "other", "draft"],
-] as const;
+type ProviderRow = {
+  id: number;
+  name: string;
+  code: string;
+  provider_type: string;
+  display_order: number;
+  is_active: boolean;
+  benefit_categories: { name: string } | { name: string }[] | null;
+};
 
-export default function ProvidersPage() {
+function getCategoryName(category: ProviderRow["benefit_categories"]) {
+  if (Array.isArray(category)) {
+    return category[0]?.name ?? "-";
+  }
+
+  return category?.name ?? "-";
+}
+
+export default async function ProvidersPage() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("providers")
+    .select(
+      "id,name,code,provider_type,display_order,is_active,benefit_categories(name)",
+    )
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load providers: ${error.message}`);
+  }
+
+  const providers = (data ?? []) as ProviderRow[];
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">Providers</h1>
-        <button type="button" className="btn btn-primary">
-          + 등록
-        </button>
+        <Link href="/admin/providers/new" className="btn btn-primary">
+          + 제공사 등록
+        </Link>
       </div>
 
       <PaginatedTable
@@ -40,22 +58,28 @@ export default function ProvidersPage() {
           { header: "code" },
           { header: "category" },
           { header: "provider_type" },
+          { header: "display_order" },
           { header: "상태" },
           { header: "관리" },
         ]}
-        rows={providers.map(([name, code, category, providerType, status]) => [
-          name,
-          code,
-          category,
-          providerType,
-          <StatusBadge key={`${code}-status`} status={status} />,
-          <button
-            key={`${code}-action`}
-            type="button"
+        rowKeys={providers.map((provider) => provider.id)}
+        rows={providers.map((provider) => [
+          provider.name,
+          provider.code,
+          getCategoryName(provider.benefit_categories),
+          provider.provider_type,
+          provider.display_order,
+          <StatusBadge
+            key={`${provider.id}-status`}
+            status={provider.is_active ? "active" : "inactive"}
+          />,
+          <Link
+            key={`${provider.id}-action`}
+            href={`/admin/providers/${provider.id}/edit`}
             className="btn btn-outline-secondary btn-sm"
           >
             수정
-          </button>,
+          </Link>,
         ])}
       />
     </>

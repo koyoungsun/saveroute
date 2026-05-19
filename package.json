@@ -25,7 +25,10 @@
     "test:search": "tsx src/lib/search/match-brand.pool.test.ts",
     "qa:schema-freeze": "node scripts/qa-schema-freeze.cjs",
     "qa:discount-matching": "tsx src/lib/search/discount-matching.qa.test.ts",
+    "qa:rank-items": "tsx src/lib/admin/rank-items.test.ts",
     "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs",
+    "apply:061-promo-slots": "node scripts/apply-061-promo-slots-cleanup.cjs",
+    "qa:promo-slot-history": "node scripts/qa-promo-slot-history.cjs",
     "cleanup:test-operational-data": "node scripts/run-clear-test-operational-data.cjs"
   },
   "dependencies": {

@@ -7,6 +7,7 @@ import {
   describeSupabaseQueryFailure,
   type SupabaseLikeError,
 } from "@/lib/admin/format-db-error";
+import { formatRank, getRankedItems } from "@/lib/admin/rank-items";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type SearchLogRow = {
@@ -651,8 +652,8 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
           description={`search_logs.keyword (${selectedPeriod.label})`}
           columns={["순위", "검색어", "검색 수"]}
           emptyText="선택한 기간에 저장된 검색 로그가 없습니다. 검색 기능이 실행 중인지 확인해 보세요."
-          rows={popularKeywords.map((row, index) => [
-            index + 1,
+          rows={getRankedItems(popularKeywords, "count").map((row) => [
+            <RankBadge key={`${row.keyword}-rank`} rank={row.rank} />,
             <span key={row.keyword} className="fw-semibold">
               {row.keyword}
             </span>,
@@ -667,8 +668,8 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
           description={`search_logs.matched_brand_id (${selectedPeriod.label})`}
           columns={["순위", "브랜드", "검색 수"]}
           emptyText="브랜드에 매칭된 검색 기록이 없습니다. 브랜드명 매칭·검색 로그 적재 상태를 확인해 보세요."
-          rows={popularBrands.map((row, index) => [
-            index + 1,
+          rows={getRankedItems(popularBrands, "count").map((row) => [
+            <RankBadge key={`${row.brandName}-rank`} rank={row.rank} />,
             <span key={row.brandName} className="fw-semibold">
               {row.brandName}
             </span>,
@@ -683,8 +684,8 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
           description={`result_click_logs.brand_id 집계 (${selectedPeriod.label}, 최신 8000건 기준 표본)`}
           columns={["순위", "브랜드", "클릭 수"]}
           emptyText="선택한 기간에 result_click_logs에 기록된 클릭이 없거나, 해당 테이블을 읽을 수 없었습니다."
-          rows={popularClickBrands.map((row, index) => [
-            index + 1,
+          rows={getRankedItems(popularClickBrands, "count").map((row) => [
+            <RankBadge key={`${row.brandName}-rank`} rank={row.rank} />,
             <span key={row.brandName} className="fw-semibold">
               {row.brandName}
             </span>,
@@ -699,8 +700,8 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
           description="user_benefits (활성) + 신용·체크·선불 카드형 benefit_products만"
           columns={["순위", "카드", "카드사", "등록 수"]}
           emptyText="활성 user_benefits 중 카드 상품 매핑 건수가 부족합니다. 보유혜택 또는 상품 카탈로그를 확인해 보세요."
-          rows={topCards.map((row, index) => [
-            index + 1,
+          rows={getRankedItems(topCards, "count").map((row) => [
+            <RankBadge key={`${row.productName}-rank`} rank={row.rank} />,
             <span key={row.productName} className="fw-semibold">
               {row.productName}
             </span>,
@@ -818,6 +819,17 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         </div>
       </div>
     </>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  return (
+    <span
+      className="badge text-bg-light text-dark border fw-semibold"
+      style={{ minWidth: "52px" }}
+    >
+      {formatRank(rank)}
+    </span>
   );
 }
 
