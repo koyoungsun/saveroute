@@ -109,7 +109,7 @@ CREATE TABLE providers (
 ---
 
 ### `benefit_products`
-> KT VIP, T멤버십, 신한카드 Deep Dream 등 구체적 혜택 상품.
+> KT VIP, T멤버십, 신한카드 Deep Dream, **삼성카드 전체** 등 구체적 혜택 상품.
 
 ```sql
 CREATE TABLE benefit_products (
@@ -127,13 +127,31 @@ CREATE TABLE benefit_products (
   grade                TEXT,                -- 'VIP', 'Gold', 'Silver' (nullable)
   card_type            TEXT
                        CHECK (card_type IN ('credit', 'debit', 'prepaid', 'unknown', NULL)),
+  benefit_type         TEXT                 -- credit / debit / prepaid / all (nullable)
+                       CHECK (
+                         benefit_type IS NULL
+                         OR benefit_type IN ('credit', 'debit', 'prepaid', 'all')
+                       ),
+  is_all_product       BOOLEAN NOT NULL DEFAULT FALSE,  -- 카드사 전체 상품
   is_mvno              BOOLEAN NOT NULL DEFAULT FALSE,
   mvno_notice_required BOOLEAN NOT NULL DEFAULT FALSE,
   is_active            BOOLEAN NOT NULL DEFAULT TRUE,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 시드·UPSERT 멱등: (provider_id, name, COALESCE(benefit_type,''))
+CREATE UNIQUE INDEX benefit_products_provider_name_benefittype_uidx
+  ON benefit_products (provider_id, name, (COALESCE(benefit_type, '')));
+
+-- 카드사 전체: provider당 1개
+CREATE UNIQUE INDEX benefit_products_provider_all_product_uidx
+  ON benefit_products (provider_id)
+  WHERE is_all_product = TRUE AND benefit_type = 'all';
 ```
+
+**카드사 전체 상품 규칙:** `name = '{카드사명} 전체'`, `benefit_type = 'all'`, `is_all_product = true`.  
+통합 SQL: `supabase/sql/schema/benefit_products.sql`
 
 ---
 
@@ -188,11 +206,12 @@ CREATE TABLE discounts (
   brand_id            INT NOT NULL REFERENCES brands(id),
   benefit_category_id INT NOT NULL REFERENCES benefit_categories(id),
   provider_id         INT NOT NULL REFERENCES providers(id),
-  benefit_product_id  INT REFERENCES benefit_products(id),   -- nullable
+  benefit_product_id  INT REFERENCES benefit_products(id),   -- nullable; 카드사 전체 할인은 "{카드사명} 전체" id 연결 권장
   title               TEXT NOT NULL,
   summary             TEXT NOT NULL,
   detail              TEXT,
   condition_text      TEXT,
+  installment_condition TEXT,                                -- 할부·결제 조건(UI 전용, 계산 미사용)
   discount_value      NUMERIC NOT NULL DEFAULT 0,
   discount_unit       TEXT NOT NULL
                       CHECK (discount_unit IN (
@@ -227,6 +246,8 @@ CREATE INDEX idx_discounts_status ON discounts(status);
 CREATE INDEX idx_discounts_provider_id ON discounts(provider_id);
 ```
 
+통합 SQL: `supabase/sql/schema/discounts.sql`
+
 ---
 
 ### `user_benefits`
@@ -239,6 +260,11 @@ CREATE TABLE user_benefits (
   benefit_category_id INT NOT NULL REFERENCES benefit_categories(id),
   provider_id         INT NOT NULL REFERENCES providers(id),
   benefit_product_id  INT REFERENCES benefit_products(id),   -- nullable
+  benefit_type        TEXT                                   -- credit / debit / prepaid / all
+                      CHECK (
+                        benefit_type IS NULL
+                        OR benefit_type IN ('credit', 'debit', 'prepaid', 'all')
+                      ),
   custom_name         TEXT,
   is_active           BOOLEAN NOT NULL DEFAULT TRUE,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -246,6 +272,8 @@ CREATE TABLE user_benefits (
   UNIQUE(user_id, benefit_category_id, provider_id, benefit_product_id)
 );
 ```
+
+통합 SQL: `supabase/sql/schema/user_benefits.sql`
 
 ---
 
@@ -459,3 +487,44 @@ INSERT INTO benefit_categories (code, name, sort_order) VALUES
   ('coupon',     '쿠폰',     3),
   ('membership', '멤버십',   4);
 ```
+
+---
+
+## 7. 데이터 정책 (카드·할인)
+
+> 상세: `supabase/sql/schema/DATA_POLICIES.md`
+
+### 카드사 전체 상품 (`benefit_products`)
+
+| 컬럼 | 값 |
+|------|-----|
+| `name` | `{카드사명} 전체` |
+| `benefit_type` | `all` |
+| `is_all_product` | `true` |
+| `provider_id` | 카드사당 **1개만** (partial unique index) |
+
+시드: migration `058_seed_card_company_all_products.sql`
+
+### 카드사 전체 할인 (`discounts`)
+
+- `benefit_product_id` → 해당 카드사의 **"{카드사명} 전체"** 상품 id
+- `benefit_product_id` null 은 지양 (매칭·관리 일관성)
+- `installment_condition` → UI 표시용 (할인 금액 계산 미사용)
+
+### 사용자 등록 (`user_benefits`)
+
+- 카드사 전체 보유 시: `benefit_product_id` = 전체 상품 id, `benefit_type` = `all`
+
+---
+
+## 8. 스키마 참조 위치
+
+| 용도 | 경로 |
+|------|------|
+| Supabase migration 이력 | `supabase/migrations/` |
+| **최종 CREATE 스냅샷** | `supabase/sql/schema/` |
+| 운영 점진 패치 | `supabase/sql/patch/` |
+| SQL 폴더 개요 | `supabase/sql/README.md` |
+
+> `migrations/004`, `007`, `008` 은 **과거 CREATE 원본**이다.  
+> `benefit_type`, `is_all_product`, `installment_condition` 은 후속 migration(027, 044, 057 등) 또는 `schema/` 스냅샷에 반영된다.

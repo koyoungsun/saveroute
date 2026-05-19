@@ -76,7 +76,14 @@ export function SearchResultCard({
 
   const categoryLabel = discount.benefit_category?.name ?? "-";
 
-  const productLabel = discount.benefit_product?.name ?? "전체 상품";
+  const productLabel = (() => {
+    const product = discount.benefit_product;
+    if (!product?.name) return "혜택 상품 미지정";
+    if (product.is_all_product || product.benefit_type === "all") {
+      return `${product.name} · 카드사 전체`;
+    }
+    return product.name;
+  })();
 
   const validLabel = formatValidUntil(discount);
 
@@ -247,6 +254,12 @@ export function SearchResultCard({
         </p>
 
 
+
+        {discount.installment_condition ? (
+          <p className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+            결제 조건: {discount.installment_condition}
+          </p>
+        ) : null}
 
         {discount.condition_text ? (
 

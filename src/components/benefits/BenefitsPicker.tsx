@@ -2,22 +2,50 @@
 
 import { Check, CreditCard, Plus, Smartphone, X } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
   registerTelecomBenefitAction,
+  requestBenefitCardCatalogAction,
   type BenefitActionState,
+  type BenefitCardCatalogRequestKind,
 } from "@/app/(user)/my-benefits/actions";
 import {
+  type CardBenefitKind,
+  allowedCardBenefitKinds,
+} from "@/lib/benefits/card-benefit-kinds";
+import {
+  dedupeTelecomMembershipOptions,
   sortTelecomMembershipOptions,
   type BenefitsRegistrationPayload,
   TELECOM_FIRST_CHOICES,
   type TelecomFirstChoiceId,
 } from "@/lib/benefits/load-registration-data";
+import { formatUserBenefitTypeLabel } from "@/lib/benefits/format-product-label";
 
+const CARD_KIND_LABEL: Record<CardBenefitKind, string> = {
+  credit: "신용카드",
+  debit: "체크카드",
+  prepaid: "선불카드",
+  all: "카드사 전체",
+};
+
+const REQUEST_KIND_UI: readonly {
+  id: BenefitCardCatalogRequestKind;
+  label: string;
+}[] = [
+  { id: "unknown", label: "모름 · 미확정" },
+  { id: "credit", label: "신용카드" },
+  { id: "debit", label: "체크카드" },
+  { id: "prepaid", label: "선불카드" },
+];
+
+function compactSearchKey(raw: string) {
+  return raw.trim().replace(/\s+/g, " ").toLowerCase();
+}
 type BenefitsPickerProps = {
   mode?: "my-benefits" | "onboarding";
   payload: BenefitsRegistrationPayload;
@@ -47,18 +75,26 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
   const [pendingTelecom, startTelecomTransition] = useTransition();
   const [selectedCardProviderId, setSelectedCardProviderId] = useState("");
   const [selectedCardProductId, setSelectedCardProductId] = useState("");
-  const [selectedCardType, setSelectedCardType] = useState<"credit" | "debit" | "">("");
+  const [selectedCardType, setSelectedCardType] = useState<CardBenefitKind | "">("");
+  const [cardSearchQuery, setCardSearchQuery] = useState("");
   const [cardMsg, setCardMsg] = useState<string | null>(null);
   const [pendingCard, startCardTransition] = useTransition();
+  const [manualCatalogCardName, setManualCatalogCardName] = useState("");
+  const [manualCatalogKind, setManualCatalogKind] =
+    useState<BenefitCardCatalogRequestKind>("unknown");
+  const [manualCatalogMsg, setManualCatalogMsg] = useState<string | null>(null);
+  const manualCatalogNameEditedRef = useRef(false);
+  const [pendingCatalogRequest, startCatalogRequestTransition] = useTransition();
 
   const membershipOptionsForCarrier = useMemo(() => {
     if (!telecomFirst || telecomFirst === "mvno") {
       return [];
     }
     const pc = PROVIDER_BY_FIRST[telecomFirst];
-    return sortTelecomMembershipOptions(
-      payload.telecomMembershipProducts.filter((p) => p.providerCode === pc),
-    );
+    const filtered = payload.telecomMembershipProducts.filter((p) => p.providerCode === pc);
+    const deduped = dedupeTelecomMembershipOptions(filtered);
+
+    return sortTelecomMembershipOptions(deduped);
   }, [telecomFirst, payload.telecomMembershipProducts]);
 
   const resolvedTelecomProductId = useMemo(() => {
@@ -165,7 +201,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     [cardBenefits],
   );
 
-  const selectableCardProducts = useMemo(() => {
+  const cardProductsForProvider = useMemo(() => {
     const providerId = Number(selectedCardProviderId);
     if (!Number.isInteger(providerId) || providerId <= 0) {
       return [];
@@ -174,24 +210,108 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     return payload.cardProducts.filter((p) => {
       if (registeredCardProductIds.has(p.id)) return false;
       return p.provider_id === providerId;
+    }).sort((a, b) => {
+      if (a.isAllProduct !== b.isAllProduct) {
+        return a.isAllProduct ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name, "ko");
     });
   }, [payload.cardProducts, registeredCardProductIds, selectedCardProviderId]);
 
-  const selectedCardProduct = useMemo(
-    () =>
-      selectableCardProducts.find(
-        (product) => product.id === Number(selectedCardProductId),
-      ) ?? null,
-    [selectableCardProducts, selectedCardProductId],
+  const filteredCardProducts = useMemo(() => {
+    const q = compactSearchKey(cardSearchQuery);
+    if (!q) {
+      return cardProductsForProvider;
+    }
+    return cardProductsForProvider.filter((p) => compactSearchKey(p.name).includes(q));
+  }, [cardProductsForProvider, cardSearchQuery]);
+
+  const selectedCardProduct = useMemo(() => {
+    const id = Number(selectedCardProductId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return null;
+    }
+    return cardProductsForProvider.find((product) => product.id === id) ?? null;
+  }, [cardProductsForProvider, selectedCardProductId]);
+
+  useEffect(() => {
+    if (!selectedCardProductId) {
+      setSelectedCardType("");
+      return;
+    }
+    const id = Number(selectedCardProductId);
+    if (!filteredCardProducts.some((p) => p.id === id)) {
+      setSelectedCardProductId("");
+      setSelectedCardType("");
+    }
+  }, [filteredCardProducts, selectedCardProductId]);
+
+  useEffect(() => {
+    if (!selectedCardProduct) {
+      setSelectedCardType("");
+      return;
+    }
+    const kinds = allowedCardBenefitKinds({
+      benefit_type: selectedCardProduct.benefitType,
+      card_type: selectedCardProduct.cardType,
+      is_all_product: selectedCardProduct.isAllProduct,
+    });
+    if (kinds.length === 1) {
+      setSelectedCardType(kinds[0]);
+      return;
+    }
+    setSelectedCardType((prev) => (prev && kinds.includes(prev) ? prev : ""));
+  }, [selectedCardProduct]);
+
+  const selectedCardProvider = useMemo(
+    () => payload.cardProviders.find((p) => String(p.id) === selectedCardProviderId) ?? null,
+    [payload.cardProviders, selectedCardProviderId],
   );
+
+  const showManualCatalogRequest =
+    Boolean(selectedCardProviderId) &&
+    (cardProductsForProvider.length === 0 || filteredCardProducts.length === 0);
+
+  useEffect(() => {
+    if (!selectedCardProviderId) {
+      manualCatalogNameEditedRef.current = false;
+      setManualCatalogCardName("");
+      setManualCatalogKind("unknown");
+      setManualCatalogMsg(null);
+    }
+  }, [selectedCardProviderId]);
+
+  useEffect(() => {
+    if (!showManualCatalogRequest) {
+      return;
+    }
+    if (!manualCatalogNameEditedRef.current) {
+      setManualCatalogCardName(cardSearchQuery.trim());
+    }
+  }, [cardSearchQuery, showManualCatalogRequest]);
+
+  useEffect(() => {
+    if (!showManualCatalogRequest) {
+      manualCatalogNameEditedRef.current = false;
+    }
+  }, [showManualCatalogRequest]);
 
   const registeredCount = payload.userBenefits.length;
   const accent = "#409A53";
   const showBenefitsEmptyCta = mode === "my-benefits" && registeredCount === 0;
+  const selectableKinds = selectedCardProduct
+    ? [...allowedCardBenefitKinds({
+        benefit_type: selectedCardProduct.benefitType,
+        card_type: selectedCardProduct.cardType,
+        is_all_product: selectedCardProduct.isAllProduct,
+      })]
+    : [];
+
   const canAddCard =
     selectedCardProviderId !== "" &&
     selectedCardProductId !== "" &&
     selectedCardType !== "" &&
+    selectableKinds.includes(selectedCardType) &&
     !pendingCard;
 
   function handleAddCard() {
@@ -203,7 +323,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
     setCardMsg(null);
     startCardTransition(() => {
-      void addCardBenefitAction(productId, selectedCardType).then((r) => {
+      void addCardBenefitAction(productId, selectedCardType as CardBenefitKind).then((r) => {
         if (r.error) {
           setCardMsg(r.error);
         } else {
@@ -216,6 +336,35 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       });
     });
   }
+
+  function handleSubmitCatalogRequest() {
+    const pid = Number(selectedCardProviderId);
+    const nameTrim = manualCatalogCardName.trim();
+    if (!Number.isInteger(pid) || pid <= 0 || nameTrim.length === 0) {
+      setManualCatalogMsg("카드명을 입력해 주세요.");
+      return;
+    }
+    setManualCatalogMsg(null);
+    startCatalogRequestTransition(() => {
+      void requestBenefitCardCatalogAction(pid, nameTrim, manualCatalogKind).then(
+        (r: BenefitActionState) => {
+          if (r.error) {
+            setManualCatalogMsg(r.error);
+            return;
+          }
+          manualCatalogNameEditedRef.current = false;
+          setManualCatalogMsg(r.message ?? "요청이 접수되었습니다.");
+          setManualCatalogKind("unknown");
+          router.refresh();
+        },
+      );
+    });
+  }
+
+  const canSubmitManualCatalog =
+    showManualCatalogRequest &&
+    manualCatalogCardName.trim().length > 0 &&
+    !pendingCatalogRequest;
 
   return (
     <div className="space-y-8 pb-28 md:pb-10">
@@ -432,6 +581,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 onChange={(event) => {
                   setSelectedCardProviderId(event.target.value);
                   setSelectedCardProductId("");
+                  setCardSearchQuery("");
                   setCardMsg(null);
                 }}
                 className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
@@ -445,81 +595,182 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               </select>
             </div>
 
-            <div>
-              <label htmlFor="card-product" className="text-xs font-bold text-gray-700">
-                2. 카드
-              </label>
-              <select
-                id="card-product"
-                value={selectedCardProductId}
-                onChange={(event) => {
-                  setSelectedCardProductId(event.target.value);
-                  setCardMsg(null);
-                }}
-                disabled={!selectedCardProviderId}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">
-                  {selectedCardProviderId
-                    ? "카드를 선택해 주세요"
-                    : "카드사를 먼저 선택해 주세요"}
-                </option>
-                {selectableCardProducts.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              {selectedCardProviderId && selectableCardProducts.length === 0 ? (
-                <p className="mt-1.5 text-xs text-gray-400">
-                  등록 가능한 카드가 없거나 이미 추가된 카드만 있습니다.
-                </p>
-              ) : null}
-            </div>
+            {!selectedCardProviderId ? (
+              <p className="mt-4 rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm font-medium text-amber-900">
+                카드사를 먼저 선택하세요.
+              </p>
+            ) : null}
 
-            <div>
-              <p className="text-xs font-bold text-gray-700">3. 카드 유형</p>
-              <div className="mt-1.5 grid grid-cols-2 rounded-2xl bg-gray-100 p-1">
-                {[
-                  { value: "credit", label: "신용카드" },
-                  { value: "debit", label: "체크카드" },
-                ].map((type) => {
-                  const active = selectedCardType === type.value;
-                  return (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCardType(type.value as "credit" | "debit");
-                        setCardMsg(null);
-                      }}
-                      className={`h-10 rounded-xl text-sm font-extrabold transition ${
-                        active
-                          ? "bg-white text-[#409A53] shadow-sm"
-                          : "text-gray-500"
+            {selectedCardProviderId ? (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label htmlFor="card-search" className="text-xs font-bold text-gray-700">
+                    2. 카드명 검색
+                  </label>
+                  <input
+                    id="card-search"
+                    type="search"
+                    value={cardSearchQuery}
+                    onChange={(event) => setCardSearchQuery(event.target.value)}
+                    placeholder="예: 트래블, The Pink, 전체"
+                    autoComplete="off"
+                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 placeholder:font-normal placeholder:text-gray-400 focus:border-[#409A53]/45 focus:ring-2"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="card-product" className="text-xs font-bold text-gray-700">
+                    3. 카드 선택
+                  </label>
+                  <select
+                    id="card-product"
+                    value={selectedCardProductId}
+                    onChange={(event) => {
+                      setSelectedCardProductId(event.target.value);
+                      setCardMsg(null);
+                    }}
+                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+                  >
+                    <option value="">목록에서 카드를 선택해 주세요</option>
+                    {filteredCardProducts.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {showManualCatalogRequest ? (
+                    <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
+                      <p className="text-xs font-medium text-gray-700">
+                        {cardProductsForProvider.length === 0
+                          ? "표시할 카드 상품이 없습니다. DB 마스터에 해당 카드사 상품이 아직 없을 수 있어요."
+                          : "검색 결과가 없습니다. 보유 중인 카드명을 직접 입력해 마스터 추가를 요청할 수 있어요."}
+                      </p>
+                      <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                        <div>
+                          <p className="text-xs font-bold text-gray-700">카드사</p>
+                          <p className="mt-1 text-sm font-semibold text-gray-900">
+                            {selectedCardProvider?.name ?? "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <label htmlFor="manual-catalog-card-name" className="text-xs font-bold text-gray-700">
+                            카드명 (검색어가 기본으로 채워집니다)
+                          </label>
+                          <input
+                            id="manual-catalog-card-name"
+                            type="text"
+                            value={manualCatalogCardName}
+                            onChange={(e) => {
+                              manualCatalogNameEditedRef.current = true;
+                              setManualCatalogCardName(e.target.value);
+                              setManualCatalogMsg(null);
+                            }}
+                            maxLength={200}
+                            autoComplete="off"
+                            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+                            placeholder="예: 나만의 체크카드"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-700">카드 유형</p>
+                          <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1 sm:grid-cols-4">
+                            {REQUEST_KIND_UI.map((item) => (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => {
+                                  setManualCatalogKind(item.id);
+                                  setManualCatalogMsg(null);
+                                }}
+                                className={`h-9 rounded-xl text-xs font-extrabold transition sm:text-sm ${
+                                  manualCatalogKind === item.id
+                                    ? "bg-white text-[#409A53] shadow-sm"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          요청이 접수되면 검토 후 카드 목록에 반영됩니다.
+                        </p>
+                        <button
+                          type="button"
+                          disabled={!canSubmitManualCatalog}
+                          onClick={handleSubmitCatalogRequest}
+                          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+                        >
+                          {pendingCatalogRequest ? "접수 중..." : "카드 마스터 추가 요청"}
+                        </button>
+                        {manualCatalogMsg ? (
+                          <p className="text-xs font-medium text-gray-600">{manualCatalogMsg}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {selectedCardProduct && selectableKinds.length > 0 && selectableKinds[0] !== "all" ? (
+                  <div>
+                    <p className="text-xs font-bold text-gray-700">4. 카드 유형</p>
+                    <div
+                      className={`mt-1.5 grid gap-1 rounded-2xl bg-gray-100 p-1 ${
+                        selectableKinds.length <= 2 ? "grid-cols-2" : "grid-cols-3"
                       }`}
                     >
-                      {type.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedCardProduct?.cardType === "credit" || selectedCardProduct?.cardType === "debit" ? (
-                <p className="mt-1.5 text-xs text-gray-400">
-                  선택한 카드 데이터 기준 유형: {selectedCardProduct.cardType === "credit" ? "신용카드" : "체크카드"}
-                </p>
-              ) : null}
-            </div>
+                      {selectableKinds.map((kind) => {
+                        const active = selectedCardType === kind;
+                        return (
+                          <button
+                            key={kind}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCardType(kind);
+                              setCardMsg(null);
+                            }}
+                            className={`h-10 rounded-xl text-sm font-extrabold transition ${
+                              active ? "bg-white text-[#409A53] shadow-sm" : "text-gray-500"
+                            }`}
+                          >
+                            {CARD_KIND_LABEL[kind]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectableKinds.length === 1 ? (
+                      <p className="mt-1.5 text-xs text-gray-500">
+                        이 카드는 마스터 데이터 기준 {CARD_KIND_LABEL[selectableKinds[0]]}예요.
+                      </p>
+                    ) : selectableKinds.length > 1 ? (
+                      <p className="mt-1.5 text-xs text-gray-500">
+                        보유하신 결제 방식을 선택해 주세요.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : selectedCardProduct?.isAllProduct ? (
+                  <p className="text-xs text-gray-500">
+                    이 상품은 해당 카드사 전체 할인에 매칭됩니다.
+                  </p>
+                ) : selectedCardProviderId &&
+                  cardProductsForProvider.length > 0 &&
+                  filteredCardProducts.length > 0 ? (
+                  <p className="text-xs text-gray-400">카드를 선택하면 카드 유형을 고를 수 있어요.</p>
+                ) : null}
 
-            <button
-              type="button"
-              disabled={!canAddCard}
-              onClick={handleAddCard}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
-            >
-              <Plus className="size-4" aria-hidden />
-              {pendingCard ? "등록 중..." : "보유카드에 추가"}
-            </button>
+                <button
+                  type="button"
+                  disabled={!canAddCard}
+                  onClick={handleAddCard}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+                >
+                  <Plus className="size-4" aria-hidden />
+                  {pendingCard ? "등록 중..." : "보유카드에 추가"}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -531,12 +782,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           {cardBenefits.map((b) => {
             const productName = relationOne(b.benefit_product)?.name ?? "카드";
             const providerName = relationOne(b.provider)?.name ?? "";
-            const benefitTypeLabel =
-              b.benefit_type === "credit"
-                ? "신용"
-                : b.benefit_type === "debit"
-                  ? "체크"
-                  : null;
+            const benefitTypeLabel = formatUserBenefitTypeLabel(b.benefit_type);
             const hasConnectedDiscounts = b.connectedDiscountCount > 0;
             return (
               <div
@@ -575,7 +821,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             );
           })}
           {cardBenefits.length === 0 ? (
-            <p className="text-xs text-gray-400">아직 등록된 카드가 없어요.</p>
+            <p className="text-xs text-gray-500">등록된 카드가 없습니다.</p>
           ) : null}
         </div>
 

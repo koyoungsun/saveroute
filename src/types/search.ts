@@ -27,6 +27,8 @@ export type BenefitProductSummary = {
   name: string;
   is_mvno: boolean;
   mvno_notice_required: boolean;
+  is_all_product?: boolean;
+  benefit_type?: string | null;
 };
 
 /** Flat discount row enriched for cards / consumers */
@@ -35,6 +37,7 @@ export type DiscountResult = {
   brand_id: number;
   title: string;
   condition_text: string | null;
+  installment_condition: string | null;
   discount_value: number | string;
   discount_unit: DiscountUnit;
   usage_type: string;

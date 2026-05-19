@@ -22,20 +22,28 @@ export function ThemeParkConditionFilters() {
   const [ticketType, setTicketType] = useState("all");
 
   return (
-    <section className="rounded-2xl border border-[#409A53]/20 bg-[#409A53]/[0.04] p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#409A53]">
-          추가 조건
-        </p>
-        <h2 className="mt-1 text-base font-extrabold text-gray-950">
-          놀이동산 이용 조건
-        </h2>
-        <p className="mt-1 text-xs leading-5 text-gray-500">
-          상세 요금 비교는 준비 중입니다.
-        </p>
+    <section
+      className="rounded-2xl border border-[#409A53]/20 bg-[#409A53]/[0.04] p-4"
+      aria-label="놀이동산 이용 조건 미리보기"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#409A53]">
+            추가 조건
+          </p>
+          <h2 className="mt-1 text-base font-extrabold text-gray-950">
+            놀이동산 이용 조건
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-gray-500">
+            UI 미리보기입니다. 선택해도 할인 결과는 아직 바뀌지 않아요.
+          </p>
+        </div>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500 ring-1 ring-gray-200">
+          준비 중
+        </span>
       </div>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-4 opacity-90">
         <div>
           <p className="text-xs font-bold text-gray-700">방문 인원</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -45,6 +53,7 @@ export function ThemeParkConditionFilters() {
                 <button
                   key={option.value}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => setVisitorGroup(option.value)}
                   className={`min-h-10 rounded-xl border px-3 text-sm font-bold transition ${
                     active
@@ -68,6 +77,7 @@ export function ThemeParkConditionFilters() {
                 <button
                   key={option.value}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => setTicketType(option.value)}
                   className={`min-h-10 shrink-0 rounded-xl border px-3 text-sm font-bold transition ${
                     active

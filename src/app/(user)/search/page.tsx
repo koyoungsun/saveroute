@@ -28,11 +28,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const keyword = getKeyword(params.keyword);
 
   if (!keyword) {
-    return <EmptyState keyword="" />;
+    return <EmptyState variant="no_keyword" />;
   }
 
-  const supabase = await createServerSupabaseClient();
-  const result = await performSearch(supabase, keyword);
+  let result;
+  try {
+    const supabase = await createServerSupabaseClient();
+    result = await performSearch(supabase, keyword);
+  } catch {
+    return <EmptyState keyword={keyword} variant="search_error" />;
+  }
 
   if (!result.matchedBrand) {
     return <EmptyState keyword={keyword} variant="unregistered_brand" />;
@@ -47,12 +52,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     result.brandCategoryCode === "theme_park";
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 py-3 pb-10">
       <div className="flex items-center gap-3">
         <Link
           href="/"
           aria-label="홈으로 돌아가기"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-gray-600 shadow-sm"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
         </Link>
@@ -86,6 +91,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <h2 className="mt-1 text-lg font-extrabold text-gray-950">
               {result.authenticated ? "내가 받을 수 있는 할인" : "전체 할인 결과"}
             </h2>
+            {result.authenticated && ownedSet.size > 0 ? (
+              <p className="mt-1 text-xs text-gray-500">
+                내 혜택과 연결된 할인 {ownedSet.size}건을 우선 표시합니다.
+              </p>
+            ) : null}
           </div>
           <p className="shrink-0 text-xs font-semibold text-gray-400">
             {displayDiscounts.length}개
@@ -110,28 +120,43 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <div className="rounded-2xl border border-gray-100 bg-white px-4 py-6 text-center shadow-sm">
             <p className="text-sm font-bold text-gray-900">
               {result.authenticated
-                ? "현재 등록된 혜택으로 받을 수 있는 할인이 없습니다."
-                : "현재 확인된 할인 정보가 없습니다."}
+                ? "등록한 혜택으로 받을 수 있는 할인이 아직 없어요."
+                : "현재 확인된 할인 정보가 없어요."}
             </p>
             <p className="mt-2 text-xs leading-5 text-gray-500">
               {result.authenticated
-                ? "보유혜택을 추가하거나 수정하면 맞춤 할인 결과가 달라질 수 있어요."
-                : "내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
+                ? "다른 카드나 카드사 전체 혜택을 등록하면 결과가 달라질 수 있어요."
+                : "로그인 후 내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
             </p>
+            {result.authenticated ? (
+              <Link
+                href="/my-benefits"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-sr-primary px-4 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+              >
+                내 혜택 등록·수정
+              </Link>
+            ) : (
+              <Link
+                href={`/auth/login?redirect=${encodeURIComponent("/my-benefits")}`}
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-sr-primary px-4 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+              >
+                로그인하고 혜택 등록
+              </Link>
+            )}
           </div>
         )}
 
         {result.hasMvnoDiscount ? (
-          <p className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-xs leading-5 text-orange-800 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-200">
-            알뜰요금제 혜택은 통신사/요금제별로 다를 수 있어 실제 적용 여부 확인이 필요합니다.
+          <p className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-xs leading-5 text-orange-800">
+            알뜰요금제 혜택은 통신사·요금제별로 다를 수 있어 실제 적용 여부를 꼭 확인해 주세요.
           </p>
         ) : null}
 
         <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm">
           <p className="text-xs leading-5 text-gray-500">
             {result.authenticated
-              ? "보유카드를 바꾸거나 통신사 혜택을 추가하면 검색 결과가 다시 맞춰집니다."
-              : "내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
+              ? "보유 카드·통신사 혜택을 바꾸면 검색 결과의 «내 할인 가능» 표시가 함께 바뀝니다."
+              : "내 혜택을 등록하면 받을 수 있는 할인에 «내 할인 가능» 배지가 표시됩니다."}
           </p>
           {result.authenticated ? (
             <Link
@@ -144,13 +169,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={`/auth/login?redirect=${encodeURIComponent("/my-benefits")}`}
-                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:border-[#409A53]/40 hover:text-[#409A53] active:scale-[0.98]"
+                className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:border-[#409A53]/40 hover:text-[#409A53] active:scale-[0.98]"
               >
-                로그인하고 혜택 등록
+                로그인
               </Link>
               <Link
                 href="/auth/signup"
-                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:border-[#409A53]/40 hover:text-[#409A53] active:scale-[0.98]"
+                className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:border-[#409A53]/40 hover:text-[#409A53] active:scale-[0.98]"
               >
                 회원가입
               </Link>

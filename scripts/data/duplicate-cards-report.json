@@ -1,0 +1,6 @@
+{
+  "generatedAt": "2026-05-15T14:27:21.339Z",
+  "inputPath": "D:\\new-saveroute\\saveroute\\scripts\\data\\card_products_by_provider.input.example.json",
+  "note": "동일 카드 표시명(NFKC·trim·공백압축 기준 같음) 중복은 하나만 남기고 병합, 아래 목록만 보존 카운트.",
+  "duplicateCardNamesByProvider": []
+}

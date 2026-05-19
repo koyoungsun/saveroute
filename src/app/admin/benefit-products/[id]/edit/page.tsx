@@ -18,6 +18,7 @@ type EditBenefitProductPageProps = {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 type ProviderOption = {
@@ -52,14 +53,17 @@ export default async function EditBenefitProductPage({
         name,
         is_active,
         is_mvno,
-        mvno_notice_required
+        mvno_notice_required,
+        benefit_type,
+        card_type,
+        is_all_product
       `,
       )
       .eq("id", benefitProductId)
       .maybeSingle(),
     supabase
       .from("benefit_categories")
-      .select("id,name")
+      .select("id,name,code")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
     supabase
@@ -87,6 +91,8 @@ export default async function EditBenefitProductPage({
   const benefitProduct = productData as BenefitProductFormValues;
   const categories = (categoryData ?? []) as BenefitCategoryOption[];
   const providers = (providerData ?? []) as ProviderOption[];
+  const cardCategoryId =
+    categories.find((category) => category.code === "card")?.id ?? null;
   const updateAction = updateBenefitProductAction.bind(null, benefitProduct.id);
 
   return (
@@ -110,6 +116,7 @@ export default async function EditBenefitProductPage({
         action={updateAction}
         categories={categories}
         providers={providers}
+        cardCategoryId={cardCategoryId}
         initialValues={benefitProduct}
         mode="edit"
       />

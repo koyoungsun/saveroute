@@ -83,6 +83,7 @@ export async function updateDiscountAction(
   const discountUnitValue = readString(formData, "discount_unit");
   const discountValueValue = readString(formData, "discount_value");
   const conditionText = readString(formData, "condition_text");
+  const installmentCondition = readString(formData, "installment_condition");
   const validFrom = readString(formData, "valid_from");
   const validUntil = readString(formData, "valid_until");
   const sourceUrlValue = readString(formData, "source_url");
@@ -220,6 +221,7 @@ export async function updateDiscountAction(
       title,
       summary: title,
       condition_text: conditionText || null,
+      installment_condition: installmentCondition || null,
       discount_value: discountValue,
       discount_unit: discountUnit,
       valid_from: validFrom || null,

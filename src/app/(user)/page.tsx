@@ -16,16 +16,19 @@ import {
 } from "@/lib/homePromoSlots";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+import {
+  matchDiscountToUserBenefit,
+  type BenefitProductMatchMeta,
+  type UserBenefitMatchRow,
+} from "@/lib/search/discount-matching";
+
 const popularBrands = ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"];
 const telecomCategoryCodes = new Set(["telecom", "membership", "mvno"]);
 const cardCategoryCodes = new Set(["card"]);
 
 type Relation<T> = T | T[] | null;
 
-type UserBenefitRow = {
-  benefit_category_id: number;
-  provider_id: number;
-  benefit_product_id: number | null;
+type UserBenefitRow = UserBenefitMatchRow & {
   benefit_category: Relation<{ code: string; name: string }>;
 };
 
@@ -57,19 +60,16 @@ function getRelation<T>(relation: Relation<T>) {
   return relation;
 }
 
-function matchesBenefit(discount: DiscountRow, benefit: UserBenefitRow) {
-  if (
-    discount.benefit_category_id !== benefit.benefit_category_id ||
-    discount.provider_id !== benefit.provider_id
-  ) {
-    return false;
-  }
-
-  if (discount.benefit_product_id == null) {
-    return true;
-  }
-
-  return discount.benefit_product_id === benefit.benefit_product_id;
+function matchesBenefit(
+  discount: DiscountRow,
+  benefit: UserBenefitRow,
+  productById: Map<number, BenefitProductMatchMeta>,
+) {
+  const discountProduct =
+    discount.benefit_product_id == null
+      ? null
+      : productById.get(discount.benefit_product_id);
+  return matchDiscountToUserBenefit(discount, benefit, discountProduct);
 }
 
 function toPersonalizedDiscount(discount: DiscountRow): PersonalizedDiscount {
@@ -87,6 +87,7 @@ function getBestDiscounts(
   discounts: DiscountRow[],
   benefits: UserBenefitRow[],
   categoryCodes: Set<string>,
+  productById: Map<number, BenefitProductMatchMeta>,
 ) {
   const scopedBenefits = benefits.filter((benefit) => {
     const code = getRelation(benefit.benefit_category)?.code;
@@ -99,7 +100,7 @@ function getBestDiscounts(
 
   return discounts
     .filter((discount) =>
-      scopedBenefits.some((benefit) => matchesBenefit(discount, benefit)),
+      scopedBenefits.some((benefit) => matchesBenefit(discount, benefit, productById)),
     )
     .sort((a, b) => (Number(b.discount_value) || 0) - (Number(a.discount_value) || 0))
     .slice(0, 3)
@@ -143,12 +144,10 @@ export default async function HomePage() {
     : ((promoSlotData ?? []) as HomePromoSlotRow[]).map(toHomePromoSlot);
   let userBenefits: UserBenefitRow[] = [];
   let activeDiscounts: DiscountRow[] = [];
+  let productMatchById = new Map<number, BenefitProductMatchMeta>();
 
   if (user) {
-    const [
-      { data: benefitData },
-      { data: discountData },
-    ] = await Promise.all([
+    const [{ data: benefitData }, { data: discountData }] = await Promise.all([
       supabase
         .from("user_benefits")
         .select(
@@ -156,7 +155,9 @@ export default async function HomePage() {
           benefit_category_id,
           provider_id,
           benefit_product_id,
-          benefit_category:benefit_categories(code,name)
+          benefit_type,
+          benefit_category:benefit_categories(code,name),
+          product:benefit_products(id,benefit_type,is_all_product)
         `,
         )
         .eq("user_id", user.id)
@@ -181,19 +182,66 @@ export default async function HomePage() {
         .limit(100),
     ]);
 
-    userBenefits = (benefitData ?? []) as UserBenefitRow[];
+    userBenefits = ((benefitData ?? []) as Array<Omit<UserBenefitRow, "product"> & {
+      product:
+        | { id: number; benefit_type: string | null; is_all_product: boolean }
+        | { id: number; benefit_type: string | null; is_all_product: boolean }[]
+        | null;
+    }>).map((row) => {
+      const prod = getRelation(row.product);
+      return {
+        benefit_category_id: row.benefit_category_id,
+        provider_id: row.provider_id,
+        benefit_product_id: row.benefit_product_id,
+        benefit_type: row.benefit_type,
+        benefit_category: row.benefit_category,
+        product: prod
+          ? {
+              id: prod.id,
+              benefit_type: prod.benefit_type,
+              is_all_product: prod.is_all_product,
+            }
+          : null,
+      };
+    });
     activeDiscounts = (discountData ?? []) as DiscountRow[];
+
+    const productIds = [
+      ...new Set(
+        activeDiscounts
+          .map((d) => d.benefit_product_id)
+          .filter((id): id is number => typeof id === "number"),
+      ),
+    ];
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from("benefit_products")
+        .select("id,benefit_type,is_all_product")
+        .in("id", productIds);
+      productMatchById = new Map(
+        (products ?? []).map((p) => [
+          p.id as number,
+          {
+            id: p.id as number,
+            benefit_type: (p.benefit_type as string | null) ?? null,
+            is_all_product: Boolean(p.is_all_product),
+          },
+        ]),
+      );
+    }
   }
 
   const telecomDiscounts = getBestDiscounts(
     activeDiscounts,
     userBenefits,
     telecomCategoryCodes,
+    productMatchById,
   );
   const cardDiscounts = getBestDiscounts(
     activeDiscounts,
     userBenefits,
     cardCategoryCodes,
+    productMatchById,
   );
 
   return (
@@ -233,7 +281,12 @@ export default async function HomePage() {
           </>
         ) : (
           <>
-            <div className="space-y-2">
+            <SearchBar />
+            <RecentSearches />
+            <p className="mt-6 text-center text-sm text-gray-500">
+              로그인하면 내 혜택 기준 맞춤 할인을 볼 수 있어요.
+            </p>
+            <div className="mt-3 space-y-2">
               <Link
                 href="/auth/login"
                 className="mx-auto flex h-12 w-[70%] items-center justify-center rounded-3xl bg-sr-primary text-center font-semibold text-white hover:bg-sr-primary-hover"
@@ -248,17 +301,13 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-6">
-              <SearchBar />
-              <RecentSearches />
-              <div className="mt-8">
-                <PersonalizedBestSections
-                  isAuthenticated={false}
-                  hasBenefits={false}
-                  telecomDiscounts={[]}
-                  cardDiscounts={[]}
-                />
-              </div>
+            <div className="mt-8">
+              <PersonalizedBestSections
+                isAuthenticated={false}
+                hasBenefits={false}
+                telecomDiscounts={[]}
+                cardDiscounts={[]}
+              />
             </div>
           </>
         )}

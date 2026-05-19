@@ -4,11 +4,22 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { allowedCardBenefitKinds, type CardBenefitKind } from "@/lib/benefits/card-benefit-kinds";
 
 export type BenefitActionState = {
   message?: string;
   error?: string;
 };
+
+export type BenefitCardCatalogRequestKind = "credit" | "debit" | "prepaid" | "unknown";
+
+function normalizeBenefitCatalogRequestKind(
+  value: BenefitCardCatalogRequestKind | string,
+): BenefitCardCatalogRequestKind | null {
+  return value === "credit" || value === "debit" || value === "prepaid" || value === "unknown"
+    ? value
+    : null;
+}
 
 function readPositiveInteger(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -21,7 +32,9 @@ function readPositiveInteger(formData: FormData, key: string) {
 }
 
 function normalizeCardBenefitType(value: string) {
-  return value === "credit" || value === "debit" ? value : null;
+  return value === "credit" || value === "debit" || value === "prepaid" || value === "all"
+    ? value
+    : null;
 }
 
 function nowIso() {
@@ -133,7 +146,7 @@ export async function registerTelecomBenefitAction(productId: number): Promise<B
 /** 카드 혜택 상품 추가 (중복 시 재활성화) */
 export async function addCardBenefitAction(
   productId: number,
-  benefitType: "credit" | "debit",
+  benefitType: "credit" | "debit" | "prepaid" | "all",
 ): Promise<BenefitActionState> {
   if (!Number.isInteger(productId) || productId <= 0) {
     return { error: "잘못된 카드 상품입니다." };
@@ -148,13 +161,31 @@ export async function addCardBenefitAction(
 
   const { data: product, error: productError } = await supabase
     .from("benefit_products")
-    .select("id, benefit_category_id, provider_id")
+    .select("id, benefit_category_id, provider_id, benefit_type, card_type, is_all_product")
     .eq("id", productId)
     .eq("is_active", true)
     .maybeSingle();
 
   if (productError || !product) {
     return { error: "카드 상품을 찾지 못했습니다." };
+  }
+
+  const isAllProduct =
+    Boolean(product.is_all_product) ||
+    String(product.benefit_type ?? "").toLowerCase() === "all";
+
+  let storedBenefitType: CardBenefitKind | null = normalizedBenefitType;
+  if (isAllProduct) {
+    storedBenefitType = "all";
+  }
+
+  const allowed = allowedCardBenefitKinds({
+    benefit_type: (product.benefit_type as string | null) ?? null,
+    card_type: (product.card_type as string | null) ?? null,
+    is_all_product: isAllProduct,
+  });
+  if (!storedBenefitType || !allowed.includes(storedBenefitType)) {
+    return { error: "선택한 카드와 카드 유형이 맞지 않습니다." };
   }
 
   const { data: categoryRow } = await supabase
@@ -189,7 +220,7 @@ export async function addCardBenefitAction(
     benefit_category_id: product.benefit_category_id,
     provider_id: product.provider_id,
     benefit_product_id: product.id,
-    benefit_type: normalizedBenefitType,
+    benefit_type: storedBenefitType,
     is_active: true,
     updated_at: nowIso(),
   };
@@ -205,6 +236,67 @@ export async function addCardBenefitAction(
   revalidatePath("/my-benefits");
   revalidatePath("/onboarding");
   return { message: "보유카드에 추가되었습니다." };
+}
+
+/** benefit_products 에 없어도 카드 마스터 추가 요청 (상태 pending) */
+export async function requestBenefitCardCatalogAction(
+  providerId: number,
+  rawCardName: string,
+  cardBenefitType: BenefitCardCatalogRequestKind,
+): Promise<BenefitActionState> {
+  if (!Number.isInteger(providerId) || providerId <= 0) {
+    return { error: "카드사를 선택해 주세요." };
+  }
+
+  const cardName = rawCardName.trim();
+  if (cardName.length === 0 || cardName.length > 200) {
+    return { error: "카드명을 1~200자로 입력해 주세요." };
+  }
+
+  const normalizedKind = normalizeBenefitCatalogRequestKind(cardBenefitType);
+  if (!normalizedKind) {
+    return { error: "카드 유형을 선택해 주세요." };
+  }
+
+  const { supabase, userId } = await requireSession();
+
+  const { data: provider, error: providerError } = await supabase
+    .from("providers")
+    .select("id,benefit_category_id,provider_type,is_active")
+    .eq("id", providerId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (providerError || !provider) {
+    return { error: "카드사 정보를 확인할 수 없습니다." };
+  }
+
+  const { data: category, error: categoryError } = await supabase
+    .from("benefit_categories")
+    .select("code")
+    .eq("id", provider.benefit_category_id as number)
+    .maybeSingle();
+
+  if (categoryError || category?.code !== "card" || provider.provider_type !== "card_company") {
+    return { error: "등록 가능한 카드사만 요청할 수 있습니다." };
+  }
+
+  const { error: insertError } = await supabase.from("benefit_card_catalog_requests").insert({
+    user_id: userId,
+    provider_id: providerId,
+    card_name: cardName,
+    card_benefit_type: normalizedKind,
+    status: "pending",
+    updated_at: nowIso(),
+  });
+
+  if (insertError) {
+    return { error: insertError.message };
+  }
+
+  revalidatePath("/my-benefits");
+  revalidatePath("/onboarding");
+  return { message: "카드 추가 요청이 접수되었습니다. 처리 후 마스터에 반영할게요." };
 }
 
 export async function deactivateUserBenefitAction(formData: FormData) {

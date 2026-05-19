@@ -100,6 +100,7 @@ export async function createDiscountAction(
   const endDate = readString(formData, "end_date");
   const sourceUrlValue = readString(formData, "source_url");
   const notice = readString(formData, "notice");
+  const installmentCondition = readString(formData, "installment_condition");
   const isActive = formData.get("is_active") === "on";
 
   const fieldErrors: DiscountFormState["fieldErrors"] = {};
@@ -236,6 +237,7 @@ export async function createDiscountAction(
         maxDiscountAmount,
         minPaymentAmount,
       }),
+      installment_condition: installmentCondition || null,
       discount_value: discountValue,
       discount_unit: discountType,
       usage_type: "unknown",

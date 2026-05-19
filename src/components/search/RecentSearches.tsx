@@ -7,7 +7,7 @@ import { getRecentSearches, saveRecentSearch } from "./recentSearchesStorage";
 
 export function RecentSearches() {
   const router = useRouter();
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[] | null>(null);
 
   useEffect(() => {
     const syncRecentSearches = () => {
@@ -27,7 +27,7 @@ export function RecentSearches() {
     };
   }, []);
 
-  if (recentSearches.length === 0) {
+  if (recentSearches === null) {
     return null;
   }
 
@@ -39,18 +39,24 @@ export function RecentSearches() {
   return (
     <section className="mt-4">
       <p className="text-xs font-semibold text-gray-400">최근 검색어</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {recentSearches.map((keyword) => (
-          <button
-            key={keyword}
-            type="button"
-            onClick={() => handleClick(keyword)}
-            className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700"
-          >
-            {keyword}
-          </button>
-        ))}
-      </div>
+      {recentSearches.length === 0 ? (
+        <p className="mt-2 text-xs leading-relaxed text-gray-400">
+          브랜드를 검색하면 최근 검색어가 여기에 저장됩니다.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {recentSearches.map((keyword) => (
+            <button
+              key={keyword}
+              type="button"
+              onClick={() => handleClick(keyword)}
+              className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 transition hover:border-orange-200 hover:bg-orange-100"
+            >
+              {keyword}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

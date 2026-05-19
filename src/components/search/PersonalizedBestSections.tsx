@@ -55,17 +55,17 @@ function DiscountCard({ discount }: { discount: PersonalizedDiscount }) {
 function DiscountSection({
   title,
   discounts,
+  emptyHint,
 }: {
   title: string;
   discounts: PersonalizedDiscount[];
+  emptyHint: string;
 }) {
   return (
     <section>
       <div className="mb-3 flex items-end justify-between gap-3">
         <h2 className="text-base font-black text-gray-950">{title}</h2>
-        <span className="text-xs font-semibold text-gray-400">
-          최대 3개
-        </span>
+        <span className="text-xs font-semibold text-gray-400">최대 3개</span>
       </div>
       {discounts.length > 0 ? (
         <div className="grid gap-3">
@@ -75,8 +75,8 @@ function DiscountSection({
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-4 text-sm leading-6 text-gray-500">
-          아직 매칭되는 할인이 없습니다. 혜택상품과 할인 데이터를 추가하면 이곳에
-          표시됩니다.
+          <p className="font-semibold text-gray-700">아직 매칭되는 할인이 없어요.</p>
+          <p className="mt-1">{emptyHint}</p>
         </div>
       )}
     </section>
@@ -97,17 +97,16 @@ export function PersonalizedBestSections({
   if (!isAuthenticated) {
     return (
       <section className="rounded-3xl border border-orange-100 bg-orange-50 p-5">
-        <h2 className="text-base font-black text-gray-950">
-          맞춤 할인 BEST
-        </h2>
+        <h2 className="text-base font-black text-gray-950">맞춤 할인 BEST</h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          내 혜택을 등록하면 맞춤 할인 BEST를 볼 수 있어요.
+          로그인 후 내 혜택을 등록하면, 통신사·카드 기준으로 받을 수 있는 할인을
+          먼저 보여드려요.
         </p>
         <Link
           href="/auth/login?redirect=/my-benefits"
-          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-4 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-5 text-sm font-semibold text-white hover:bg-sr-primary-hover"
         >
-          내 혜택 등록하기
+          로그인하고 혜택 등록
         </Link>
       </section>
     );
@@ -116,18 +115,16 @@ export function PersonalizedBestSections({
   if (!hasBenefits) {
     return (
       <section className="rounded-3xl border border-orange-100 bg-orange-50 p-5">
-        <h2 className="text-base font-black text-gray-950">
-          맞춤 할인 BEST
-        </h2>
+        <h2 className="text-base font-black text-gray-950">맞춤 할인 BEST</h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          등록된 혜택이 없습니다. 보유 혜택을 등록하면 통신사/카드 할인 BEST를
-          볼 수 있어요.
+          보유 통신사·카드를 등록하면 홈과 검색에서 &lsquo;내 할인 가능&rsquo; 할인을
+          먼저 볼 수 있어요.
         </p>
         <Link
           href="/my-benefits"
-          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-4 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-5 text-sm font-semibold text-white hover:bg-sr-primary-hover"
         >
-          My Benefits 등록
+          내 혜택 등록하기
         </Link>
       </section>
     );
@@ -135,8 +132,16 @@ export function PersonalizedBestSections({
 
   return (
     <div className="space-y-6">
-      <DiscountSection title="내 통신사 할인 BEST" discounts={telecomDiscounts} />
-      <DiscountSection title="내 카드 할인 BEST" discounts={cardDiscounts} />
+      <DiscountSection
+        title="내 통신사 할인 BEST"
+        discounts={telecomDiscounts}
+        emptyHint="등록한 통신사 혜택과 연결된 할인이 생기면 여기에 표시됩니다."
+      />
+      <DiscountSection
+        title="내 카드 할인 BEST"
+        discounts={cardDiscounts}
+        emptyHint="등록한 카드·카드사 전체 혜택과 연결된 할인이 생기면 여기에 표시됩니다."
+      />
     </div>
   );
 }

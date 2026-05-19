@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isCardCatalogPlaceholderForPicker } from "@/lib/benefits/card-benefit-kinds";
+import { countMatchingCardDiscounts } from "@/lib/search/discount-matching";
+
 export type BenefitProductRelation = { name: string; code?: string } | null;
 
 export type LoadedUserBenefitRow = {
@@ -7,7 +10,7 @@ export type LoadedUserBenefitRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
-  benefit_type: "credit" | "debit" | null;
+  benefit_type: "credit" | "debit" | "prepaid" | "all" | null;
   connectedDiscountCount: number;
   created_at: string;
   benefit_category: { name: string } | { name: string }[] | null;
@@ -18,10 +21,15 @@ export type LoadedUserBenefitRow = {
 export type CardProductOption = {
   id: number;
   name: string;
+  code: string | null;
   benefit_category_id: number;
   provider_id: number;
   providerName: string;
+  /** benefit_products.card_type */
   cardType: "credit" | "debit" | "prepaid" | "unknown" | null;
+  /** benefit_products.benefit_type (마스터 기준, 없으면 null) */
+  benefitType: string | null;
+  isAllProduct: boolean;
 };
 
 export type CardProviderOption = {
@@ -33,6 +41,12 @@ export type CardProviderOption = {
 type ActiveDiscountScopeRow = {
   provider_id: number;
   benefit_product_id: number | null;
+};
+
+type CardProductMetaRow = {
+  id: number;
+  benefit_type: string | null;
+  is_all_product: boolean;
 };
 
 /** 통신 혜택 등록 1차 선택 (이동통신 3사 + 알뜰폰) */
@@ -50,6 +64,8 @@ export type TelecomMembershipOption = {
   name: string;
   grade: string | null;
   providerCode: string;
+  provider_id: number;
+  benefit_type: string | null;
 };
 
 export type MvnoBrandOption = {
@@ -91,6 +107,20 @@ export function sortTelecomMembershipOptions(rows: TelecomMembershipOption[]): T
     if (as !== bs) return as - bs;
     return a.name.localeCompare(b.name, "ko");
   });
+}
+
+/** 같은 provider·상품명(+ benefit_type)에 대해 레거시로 남은 복수 benefit_product 행 중 id가 가장 작은 것만 유지 */
+export function dedupeTelecomMembershipOptions(rows: TelecomMembershipOption[]): TelecomMembershipOption[] {
+  const uniqueById = [...new Map(rows.map((row) => [row.id, row])).values()];
+  const byLogical = new Map<string, TelecomMembershipOption>();
+  for (const row of uniqueById) {
+    const key = `${row.provider_id}-${row.name}-${row.benefit_type ?? ""}`;
+    const prev = byLogical.get(key);
+    if (!prev || row.id < prev.id) {
+      byLogical.set(key, row);
+    }
+  }
+  return [...byLogical.values()];
 }
 
 export function sortMvnoBrandOptions(rows: MvnoBrandOption[]): MvnoBrandOption[] {
@@ -167,6 +197,7 @@ export async function loadBenefitsRegistrationData(
 
   const [
     { data: membershipRaw, error: membershipError },
+    { data: telecomMajorProvidersRaw, error: telecomMajorProvidersError },
     { data: mvnoProvidersRaw, error: mvnoProvidersError },
     { data: cardProvidersRaw, error: cardProvidersError },
     { data: cardProductsRaw, error: cardProdError },
@@ -175,17 +206,16 @@ export async function loadBenefitsRegistrationData(
   ] = await Promise.all([
     supabase
       .from("benefit_products")
-      .select(
-        `
-        id,
-        name,
-        grade,
-        provider_id,
-        provider:providers!inner(code)
-      `,
-      )
+      .select("id,name,grade,provider_id,benefit_type")
       .eq("benefit_category_id", telecomCategoryId)
       .eq("product_type", "telecom_membership")
+      .eq("is_active", true)
+      .order("id", { ascending: true }),
+    supabase
+      .from("providers")
+      .select("id,code")
+      .eq("benefit_category_id", telecomCategoryId)
+      .eq("provider_type", "telecom_major")
       .eq("is_active", true),
     mvnoProviderQuery,
     supabase
@@ -200,9 +230,12 @@ export async function loadBenefitsRegistrationData(
         `
         id,
         name,
+        code,
         benefit_category_id,
         provider_id,
         card_type,
+        benefit_type,
+        is_all_product,
         provider:providers(name)
       `,
       )
@@ -237,6 +270,9 @@ export async function loadBenefitsRegistrationData(
   if (membershipError) {
     throw new Error(membershipError.message);
   }
+  if (telecomMajorProvidersError) {
+    throw new Error(telecomMajorProvidersError.message);
+  }
   if (mvnoProvidersError) {
     throw new Error(mvnoProvidersError.message);
   }
@@ -253,16 +289,24 @@ export async function loadBenefitsRegistrationData(
     throw new Error(activeCardDiscountsError.message);
   }
 
+  const telecomProviderCodeById = new Map(
+    (telecomMajorProvidersRaw ?? []).map((p) => [p.id as number, String(p.code ?? "")]),
+  );
+
   const telecomMembershipProducts: TelecomMembershipOption[] = sortTelecomMembershipOptions(
-    (membershipRaw ?? []).map((row: Record<string, unknown>) => {
-      const provider = relationOne(row.provider as { code?: string } | null);
-      return {
-        id: row.id as number,
-        name: row.name as string,
-        grade: (row.grade as string | null) ?? null,
-        providerCode: provider?.code ?? "",
-      };
-    }),
+    dedupeTelecomMembershipOptions(
+      (membershipRaw ?? []).map((row: Record<string, unknown>) => {
+        const pid = row.provider_id as number;
+        return {
+          id: row.id as number,
+          name: row.name as string,
+          grade: (row.grade as string | null) ?? null,
+          providerCode: telecomProviderCodeById.get(pid) ?? "",
+          provider_id: pid,
+          benefit_type: (row.benefit_type as string | null) ?? null,
+        };
+      }),
+    ),
   );
 
   const mvnoProviderIds = (mvnoProvidersRaw ?? []).map((p) => p.id);
@@ -309,17 +353,35 @@ export async function loadBenefitsRegistrationData(
       .filter((x): x is MvnoBrandOption => x !== null),
   );
 
-  const cardProducts: CardProductOption[] = (cardProductsRaw ?? []).map((row: Record<string, unknown>) => {
-    const provider = relationOne(row.provider as { name?: string } | null);
-    return {
-      id: row.id as number,
-      name: row.name as string,
-      benefit_category_id: row.benefit_category_id as number,
-      provider_id: row.provider_id as number,
-      providerName: provider?.name ?? "카드사",
-      cardType: row.card_type as CardProductOption["cardType"],
-    };
-  });
+  const cardProducts: CardProductOption[] = (cardProductsRaw ?? [])
+    .map((row: Record<string, unknown>) => {
+      const provider = relationOne(row.provider as { name?: string } | null);
+      const code = (row.code as string | null) ?? null;
+      const benefitType = (row.benefit_type as string | null) ?? null;
+      const cardType = row.card_type as CardProductOption["cardType"];
+      const isAllProduct = Boolean(row.is_all_product);
+      return {
+        id: row.id as number,
+        name: row.name as string,
+        code,
+        benefit_category_id: row.benefit_category_id as number,
+        provider_id: row.provider_id as number,
+        providerName: provider?.name ?? "카드사",
+        cardType,
+        benefitType,
+        isAllProduct,
+      };
+    })
+    .filter(
+      (row) =>
+        !isCardCatalogPlaceholderForPicker({
+          name: row.name,
+          code: row.code,
+          card_type: row.cardType,
+          benefit_type: row.benefitType,
+          is_all_product: row.isAllProduct,
+        }),
+    );
 
   const preferredProviderNames = [
     "신한카드",
@@ -348,22 +410,69 @@ export async function loadBenefitsRegistrationData(
     });
 
   const cardDiscountScopes = (activeCardDiscounts ?? []) as ActiveDiscountScopeRow[];
+  const discountProductIds = [
+    ...new Set(
+      cardDiscountScopes
+        .map((d) => d.benefit_product_id)
+        .filter((id): id is number => typeof id === "number"),
+    ),
+  ];
+
+  let cardDiscountProductById = new Map<
+    number,
+    { id: number; benefit_type: string | null; is_all_product: boolean }
+  >();
+  if (discountProductIds.length > 0) {
+    const { data: discountProducts, error: dpError } = await supabase
+      .from("benefit_products")
+      .select("id,benefit_type,is_all_product")
+      .in("id", discountProductIds);
+    if (dpError) {
+      throw new Error(dpError.message);
+    }
+    cardDiscountProductById = new Map(
+      ((discountProducts ?? []) as CardProductMetaRow[]).map((p) => [
+        p.id,
+        {
+          id: p.id,
+          benefit_type: p.benefit_type,
+          is_all_product: p.is_all_product,
+        },
+      ]),
+    );
+  }
+
+  const cardProductById = new Map(
+    cardProducts.map((p) => [
+      p.id,
+      {
+        id: p.id,
+        benefit_type: p.benefitType,
+        is_all_product: p.isAllProduct,
+      },
+    ]),
+  );
+
   const benefitsWithDiscountCounts = ((userBenefits ?? []) as Omit<
     LoadedUserBenefitRow,
     "connectedDiscountCount"
   >[]).map((benefit) => {
     const connectedDiscountCount =
       benefit.benefit_category_id === cardCategoryId
-        ? cardDiscountScopes.filter((discount) => {
-            if (discount.provider_id !== benefit.provider_id) {
-              return false;
-            }
-
-            return (
-              discount.benefit_product_id === null ||
-              discount.benefit_product_id === benefit.benefit_product_id
-            );
-          }).length
+        ? countMatchingCardDiscounts(
+            {
+              benefit_category_id: benefit.benefit_category_id,
+              provider_id: benefit.provider_id,
+              benefit_product_id: benefit.benefit_product_id,
+              benefit_type: benefit.benefit_type,
+              product:
+                benefit.benefit_product_id == null
+                  ? null
+                  : cardProductById.get(benefit.benefit_product_id) ?? null,
+            },
+            cardDiscountScopes,
+            cardDiscountProductById,
+          )
         : 0;
 
     return {

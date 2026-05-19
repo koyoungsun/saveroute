@@ -11,6 +11,7 @@ type ProductType =
   | "telecom_membership"
   | "telecom_mvno_plan"
   | "credit_card"
+  | "debit_card"
   | "coupon"
   | "membership";
 
@@ -27,12 +28,11 @@ type FieldName =
   | "name"
   | "is_active"
   | "is_mvno"
-  | "mvno_notice_required";
+  | "mvno_notice_required"
+  | "benefit_type"
+  | "is_all_product";
 
-export type BenefitProductFormState = {
-  message?: string;
-  fieldErrors?: Partial<Record<FieldName, string>>;
-};
+type CardBenefitType = "credit" | "debit" | "prepaid" | "all";
 
 type ValidatedProductInput = {
   benefitCategoryId: number;
@@ -42,6 +42,14 @@ type ValidatedProductInput = {
   isMvno: boolean;
   mvnoNoticeRequired: boolean;
   productType: ProductType;
+  benefitType: CardBenefitType | null;
+  cardType: string | null;
+  isAllProduct: boolean;
+};
+
+export type BenefitProductFormState = {
+  message?: string;
+  fieldErrors?: Partial<Record<FieldName, string>>;
 };
 
 type ValidationResult =
@@ -101,6 +109,75 @@ function inferProductType({
   return null;
 }
 
+function resolveCardProductFields({
+  categoryCode,
+  isAllProduct,
+  benefitTypeRaw,
+}: {
+  categoryCode: string;
+  isAllProduct: boolean;
+  benefitTypeRaw: string;
+}):
+  | {
+      ok: true;
+      productType: ProductType;
+      benefitType: CardBenefitType | null;
+      cardType: string | null;
+      isAllProduct: boolean;
+    }
+  | { ok: false; fieldErrors: BenefitProductFormState["fieldErrors"] } {
+  if (categoryCode !== "card") {
+    return {
+      ok: true,
+      productType: "credit_card",
+      benefitType: null,
+      cardType: null,
+      isAllProduct: false,
+    };
+  }
+
+  if (isAllProduct) {
+    return {
+      ok: true,
+      productType: "credit_card",
+      benefitType: "all",
+      cardType: "unknown",
+      isAllProduct: true,
+    };
+  }
+
+  if (!benefitTypeRaw) {
+    return {
+      ok: true,
+      productType: "credit_card",
+      benefitType: null,
+      cardType: null,
+      isAllProduct: false,
+    };
+  }
+
+  if (
+    benefitTypeRaw !== "credit" &&
+    benefitTypeRaw !== "debit" &&
+    benefitTypeRaw !== "prepaid"
+  ) {
+    return {
+      ok: false,
+      fieldErrors: {
+        benefit_type: "카드 혜택 유형을 선택해 주세요.",
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    productType: benefitTypeRaw === "debit" ? "debit_card" : "credit_card",
+    benefitType: benefitTypeRaw,
+    cardType: benefitTypeRaw,
+    isAllProduct: false,
+  };
+}
+
 async function validateBenefitProductForm(
   formData: FormData,
 ): Promise<ValidationResult> {
@@ -110,6 +187,9 @@ async function validateBenefitProductForm(
   const isActive = formData.get("is_active") === "on";
   const isMvno = formData.get("is_mvno") === "on";
   const mvnoNoticeRequired = formData.get("mvno_notice_required") === "on";
+
+  const isAllProduct = formData.get("is_all_product") === "on";
+  const benefitTypeRaw = readString(formData, "benefit_type");
 
   const fieldErrors: BenefitProductFormState["fieldErrors"] = {};
   const benefitCategoryId = readPositiveInteger(benefitCategoryIdValue);
@@ -191,7 +271,7 @@ async function validateBenefitProductForm(
     isMvno,
   });
 
-  if (!productType) {
+  if (!productType && category.code !== "card") {
     return {
       ok: false,
       state: {
@@ -202,6 +282,19 @@ async function validateBenefitProductForm(
     };
   }
 
+  const cardFields = resolveCardProductFields({
+    categoryCode: category.code,
+    isAllProduct,
+    benefitTypeRaw,
+  });
+
+  if (!cardFields.ok) {
+    return { ok: false, state: { fieldErrors: cardFields.fieldErrors } };
+  }
+
+  const resolvedProductType =
+    category.code === "card" ? cardFields.productType : productType!;
+
   return {
     ok: true,
     data: {
@@ -211,7 +304,10 @@ async function validateBenefitProductForm(
       isActive,
       isMvno,
       mvnoNoticeRequired,
-      productType,
+      productType: resolvedProductType,
+      benefitType: cardFields.benefitType,
+      cardType: cardFields.cardType,
+      isAllProduct: cardFields.isAllProduct,
     },
   };
 }
@@ -234,6 +330,9 @@ export async function createBenefitProductAction(
     name: product.name,
     code: generateProductCode(product.name),
     product_type: product.productType,
+    card_type: product.cardType,
+    benefit_type: product.benefitType,
+    is_all_product: product.isAllProduct,
     is_active: product.isActive,
     is_mvno: product.isMvno,
     mvno_notice_required: product.mvnoNoticeRequired,
@@ -275,6 +374,9 @@ export async function updateBenefitProductAction(
       provider_id: product.providerId,
       name: product.name,
       product_type: product.productType,
+      card_type: product.cardType,
+      benefit_type: product.benefitType,
+      is_all_product: product.isAllProduct,
       is_active: product.isActive,
       is_mvno: product.isMvno,
       mvno_notice_required: product.mvnoNoticeRequired,

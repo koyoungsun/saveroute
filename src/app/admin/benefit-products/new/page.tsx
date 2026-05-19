@@ -8,6 +8,7 @@ import { createBenefitProductAction } from "../form-actions";
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 type ProviderOption = {
@@ -24,7 +25,7 @@ export default async function NewBenefitProductPage() {
   ] = await Promise.all([
     supabase
       .from("benefit_categories")
-      .select("id,name")
+      .select("id,name,code")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
     supabase
@@ -43,6 +44,8 @@ export default async function NewBenefitProductPage() {
 
   const categories = (categoryData ?? []) as BenefitCategoryOption[];
   const providers = (providerData ?? []) as ProviderOption[];
+  const cardCategoryId =
+    categories.find((category) => category.code === "card")?.id ?? null;
 
   return (
     <>
@@ -65,6 +68,7 @@ export default async function NewBenefitProductPage() {
         action={createBenefitProductAction}
         categories={categories}
         providers={providers}
+        cardCategoryId={cardCategoryId}
         mode="create"
       />
     </>

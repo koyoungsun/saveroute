@@ -1,0 +1,32 @@
+{
+  "$comment": "hana_card extract → benefit_products 시드용 입력 스키마(v1)",
+  "type": "object",
+  "required": ["providerCode", "benefitCategoryCode", "items"],
+  "properties": {
+    "providerCode": { "type": "string", "const": "hana_card" },
+    "benefitCategoryCode": { "type": "string", "const": "card" },
+    "defaultProductTypeWhenKindUnknown": {
+      "type": "string",
+      "enum": ["credit_card", "debit_card"],
+      "description": "스키마 CHECK로 product_type 미지정 불가. 미구분(kind=unknown) 시 기본 카탈로그 슬롯(권장 credit_card)."
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "공개 페이지 기준 공식 카드명(공백·표기 그대로 보존)"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["credit", "debit", "prepaid", "unknown"],
+            "default": "unknown"
+          }
+        }
+      }
+    }
+  }
+}

@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# 로컬 전체 카드 추출 입력 (예시 파일만 커밋)
+/scripts/data/hana_card_products.input.json
+/scripts/data/card_products_by_provider.input.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

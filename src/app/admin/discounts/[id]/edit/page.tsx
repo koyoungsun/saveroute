@@ -64,6 +64,7 @@ export default async function EditDiscountPage({
         benefit_product_id,
         title,
         condition_text,
+        installment_condition,
         discount_value,
         discount_unit,
         valid_from,
@@ -91,7 +92,7 @@ export default async function EditDiscountPage({
       .order("name", { ascending: true }),
     supabase
       .from("benefit_products")
-      .select("id,name,benefit_category_id,provider_id")
+      .select("id,name,benefit_category_id,provider_id,benefit_type,is_all_product")
       .eq("is_active", true)
       .order("name", { ascending: true }),
   ]);

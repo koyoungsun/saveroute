@@ -1,0 +1,10 @@
+[
+  {
+    "providerName": "하나카드",
+    "cards": ["원더카드", "트래블로그 체크카드"]
+  },
+  {
+    "providerName": "신한카드",
+    "cards": ["Deep Dream", "Mr.Life"]
+  }
+]

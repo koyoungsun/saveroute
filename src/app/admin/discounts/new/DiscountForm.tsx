@@ -3,6 +3,8 @@
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { formatBenefitProductOptionLabel } from "@/lib/benefits/format-product-label";
+
 import { createDiscountAction, type DiscountFormState } from "./actions";
 
 type BrandOption = {
@@ -27,6 +29,8 @@ type BenefitProductOption = {
   name: string;
   benefit_category_id: number;
   provider_id: number;
+  benefit_type?: string | null;
+  is_all_product?: boolean;
 };
 
 const initialState: DiscountFormState = {};
@@ -72,17 +76,23 @@ export function DiscountForm({
 
   const filteredProducts = useMemo(
     () =>
-      products.filter((product) => {
-        if (selectedProviderId) {
-          return product.provider_id === Number(selectedProviderId);
-        }
+      products
+        .filter((product) => {
+          if (selectedProviderId) {
+            return product.provider_id === Number(selectedProviderId);
+          }
 
-        if (selectedCategoryId) {
-          return product.benefit_category_id === Number(selectedCategoryId);
-        }
+          if (selectedCategoryId) {
+            return product.benefit_category_id === Number(selectedCategoryId);
+          }
 
-        return true;
-      }),
+          return true;
+        })
+        .sort((a, b) => {
+          if (a.is_all_product && !b.is_all_product) return -1;
+          if (!a.is_all_product && b.is_all_product) return 1;
+          return a.name.localeCompare(b.name, "ko");
+        }),
     [products, selectedCategoryId, selectedProviderId],
   );
 
@@ -224,7 +234,7 @@ export function DiscountForm({
               </option>
               {filteredProducts.map((product) => (
                 <option key={product.id} value={product.id}>
-                  {product.name}
+                  {formatBenefitProductOptionLabel(product)}
                 </option>
               ))}
             </select>
@@ -363,6 +373,19 @@ export function DiscountForm({
                 {state.fieldErrors.source_url}
               </div>
             ) : null}
+          </div>
+
+          <div className="col-12">
+            <label className="form-label fw-semibold" htmlFor="installment_condition">
+              할부 조건
+            </label>
+            <input
+              id="installment_condition"
+              name="installment_condition"
+              className="form-control"
+              placeholder="예) 2~3개월 할부 시 적용 / 일시불 결제 시 적용 / 일시불·할부 모두 가능"
+            />
+            <div className="form-text">선택 입력 · 검색 결과에 결제 조건으로 표시됩니다.</div>
           </div>
 
           <div className="col-12">

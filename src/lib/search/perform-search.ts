@@ -16,6 +16,7 @@ import {
   normalizeKeyword,
   rowsById,
   sortDiscountsByRate,
+  toBenefitProductMatchMeta,
   uniqueNumbers,
 } from "./helpers";
 import {
@@ -180,6 +181,10 @@ export async function performSearch(
   let discountsRaw: ReturnType<typeof mapBaseDiscountToResult>[] = [];
   let brandCategoryName = "";
   let brandCategoryCode = "";
+  let productMatchById = new Map<
+    number,
+    NonNullable<ReturnType<typeof toBenefitProductMatchMeta>>
+  >();
 
   if (matchedRow) {
     const { data: discountRows } = await supabase
@@ -194,6 +199,7 @@ export async function performSearch(
       benefit_product_id,
       title,
       condition_text,
+      installment_condition,
       discount_value,
       discount_unit,
       usage_type,
@@ -233,7 +239,7 @@ export async function performSearch(
       benefitProductIds.length > 0
         ? supabase
             .from("benefit_products")
-            .select("id,name,is_mvno,mvno_notice_required")
+            .select("id,name,is_mvno,mvno_notice_required,benefit_type,is_all_product")
             .in("id", benefitProductIds)
         : { data: [] },
     ]);
@@ -245,6 +251,9 @@ export async function performSearch(
     const bcMap = rowsById((benefitCategories ?? []) as BenefitCategoryRow[]);
     const prMap = rowsById((providers ?? []) as ProviderRow[]);
     const bpMap = rowsById((benefitProducts ?? []) as BenefitProductRow[]);
+    productMatchById = new Map(
+      [...bpMap.values()].map((row) => [row.id, toBenefitProductMatchMeta(row)!]),
+    );
 
     discountsRaw = discountBaseRows.map((row) =>
       mapBaseDiscountToResult(row, bcMap, prMap, bpMap),
@@ -255,11 +264,40 @@ export async function performSearch(
   if (userId) {
     const { data: userBenefits } = await supabase
       .from("user_benefits")
-      .select("benefit_category_id,provider_id,benefit_product_id")
+      .select(
+        `
+        benefit_category_id,
+        provider_id,
+        benefit_product_id,
+        benefit_type,
+        product:benefit_products(id,benefit_type,is_all_product)
+      `,
+      )
       .eq("user_id", userId)
       .eq("is_active", true);
 
-    userBenefitList = (userBenefits ?? []) as UserBenefitRow[];
+    userBenefitList = ((userBenefits ?? []) as Array<{
+      benefit_category_id: number;
+      provider_id: number;
+      benefit_product_id: number | null;
+      benefit_type: string | null;
+      product: { id: number; benefit_type: string | null; is_all_product: boolean } | { id: number; benefit_type: string | null; is_all_product: boolean }[] | null;
+    }>).map((row) => {
+      const prod = Array.isArray(row.product) ? row.product[0] : row.product;
+      return {
+        benefit_category_id: row.benefit_category_id,
+        provider_id: row.provider_id,
+        benefit_product_id: row.benefit_product_id,
+        benefit_type: row.benefit_type,
+        product: prod
+          ? {
+              id: prod.id,
+              benefit_type: prod.benefit_type,
+              is_all_product: prod.is_all_product,
+            }
+          : null,
+      };
+    });
   }
 
   const hasRegisteredBenefits = userBenefitList.length > 0;
@@ -268,7 +306,7 @@ export async function performSearch(
       ? []
       : authenticated
         ? discountsRaw.filter((discount) =>
-            matchDiscountToBenefits(discount, userBenefitList),
+            matchDiscountToBenefits(discount, userBenefitList, productMatchById),
           )
         : discountsRaw;
 

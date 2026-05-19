@@ -6,7 +6,7 @@ type UserBenefitPayload = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number;
-  benefit_type?: "credit" | "debit" | null;
+  benefit_type?: "credit" | "debit" | "prepaid" | "all" | null;
 };
 
 function asPositiveInteger(value: unknown) {
@@ -28,7 +28,7 @@ export async function GET() {
   const userId = user.id;
   const { data, error } = await supabase
     .from("user_benefits")
-    .select("id,benefit_category_id,provider_id,benefit_product_id,is_active")
+    .select("id,benefit_category_id,provider_id,benefit_product_id,benefit_type,is_active")
     .eq("user_id", userId)
     .eq("is_active", true);
 
@@ -77,7 +77,10 @@ export async function POST(request: Request) {
     );
     const benefitTypeRaw = (item as { benefit_type?: unknown })?.benefit_type;
     const benefitType =
-      benefitTypeRaw === "credit" || benefitTypeRaw === "debit"
+      benefitTypeRaw === "credit" ||
+      benefitTypeRaw === "debit" ||
+      benefitTypeRaw === "prepaid" ||
+      benefitTypeRaw === "all"
         ? benefitTypeRaw
         : null;
 

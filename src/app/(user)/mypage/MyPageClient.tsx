@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { FontSizeControl } from "@/components/settings/FontSizeControl";
+
 import type { MyPageProfilePayload } from "./types";
 
 const ACCENT = "#409A53";
@@ -205,6 +207,13 @@ export default function MyPageClient({
               요청 참여 요약을 여기에서 확인할 수 있어요.
             </p>
           )}
+        </section>
+
+        <section
+          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          aria-label="글자 크기 설정"
+        >
+          <FontSizeControl variant="compact" />
         </section>
 
         <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">

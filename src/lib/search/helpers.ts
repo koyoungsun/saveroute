@@ -6,6 +6,12 @@ import type {
   ProviderSummary,
 } from "@/types/search";
 
+import {
+  matchDiscountToBenefits as matchDiscountToBenefitsCore,
+  type BenefitProductMatchMeta,
+  type UserBenefitMatchRow,
+} from "./discount-matching";
+
 export type BrandCandidateRow = {
   id: number;
   name: string;
@@ -25,6 +31,7 @@ export type DiscountBaseRow = {
   benefit_product_id: number | null;
   title: string;
   condition_text: string | null;
+  installment_condition: string | null;
   discount_value: number | string;
   discount_unit: DiscountUnit;
   usage_type: string;
@@ -36,11 +43,8 @@ export type DiscountBaseRow = {
   has_no_expiry: boolean;
 };
 
-export type UserBenefitRow = {
-  benefit_category_id: number;
-  provider_id: number;
-  benefit_product_id: number | null;
-};
+/** @deprecated UserBenefitMatchRow 사용 — 검색 파이프라인에서 product 메타 포함 */
+export type UserBenefitRow = UserBenefitMatchRow;
 
 export type BenefitCategoryRow = {
   id: number;
@@ -58,6 +62,8 @@ export type BenefitProductRow = {
   name: string;
   is_mvno: boolean;
   mvno_notice_required: boolean;
+  benefit_type: string | null;
+  is_all_product: boolean;
 };
 
 /** 공백 축약 후 소문자·비(한글/영숫자) 제거 — 검색어·별칭 동일 기준 비교용 */
@@ -95,28 +101,20 @@ export function matchesAlias(aliases: string[] | null, query: string, normalized
   });
 }
 
-export function matchDiscountToBenefits(discount: DiscountResult, benefits: UserBenefitRow[]) {
-  const inferredScope: "provider_all" | "product_specific" =
-    discount.benefit_product_id == null ? "provider_all" : "product_specific";
-
-  return benefits.some((b) => {
-    if (
-      b.benefit_category_id !== discount.benefit_category_id ||
-      b.provider_id !== discount.provider_id
-    ) {
-      return false;
-    }
-
-    if (inferredScope === "provider_all") {
-      return true;
-    }
-
-    if (discount.benefit_product_id == null) {
-      return false;
-    }
-
-    return b.benefit_product_id === discount.benefit_product_id;
-  });
+export function matchDiscountToBenefits(
+  discount: DiscountResult,
+  benefits: UserBenefitMatchRow[],
+  productById: Map<number, BenefitProductMatchMeta>,
+) {
+  return matchDiscountToBenefitsCore(
+    {
+      benefit_category_id: discount.benefit_category_id,
+      provider_id: discount.provider_id,
+      benefit_product_id: discount.benefit_product_id,
+    },
+    benefits,
+    productById,
+  );
 }
 
 export function getDiscountScore(discount: DiscountResult) {
@@ -214,6 +212,17 @@ export function uniqueNumbers(values: (number | null)[]) {
   );
 }
 
+export function toBenefitProductMatchMeta(
+  row: BenefitProductRow | undefined,
+): BenefitProductMatchMeta | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    benefit_type: row.benefit_type,
+    is_all_product: row.is_all_product,
+  };
+}
+
 export function mapBaseDiscountToResult(
   row: DiscountBaseRow,
   benefitCategoryById: Map<number, BenefitCategoryRow>,
@@ -235,6 +244,8 @@ export function mapBaseDiscountToResult(
         name: bp.name,
         is_mvno: bp.is_mvno,
         mvno_notice_required: bp.mvno_notice_required,
+        is_all_product: bp.is_all_product,
+        benefit_type: bp.benefit_type,
       }
     : null;
 
@@ -243,6 +254,7 @@ export function mapBaseDiscountToResult(
     brand_id: row.brand_id,
     title: row.title,
     condition_text: row.condition_text,
+    installment_condition: row.installment_condition,
     discount_value: row.discount_value,
     discount_unit: row.discount_unit,
     usage_type: row.usage_type,

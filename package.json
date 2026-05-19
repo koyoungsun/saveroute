@@ -10,7 +10,22 @@
     "seed:qa": "node scripts/seed-personalization-qa.cjs",
     "check:anon": "node scripts/check-anon-brands.cjs",
     "check:brand-requests": "node scripts/check-brand-requests-data.cjs",
-    "test:search": "tsx src/lib/search/match-brand.pool.test.ts"
+    "seed:hana-products": "node scripts/generate-hana-card-products-sql.cjs --out supabase/migrations/042_seed_hana_card_products.sql",
+    "seed:card-products-from-file": "node scripts/generate-card-products-from-file.cjs --in scripts/data/card_products_by_provider.input.json",
+    "migrate:hana-html-cards": "node scripts/generate-hana-html-card-products-migration.cjs",
+    "seed:shinhan-credit-products": "node scripts/generate-shinhan-credit-products-migration.cjs",
+    "seed:hyundai-credit-products": "node scripts/generate-hyundai-credit-products-migration.cjs",
+    "seed:samsung-credit-products": "node scripts/generate-samsung-credit-products-migration.cjs",
+    "seed:kb-credit-products": "node scripts/generate-kb-credit-products-migration.cjs",
+    "seed:lotte-credit-products": "node scripts/generate-lotte-credit-products-migration.cjs",
+    "seed:woori-credit-products": "node scripts/generate-woori-credit-products-migration.cjs",
+    "seed:nh-credit-products": "node scripts/generate-nh-credit-products-migration.cjs",
+    "seed:ibk-credit-products": "node scripts/generate-ibk-credit-products-migration.cjs",
+    "sync:samsung-cardgorilla": "node scripts/sync-samsung-cardgorilla-catalog.cjs",
+    "test:search": "tsx src/lib/search/match-brand.pool.test.ts",
+    "qa:schema-freeze": "node scripts/qa-schema-freeze.cjs",
+    "qa:discount-matching": "tsx src/lib/search/discount-matching.qa.test.ts",
+    "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

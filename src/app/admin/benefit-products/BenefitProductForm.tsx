@@ -13,6 +13,9 @@ export type BenefitProductFormValues = {
   is_active: boolean;
   is_mvno: boolean;
   mvno_notice_required: boolean;
+  benefit_type?: string | null;
+  card_type?: string | null;
+  is_all_product?: boolean;
 };
 
 type BenefitCategoryOption = {
@@ -53,12 +56,14 @@ export function BenefitProductForm({
   action,
   categories,
   providers,
+  cardCategoryId,
   initialValues,
   mode,
 }: {
   action: BenefitProductFormAction;
   categories: BenefitCategoryOption[];
   providers: ProviderOption[];
+  cardCategoryId: number | null;
   initialValues?: BenefitProductFormValues;
   mode: "create" | "edit";
 }) {
@@ -69,6 +74,14 @@ export function BenefitProductForm({
   const [selectedProviderId, setSelectedProviderId] = useState(
     initialValues ? String(initialValues.provider_id) : "",
   );
+  const [isAllProduct, setIsAllProduct] = useState(
+    initialValues?.is_all_product ?? false,
+  );
+
+  const isCardCategory =
+    cardCategoryId !== null &&
+    selectedCategoryId !== "" &&
+    Number(selectedCategoryId) === cardCategoryId;
 
   const filteredProviders = useMemo(
     () =>
@@ -80,6 +93,10 @@ export function BenefitProductForm({
         : providers,
     [providers, selectedCategoryId],
   );
+
+  const defaultBenefitType = isAllProduct
+    ? "all"
+    : (initialValues?.benefit_type ?? "");
 
   return (
     <form action={formAction} className="card sr-block">
@@ -106,6 +123,7 @@ export function BenefitProductForm({
               onChange={(event) => {
                 setSelectedCategoryId(event.target.value);
                 setSelectedProviderId("");
+                setIsAllProduct(false);
               }}
               required
             >
@@ -171,6 +189,59 @@ export function BenefitProductForm({
               </div>
             ) : null}
           </div>
+
+          {isCardCategory ? (
+            <>
+              <div className="col-12">
+                <div className="form-check form-switch">
+                  <input
+                    id="is_all_product"
+                    name="is_all_product"
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={isAllProduct}
+                    onChange={(event) => setIsAllProduct(event.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="is_all_product">
+                    카드사 전체 상품
+                  </label>
+                </div>
+                <div className="form-text">
+                  활성화 시 benefit_type=all 로 저장되며, 해당 카드사 전체 할인에
+                  매칭됩니다.
+                </div>
+              </div>
+
+              {!isAllProduct ? (
+                <div className="col-md-6">
+                  <label
+                    className="form-label fw-semibold"
+                    htmlFor="benefit_type"
+                  >
+                    카드 혜택 유형
+                  </label>
+                  <select
+                    id="benefit_type"
+                    name="benefit_type"
+                    className="form-select"
+                    defaultValue={defaultBenefitType}
+                  >
+                    <option value="">선택 안 함</option>
+                    <option value="credit">신용 (credit)</option>
+                    <option value="debit">체크 (debit)</option>
+                    <option value="prepaid">선불 (prepaid)</option>
+                  </select>
+                  {state.fieldErrors?.benefit_type ? (
+                    <div className="form-text text-danger">
+                      {state.fieldErrors.benefit_type}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <input type="hidden" name="benefit_type" value="all" />
+              )}
+            </>
+          ) : null}
 
           <div className="col-md-4">
             <div className="form-check form-switch">

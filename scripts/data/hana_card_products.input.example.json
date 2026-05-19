@@ -1,0 +1,16 @@
+{
+  "providerCode": "hana_card",
+  "benefitCategoryCode": "card",
+  "defaultProductTypeWhenKindUnknown": "credit_card",
+  "notes": "실제 추출본은 hana_card_products.input.json 으로 두고 .gitignore 처리. 콘솔 JSON은 { items: [{name}] } 또는 names: [] 도 지원.",
+  "items": [
+    {
+      "name": "예시_생성기점검용_한글카드",
+      "kind": "unknown"
+    },
+    {
+      "name": "Example English Card",
+      "kind": "credit"
+    }
+  ]
+}

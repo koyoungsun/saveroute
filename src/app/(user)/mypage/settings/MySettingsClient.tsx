@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
+import { FontSizeControl } from "@/components/settings/FontSizeControl";
 import {
   updateConsentAction,
   updateDemographicsAction,
@@ -66,6 +67,13 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
       <p className="mt-1 text-sm text-gray-500">{initial.email}</p>
 
       <div className="mt-6 space-y-6">
+        <section
+          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          aria-label="글자 크기 설정"
+        >
+          <FontSizeControl variant="full" />
+        </section>
+
         <section
           id="nickname"
           className="rounded-2xl border-2 bg-white p-4 shadow-sm scroll-mt-20"

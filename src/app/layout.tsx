@@ -1,6 +1,26 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+
+import { FontScaleProvider } from "@/components/settings/FontScaleProvider";
+
+import {
+  FONT_SCALE_MAX,
+  FONT_SCALE_MIN,
+  FONT_SCALE_STORAGE_KEY,
+  FONT_SCALE_STEP,
+} from "@/lib/settings/font-scale";
+
 import "./globals.css";
+
+const FONT_SCALE_BOOTSTRAP = `(function(){try{
+  var k=${JSON.stringify(FONT_SCALE_STORAGE_KEY)};
+  var raw=localStorage.getItem(k);
+  if(raw==null)return;
+  var n=parseInt(raw,10);
+  if(n!==n||n<${FONT_SCALE_MIN}||n>${FONT_SCALE_MAX}||n%${FONT_SCALE_STEP}!==0)return;
+  document.documentElement.style.setProperty("--font-scale", String(n/100));
+}catch(e){}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,12 +49,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <link rel="stylesheet" href={spoqaHanSansNeoCss} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {children}
+        <Script id="saveroute-font-scale-boot" strategy="beforeInteractive">
+          {FONT_SCALE_BOOTSTRAP}
+        </Script>
+        <FontScaleProvider>{children}</FontScaleProvider>
       </body>
     </html>
   );
