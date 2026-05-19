@@ -52,4 +52,5 @@ Supabase **실행 이력**은 `supabase/migrations/` 번호 순서를 따릅니�
 마이그레이션 적용 순서: **057 → 058 → 059 → 060** (060 검증은 058 카드사 전체 시드 필요)
 
 테스트 카드 탐지(수동): `cleanup/detect_test_card_products.sql`  
-정리 후 검증(수동): `cleanup/verify_after_card_cleanup.sql`
+정리 후 검증(수동): `cleanup/verify_after_card_cleanup.sql`  
+**운영 테스트 데이터 초기화:** `cleanup/clear_test_operational_data.sql` (또는 `npm run cleanup:test-operational-data`)

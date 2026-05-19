@@ -25,7 +25,8 @@
     "test:search": "tsx src/lib/search/match-brand.pool.test.ts",
     "qa:schema-freeze": "node scripts/qa-schema-freeze.cjs",
     "qa:discount-matching": "tsx src/lib/search/discount-matching.qa.test.ts",
-    "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs"
+    "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs",
+    "cleanup:test-operational-data": "node scripts/run-clear-test-operational-data.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
