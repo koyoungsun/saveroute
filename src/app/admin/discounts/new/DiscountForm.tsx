@@ -9,6 +9,7 @@ import {
 } from "@/lib/benefits/discount-product-options";
 
 import { DiscountBenefitProductSelect } from "../DiscountBenefitProductSelect";
+import { TelecomDiscountProductMultiSelect } from "../TelecomDiscountProductMultiSelect";
 import { createDiscountAction, type DiscountFormState } from "./actions";
 
 type BrandOption = {
@@ -214,29 +215,34 @@ export function DiscountForm({
             >
               혜택상품
             </label>
-            <DiscountBenefitProductSelect
-              categoryCode={selectedCategoryCode}
-              products={filteredProducts}
-              disabled={!selectedProviderId}
-              emptyHint={
-                selectedProviderId
-                  ? selectedCategoryCode === "telecom"
-                    ? "전체(등급 무관) 또는 등급별 상품 선택"
-                    : "브랜드 직접 할인 / 상품 없음"
-                  : undefined
-              }
-            />
-            {state.fieldErrors?.benefit_product_id ? (
+            {selectedCategoryCode === "telecom" ? (
+              <TelecomDiscountProductMultiSelect
+                products={filteredProducts}
+                disabled={!selectedProviderId}
+                fieldError={state.fieldErrors?.benefit_product_id}
+              />
+            ) : (
+              <DiscountBenefitProductSelect
+                categoryCode={selectedCategoryCode}
+                products={filteredProducts}
+                disabled={!selectedProviderId}
+                emptyHint={
+                  selectedProviderId
+                    ? "브랜드 직접 할인 / 상품 없음"
+                    : undefined
+                }
+              />
+            )}
+            {selectedCategoryCode !== "telecom" &&
+            state.fieldErrors?.benefit_product_id ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.benefit_product_id}
               </div>
-            ) : (
+            ) : selectedCategoryCode !== "telecom" ? (
               <div className="form-text">
-                {selectedCategoryCode === "telecom"
-                  ? "통신사 전체는 모든 등급 회원에게, 등급별은 해당 등급 회원에게만 매칭됩니다."
-                  : "카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다."}
+                카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="col-md-4">

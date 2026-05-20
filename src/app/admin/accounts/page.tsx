@@ -2,6 +2,7 @@ import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { describeSupabaseQueryFailure } from "@/lib/admin/format-db-error";
+import { formatStatusLabel } from "@/lib/ui/format-status-label";
 
 type AccountRow = {
   user_id: string;
@@ -64,7 +65,7 @@ export default async function AccountsPage() {
             key={`${account.user_id}-role`}
             className="badge text-bg-light text-dark border px-2 py-1 fw-semibold"
           >
-            {account.role}
+            {formatStatusLabel(account.role)}
           </span>,
           <StatusBadge
             key={`${account.user_id}-active`}

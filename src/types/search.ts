@@ -44,6 +44,7 @@ export type DiscountResult = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  benefit_product_ids?: number[] | null;
   valid_until: string | null;
   has_no_expiry: boolean;
   benefit_category: BenefitCategorySummary | null;

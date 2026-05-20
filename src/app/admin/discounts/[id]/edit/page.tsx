@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
 
 import { EditDiscountForm, type DiscountEditValues } from "./EditDiscountForm";
 
@@ -114,6 +115,20 @@ export default async function EditDiscountPage({
   }
 
   const discount = discountData as DiscountEditValues;
+  const linkedProductIdsByDiscount = await loadDiscountBenefitProductIdsByDiscountId(
+    supabase,
+    [discountId],
+  );
+  const linkedProductIds = linkedProductIdsByDiscount.get(discountId) ?? [];
+  const discountWithLinks: DiscountEditValues = {
+    ...discount,
+    benefit_product_ids:
+      linkedProductIds.length > 0
+        ? linkedProductIds
+        : discount.benefit_product_id != null
+          ? [discount.benefit_product_id]
+          : [],
+  };
   const brands = (brandData ?? []) as BrandOption[];
   const categories = (categoryData ?? []) as BenefitCategoryOption[];
   const providers = (providerData ?? []) as ProviderOption[];
@@ -134,7 +149,7 @@ export default async function EditDiscountPage({
       </div>
 
       <EditDiscountForm
-        discount={discount}
+        discount={discountWithLinks}
         brands={brands}
         categories={categories}
         providers={providers}

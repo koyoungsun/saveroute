@@ -21,6 +21,12 @@ import {
   type BenefitProductMatchMeta,
   type UserBenefitMatchRow,
 } from "@/lib/search/discount-matching";
+import {
+  attachBenefitProductIdsToDiscounts,
+  collectUniqueBenefitProductIds,
+  resolveDiscountBenefitProductIds,
+} from "@/lib/benefits/discount-benefit-products";
+import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
 
 const popularBrands = ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"];
 const telecomCategoryCodes = new Set(["telecom", "membership", "mvno"]);
@@ -37,6 +43,7 @@ type DiscountRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  benefit_product_ids?: number[] | null;
   title: string;
   discount_value: number | string;
   discount_unit: string;
@@ -65,11 +72,19 @@ function matchesBenefit(
   benefit: UserBenefitRow,
   productById: Map<number, BenefitProductMatchMeta>,
 ) {
+  const linkedProductIds = resolveDiscountBenefitProductIds(discount);
   const discountProduct =
-    discount.benefit_product_id == null
-      ? null
-      : productById.get(discount.benefit_product_id);
-  return matchDiscountToUserBenefit(discount, benefit, discountProduct);
+    linkedProductIds?.length === 1
+      ? productById.get(linkedProductIds[0]!) ?? null
+      : null;
+
+  return matchDiscountToUserBenefit(
+    discount,
+    benefit,
+    discountProduct,
+    linkedProductIds,
+    productById,
+  );
 }
 
 function toPersonalizedDiscount(discount: DiscountRow): PersonalizedDiscount {
@@ -204,15 +219,15 @@ export default async function HomePage() {
           : null,
       };
     });
-    activeDiscounts = (discountData ?? []) as DiscountRow[];
-
-    const productIds = [
-      ...new Set(
-        activeDiscounts
-          .map((d) => d.benefit_product_id)
-          .filter((id): id is number => typeof id === "number"),
+    activeDiscounts = attachBenefitProductIdsToDiscounts(
+      (discountData ?? []) as DiscountRow[],
+      await loadDiscountBenefitProductIdsByDiscountId(
+        supabase,
+        ((discountData ?? []) as DiscountRow[]).map((row) => row.id),
       ),
-    ];
+    );
+
+    const productIds = collectUniqueBenefitProductIds(activeDiscounts);
     if (productIds.length > 0) {
       const { data: products } = await supabase
         .from("benefit_products")

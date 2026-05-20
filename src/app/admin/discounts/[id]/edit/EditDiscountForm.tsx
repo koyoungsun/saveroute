@@ -9,6 +9,8 @@ import {
 } from "@/lib/benefits/discount-product-options";
 
 import { DiscountBenefitProductSelect } from "../../DiscountBenefitProductSelect";
+import { TelecomDiscountProductMultiSelect } from "../../TelecomDiscountProductMultiSelect";
+import { DISCOUNT_STATUS_OPTIONS } from "@/lib/ui/format-status-label";
 import { updateDiscountAction, type DiscountEditFormState } from "./actions";
 
 type BrandOption = {
@@ -37,6 +39,7 @@ export type DiscountEditValues = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  benefit_product_ids?: number[];
   title: string;
   condition_text: string | null;
   installment_condition: string | null;
@@ -110,6 +113,13 @@ export function EditDiscountForm({
       }),
     [products, selectedCategoryId, selectedProviderId],
   );
+
+  const defaultBenefitProductIds =
+    discount.benefit_product_ids && discount.benefit_product_ids.length > 0
+      ? discount.benefit_product_ids
+      : discount.benefit_product_id != null
+        ? [discount.benefit_product_id]
+        : [];
 
   return (
     <form action={formAction} className="card sr-block">
@@ -235,30 +245,36 @@ export function EditDiscountForm({
             >
               혜택상품
             </label>
-            <DiscountBenefitProductSelect
-              categoryCode={selectedCategoryCode}
-              products={filteredProducts}
-              defaultValue={discount.benefit_product_id}
-              disabled={!selectedProviderId}
-              emptyHint={
-                selectedProviderId
-                  ? selectedCategoryCode === "telecom"
-                    ? "전체(등급 무관) 또는 등급별 상품 선택"
-                    : "브랜드 직접 할인 / 상품 없음"
-                  : undefined
-              }
-            />
-            {state.fieldErrors?.benefit_product_id ? (
+            {selectedCategoryCode === "telecom" ? (
+              <TelecomDiscountProductMultiSelect
+                products={filteredProducts}
+                defaultSelectedIds={defaultBenefitProductIds}
+                disabled={!selectedProviderId}
+                fieldError={state.fieldErrors?.benefit_product_id}
+              />
+            ) : (
+              <DiscountBenefitProductSelect
+                categoryCode={selectedCategoryCode}
+                products={filteredProducts}
+                defaultValue={discount.benefit_product_id}
+                disabled={!selectedProviderId}
+                emptyHint={
+                  selectedProviderId
+                    ? "브랜드 직접 할인 / 상품 없음"
+                    : undefined
+                }
+              />
+            )}
+            {selectedCategoryCode !== "telecom" &&
+            state.fieldErrors?.benefit_product_id ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.benefit_product_id}
               </div>
-            ) : (
+            ) : selectedCategoryCode !== "telecom" ? (
               <div className="form-text">
-                {selectedCategoryCode === "telecom"
-                  ? "통신사 전체는 모든 등급 회원에게, 등급별은 해당 등급 회원에게만 매칭됩니다."
-                  : "카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다."}
+                카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="col-md-4">
@@ -317,10 +333,11 @@ export function EditDiscountForm({
               defaultValue={discount.status}
               required
             >
-              <option value="draft">draft</option>
-              <option value="active">active</option>
-              <option value="expired">expired</option>
-              <option value="hidden">hidden</option>
+              {DISCOUNT_STATUS_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
             {state.fieldErrors?.status ? (
               <div className="form-text text-danger">

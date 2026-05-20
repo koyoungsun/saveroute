@@ -3,16 +3,16 @@
  */
 import assert from "node:assert/strict";
 import {
+  matchDiscountToBenefits,
   matchDiscountToUserBenefit,
   userHoldsProviderAllProduct,
+  type BenefitProductMatchMeta,
 } from "./discount-matching";
 
 const CARD_CAT = 2;
 const SAMSUNG = 10;
 const ALL_PRODUCT_ID = 9001;
 const SPECIFIC_CARD_ID = 9002;
-const DISCOUNT_ALL_ID = 8001;
-const DISCOUNT_SPECIFIC_ID = 8002;
 
 const allProductMeta = {
   id: ALL_PRODUCT_ID,
@@ -100,11 +100,30 @@ assert.equal(
   true,
 );
 
+// Card regression via matchDiscountToBenefits
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: CARD_CAT,
+      provider_id: SAMSUNG,
+      benefit_product_id: SPECIFIC_CARD_ID,
+    },
+    [userSpecificBenefit],
+    new Map<number, BenefitProductMatchMeta>([
+      [ALL_PRODUCT_ID, allProductMeta],
+      [SPECIFIC_CARD_ID, specificProductMeta],
+    ]),
+  ),
+  true,
+);
+
 // --- Telecom membership (same all-product semantics, separate provider scope) ---
 const TELECOM_CAT = 1;
 const SKT = 1;
 const SKT_ALL_ID = 7001;
 const SKT_VIP_ID = 7002;
+const SKT_VVIP_ID = 7003;
+const SKT_NORMAL_ID = 7004;
 
 const sktAllMeta = {
   id: SKT_ALL_ID,
@@ -118,12 +137,47 @@ const sktVipMeta = {
   is_all_product: false,
 };
 
+const sktVvipMeta = {
+  id: SKT_VVIP_ID,
+  benefit_type: null,
+  is_all_product: false,
+};
+
+const sktNormalMeta = {
+  id: SKT_NORMAL_ID,
+  benefit_type: null,
+  is_all_product: false,
+};
+
+const telecomProductById = new Map<number, BenefitProductMatchMeta>([
+  [SKT_ALL_ID, sktAllMeta],
+  [SKT_VIP_ID, sktVipMeta],
+  [SKT_VVIP_ID, sktVvipMeta],
+  [SKT_NORMAL_ID, sktNormalMeta],
+]);
+
 const userSktVip = {
   benefit_category_id: TELECOM_CAT,
   provider_id: SKT,
   benefit_product_id: SKT_VIP_ID,
   benefit_type: null,
   product: sktVipMeta,
+};
+
+const userSktVvip = {
+  benefit_category_id: TELECOM_CAT,
+  provider_id: SKT,
+  benefit_product_id: SKT_VVIP_ID,
+  benefit_type: null,
+  product: sktVvipMeta,
+};
+
+const userSktNormal = {
+  benefit_category_id: TELECOM_CAT,
+  provider_id: SKT,
+  benefit_product_id: SKT_NORMAL_ID,
+  benefit_type: null,
+  product: sktNormalMeta,
 };
 
 const userSktAll = {
@@ -175,6 +229,71 @@ assert.equal(
     },
     userSktAll,
     sktAllMeta,
+  ),
+  true,
+);
+
+// VIP + VVIP 복수 등급 할인
+const multiTierDiscount = {
+  benefit_category_id: TELECOM_CAT,
+  provider_id: SKT,
+  benefit_product_id: SKT_VIP_ID,
+  benefit_product_ids: [SKT_VIP_ID, SKT_VVIP_ID],
+};
+
+assert.equal(
+  matchDiscountToBenefits(multiTierDiscount, [userSktVip], telecomProductById),
+  true,
+);
+assert.equal(
+  matchDiscountToBenefits(multiTierDiscount, [userSktVvip], telecomProductById),
+  true,
+);
+assert.equal(
+  matchDiscountToBenefits(multiTierDiscount, [userSktNormal], telecomProductById),
+  false,
+);
+assert.equal(
+  matchDiscountToBenefits(multiTierDiscount, [userSktAll], telecomProductById),
+  false,
+);
+
+// SKT 일반 사용자는 VIP/VVIP 전용 할인에 매칭되지 않음
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_VIP_ID,
+    },
+    [userSktNormal],
+    telecomProductById,
+  ),
+  false,
+);
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_VVIP_ID,
+    },
+    [userSktNormal],
+    telecomProductById,
+  ),
+  false,
+);
+
+// SKT 일반 사용자는 SKT 전체 할인만 매칭
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_ALL_ID,
+    },
+    [userSktNormal],
+    telecomProductById,
   ),
   true,
 );

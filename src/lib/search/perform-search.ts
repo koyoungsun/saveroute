@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
+import {
+  attachBenefitProductIdsToDiscounts,
+  collectUniqueBenefitProductIds,
+} from "@/lib/benefits/discount-benefit-products";
 import type { BrandResult, SearchApiPayload } from "@/types/search";
 
 import type {
@@ -214,12 +219,20 @@ export async function performSearch(
       .eq("brand_id", matchedRow.id)
       .eq("status", "active");
 
-    const discountBaseRows = (discountRows ?? []) as DiscountBaseRow[];
+    const discountBaseRowsRaw = (discountRows ?? []) as DiscountBaseRow[];
+    const linkedProductIdsByDiscount = await loadDiscountBenefitProductIdsByDiscountId(
+      supabase,
+      discountBaseRowsRaw.map((row) => row.id),
+    );
+    const discountBaseRows = attachBenefitProductIdsToDiscounts(
+      discountBaseRowsRaw,
+      linkedProductIdsByDiscount,
+    );
     const benefitCategoryIds = uniqueNumbers(
       discountBaseRows.map((d) => d.benefit_category_id),
     );
     const providerIds = uniqueNumbers(discountBaseRows.map((d) => d.provider_id));
-    const benefitProductIds = uniqueNumbers(discountBaseRows.map((d) => d.benefit_product_id));
+    const benefitProductIds = collectUniqueBenefitProductIds(discountBaseRows);
 
     const [
       { data: brandCategories },

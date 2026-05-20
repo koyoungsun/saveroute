@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  parseDiscountBenefitProductsFromForm,
+  syncDiscountBenefitProductLinks,
+} from "@/lib/admin/discount-benefit-product-links";
 
 type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
 type DiscountStatus = "draft" | "active" | "expired" | "hidden";
@@ -78,7 +82,6 @@ export async function updateDiscountAction(
   const brandIdValue = readString(formData, "brand_id");
   const benefitCategoryIdValue = readString(formData, "benefit_category_id");
   const providerIdValue = readString(formData, "provider_id");
-  const benefitProductIdValue = readString(formData, "benefit_product_id");
   const title = readString(formData, "title");
   const discountUnitValue = readString(formData, "discount_unit");
   const discountValueValue = readString(formData, "discount_value");
@@ -108,19 +111,6 @@ export async function updateDiscountAction(
   const providerId = Number(providerIdValue);
   if (!providerIdValue || !Number.isInteger(providerId) || providerId <= 0) {
     fieldErrors.provider_id = "제공사를 선택해 주세요.";
-  }
-
-  let benefitProductId: number | null = null;
-  if (benefitProductIdValue) {
-    const parsedBenefitProductId = Number(benefitProductIdValue);
-    if (
-      !Number.isInteger(parsedBenefitProductId) ||
-      parsedBenefitProductId <= 0
-    ) {
-      fieldErrors.benefit_product_id = "올바른 혜택상품을 선택해 주세요.";
-    } else {
-      benefitProductId = parsedBenefitProductId;
-    }
   }
 
   if (!title) {
@@ -181,35 +171,22 @@ export async function updateDiscountAction(
     };
   }
 
-  if (benefitProductId) {
-    const { data: product, error: productError } = await supabase
-      .from("benefit_products")
-      .select("benefit_category_id,provider_id")
-      .eq("id", benefitProductId)
-      .eq("is_active", true)
-      .maybeSingle();
+  const parsedProducts = await parseDiscountBenefitProductsFromForm(
+    supabase,
+    formData,
+    benefitCategoryId,
+    providerId,
+  );
 
-    if (productError || !product) {
-      return {
-        fieldErrors: {
-          benefit_product_id: "활성 혜택상품을 선택해 주세요.",
-        },
-        message: productError?.message,
-      };
-    }
-
-    if (
-      product.benefit_category_id !== benefitCategoryId ||
-      product.provider_id !== providerId
-    ) {
-      return {
-        fieldErrors: {
-          benefit_product_id:
-            "선택한 카테고리와 제공사에 속한 혜택상품을 선택해 주세요.",
-        },
-      };
-    }
+  if (!parsedProducts.ok) {
+    return {
+      fieldErrors: {
+        benefit_product_id: parsedProducts.message,
+      },
+    };
   }
+
+  const { primaryBenefitProductId: benefitProductId } = parsedProducts.value;
 
   const { error } = await supabase
     .from("discounts")
@@ -235,6 +212,17 @@ export async function updateDiscountAction(
   if (error) {
     return {
       message: `할인 수정에 실패했습니다: ${error.message}`,
+    };
+  }
+
+  try {
+    await syncDiscountBenefitProductLinks(supabase, discountId, parsedProducts.value);
+  } catch (syncError) {
+    return {
+      message:
+        syncError instanceof Error
+          ? `혜택상품 연결 저장에 실패했습니다: ${syncError.message}`
+          : "혜택상품 연결 저장에 실패했습니다.",
     };
   }
 

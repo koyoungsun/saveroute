@@ -1,7 +1,10 @@
 /**
  * 할인 ↔ 사용자 등록 혜택 매칭 (카드사 전체 / 특정 카드 / 카드유형 전체).
  * 통신사 "전체" 상품(is_all_product + benefit_type=all)도 동일 규칙 적용.
+ * 통신사 복수 등급은 discount_benefit_products / benefit_product_ids 로 연결.
  */
+
+import { resolveDiscountBenefitProductIds } from "@/lib/benefits/discount-benefit-products";
 
 export type BenefitProductMatchMeta = {
   id: number;
@@ -22,6 +25,8 @@ export type DiscountMatchRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  /** junction 또는 로더에서 주입 (없으면 benefit_product_id 단일 사용) */
+  benefit_product_ids?: number[] | null;
 };
 
 function normalizeBenefitType(value: string | null | undefined): string | null {
@@ -70,43 +75,25 @@ function providerScopeMatches(
   );
 }
 
-/**
- * 단일 (할인, 사용자혜택) 쌍 매칭.
- * discountProduct: 할인에 연결된 benefit_products 메타 (legacy null product_id 는 undefined)
- */
-export function matchDiscountToUserBenefit(
-  discount: DiscountMatchRow,
-  benefit: UserBenefitMatchRow,
+function matchDiscountProductToUserBenefit(
   discountProduct: BenefitProductMatchMeta | null | undefined,
+  benefit: UserBenefitMatchRow,
 ): boolean {
-  if (!providerScopeMatches(discount, benefit)) {
-    return false;
-  }
-
   const userAll = userHoldsProviderAllProduct(benefit);
   const userBenefitType = normalizeBenefitType(benefit.benefit_type);
 
-  // 레거시: benefit_product_id NULL = 카드사 전체 할인
-  if (discount.benefit_product_id == null) {
-    return true;
-  }
-
   if (!discountProduct) {
-    return discount.benefit_product_id === benefit.benefit_product_id;
+    return false;
   }
 
   const discountAll = isAllProductMeta(discountProduct);
   const discountTypeWide = isCardTypeWideProductMeta(discountProduct);
 
   if (userAll) {
-    if (discount.benefit_product_id == null) {
-      return true;
-    }
     return discountAll;
   }
 
-  // 특정 카드 등록
-  if (discount.benefit_product_id === benefit.benefit_product_id) {
+  if (discountProduct.id === benefit.benefit_product_id) {
     return true;
   }
 
@@ -125,24 +112,86 @@ export function matchDiscountToUserBenefit(
   return false;
 }
 
+/**
+ * 단일 (할인, 사용자혜택) 쌍 매칭.
+ * discountProductIds: 할인에 연결된 benefit_products id 목록 (legacy null = provider-wide)
+ */
+export function matchDiscountToUserBenefit(
+  discount: DiscountMatchRow,
+  benefit: UserBenefitMatchRow,
+  discountProduct: BenefitProductMatchMeta | null | undefined,
+  discountProductIds?: number[] | null,
+  productById?: Map<number, BenefitProductMatchMeta>,
+): boolean {
+  if (!providerScopeMatches(discount, benefit)) {
+    return false;
+  }
+
+  const linkedProductIds =
+    discountProductIds ??
+    resolveDiscountBenefitProductIds(discount);
+
+  // 레거시: benefit_product_id NULL + junction 없음 = 제공사 전체 할인
+  if (linkedProductIds === null) {
+    return true;
+  }
+
+  if (linkedProductIds.length === 0) {
+    return discount.benefit_product_id == null;
+  }
+
+  if (linkedProductIds.length === 1 && productById) {
+    const singleProduct =
+      productById.get(linkedProductIds[0]!) ?? discountProduct ?? null;
+    return matchDiscountProductToUserBenefit(singleProduct, benefit);
+  }
+
+  if (productById) {
+    return linkedProductIds.some((productId) =>
+      matchDiscountProductToUserBenefit(productById.get(productId), benefit),
+    );
+  }
+
+  if (discountProduct) {
+    return matchDiscountProductToUserBenefit(discountProduct, benefit);
+  }
+
+  return linkedProductIds.includes(benefit.benefit_product_id ?? -1);
+}
+
 export function matchDiscountToBenefits(
   discount: DiscountMatchRow,
   benefits: UserBenefitMatchRow[],
   productById: Map<number, BenefitProductMatchMeta>,
 ): boolean {
+  const linkedProductIds = resolveDiscountBenefitProductIds(discount);
+
   return benefits.some((benefit) => {
     const discountProduct =
-      discount.benefit_product_id == null
-        ? null
-        : productById.get(discount.benefit_product_id);
-    return matchDiscountToUserBenefit(discount, benefit, discountProduct);
+      linkedProductIds?.length === 1
+        ? productById.get(linkedProductIds[0]!) ?? null
+        : linkedProductIds?.length === 0 || linkedProductIds == null
+          ? null
+          : null;
+
+    return matchDiscountToUserBenefit(
+      discount,
+      benefit,
+      discountProduct,
+      linkedProductIds,
+      productById,
+    );
   });
 }
 
 /** 등록 화면: 연결된 할인 건수 (카드) */
 export function countMatchingCardDiscounts(
   benefit: UserBenefitMatchRow,
-  discounts: { provider_id: number; benefit_product_id: number | null }[],
+  discounts: {
+    provider_id: number;
+    benefit_product_id: number | null;
+    benefit_product_ids?: number[] | null;
+  }[],
   productById: Map<number, BenefitProductMatchMeta>,
 ): number {
   return discounts.filter((d) =>
@@ -151,9 +200,12 @@ export function countMatchingCardDiscounts(
         benefit_category_id: benefit.benefit_category_id,
         provider_id: d.provider_id,
         benefit_product_id: d.benefit_product_id,
+        benefit_product_ids: d.benefit_product_ids,
       },
       benefit,
       d.benefit_product_id == null ? null : productById.get(d.benefit_product_id),
+      resolveDiscountBenefitProductIds(d),
+      productById,
     ),
   ).length;
 }

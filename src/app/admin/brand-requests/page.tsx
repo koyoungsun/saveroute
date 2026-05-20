@@ -5,6 +5,9 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import { updateBrandRequestStatusAction } from "./actions";
+import {
+  BRAND_REQUEST_STATUS_OPTIONS,
+} from "@/lib/ui/format-status-label";
 
 function escapeIlikePattern(raw: string): string {
   return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
@@ -42,10 +45,7 @@ type PageProps = {
 
 const STATUS_OPTIONS = [
   { value: "", label: "상태 전체" },
-  { value: "pending", label: "pending (대기)" },
-  { value: "reviewing", label: "reviewing (검토중)" },
-  { value: "completed", label: "completed (반영완료)" },
-  { value: "rejected", label: "rejected (반려)" },
+  ...BRAND_REQUEST_STATUS_OPTIONS.map(({ value, label }) => ({ value, label })),
 ] as const;
 
 export default async function BrandRequestsPage({ searchParams }: PageProps) {
@@ -104,7 +104,7 @@ export default async function BrandRequestsPage({ searchParams }: PageProps) {
           <h1 className="h3 mb-1">브랜드 요청</h1>
           <p className="text-muted small mb-0">
             미등록 브랜드 검색 요청을 우선순위(request_count·최근 갱신)로 처리합니다. 브랜드 등록 후 같은 행에서 상태를{" "}
-            <strong>completed</strong>로 저장하면 처리가 마무리됩니다.
+            <strong>완료</strong>로 저장하면 처리가 마무리됩니다.
           </p>
         </div>
         <Link href="/admin/brands/new" className="btn btn-primary shrink-0">
@@ -125,9 +125,9 @@ export default async function BrandRequestsPage({ searchParams }: PageProps) {
         <div className="col-md-4">
           <div className="sr-block card shadow-sm h-100 border-start border-warning border-4">
             <div className="card-body">
-              <div className="small text-muted mb-1">pending (처리 대기)</div>
+              <div className="small text-muted mb-1">대기중 (처리 대기)</div>
               <div className="display-6 fw-bold lh-1 text-warning-emphasis">{pendingCount ?? 0}</div>
-              <div className="small text-muted mt-2">브랜드 등록 후 completed 로 바꿔 주세요</div>
+              <div className="small text-muted mt-2">브랜드 등록 후 완료로 바꿔 주세요</div>
             </div>
           </div>
         </div>
@@ -225,10 +225,11 @@ export default async function BrandRequestsPage({ searchParams }: PageProps) {
             >
               <input type="hidden" name="id" value={r.id} />
               <select name="status" className="form-select form-select-sm" defaultValue={r.status}>
-                <option value="pending">pending</option>
-                <option value="reviewing">reviewing</option>
-                <option value="completed">completed</option>
-                <option value="rejected">rejected</option>
+                {BRAND_REQUEST_STATUS_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
               <button type="submit" className="btn btn-sm btn-outline-primary">
                 저장

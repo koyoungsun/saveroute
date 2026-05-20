@@ -4,6 +4,7 @@ import { BrandFavicon } from "@/components/brand/BrandFavicon";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { BRAND_STATUS_FILTER_OPTIONS } from "@/lib/ui/format-status-label";
 
 import { deactivateBrandAction } from "./actions";
 
@@ -80,8 +81,11 @@ export default async function AdminBrandsPage() {
             <div className="col-md-3">
               <select className="form-select" defaultValue="">
                 <option value="">상태 전체</option>
-                <option>active</option>
-                <option>hidden</option>
+                {BRAND_STATUS_FILTER_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

@@ -37,7 +37,7 @@ export function BrandForm({
         {initialBrandName ? (
           <div className="alert alert-secondary py-2 mb-3" role="status">
             브랜드 요청에서 넘어온 검색어로 브랜드명을 채웠습니다. 등록이 끝나면{" "}
-            <strong>브랜드 요청</strong> 목록에서 해당 행을 <strong>completed</strong>로 저장해 주세요.
+            <strong>브랜드 요청</strong> 목록에서 해당 행을 <strong>완료</strong>로 저장해 주세요.
           </div>
         ) : null}
 

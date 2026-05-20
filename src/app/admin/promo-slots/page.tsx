@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { formatStatusLabel } from "@/lib/ui/format-status-label";
 
 import { togglePromoSlotActiveAction } from "./actions";
 
@@ -152,7 +153,7 @@ export default async function AdminPromoSlotsPage() {
             </div>,
             slot.badge,
             <span key={`${slot.id}-type`} className="badge text-bg-light text-dark border">
-              {slot.link_type}
+              {formatStatusLabel(slot.link_type)}
             </span>,
             <a
               key={`${slot.id}-href`}

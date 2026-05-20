@@ -6,8 +6,7 @@ type LegendType = "discount" | "request" | "account" | "generic";
 
 type LegendItem = {
   key: string;
-  badgeText: string;
-  statusForBadge?: string;
+  statusForBadge: string;
   description: string;
 };
 
@@ -17,25 +16,21 @@ const legends: Record<LegendType, { title: string; items: LegendItem[] }> = {
     items: [
       {
         key: "draft",
-        badgeText: "draft",
         statusForBadge: "draft",
         description: "미노출",
       },
       {
         key: "active",
-        badgeText: "active",
         statusForBadge: "active",
         description: "사용자 노출",
       },
       {
         key: "expired",
-        badgeText: "expired",
         statusForBadge: "expired",
         description: "만료",
       },
       {
         key: "hidden",
-        badgeText: "hidden",
         statusForBadge: "hidden",
         description: "비노출",
       },
@@ -46,25 +41,21 @@ const legends: Record<LegendType, { title: string; items: LegendItem[] }> = {
     items: [
       {
         key: "pending",
-        badgeText: "pending",
         statusForBadge: "pending",
         description: "신규·재요청 대기",
       },
       {
         key: "reviewing",
-        badgeText: "reviewing",
         statusForBadge: "reviewing",
         description: "검토·등록 진행 중",
       },
       {
         key: "completed",
-        badgeText: "completed",
         statusForBadge: "completed",
         description: "브랜드 반영 완료",
       },
       {
         key: "rejected",
-        badgeText: "rejected",
         statusForBadge: "rejected",
         description: "중복·불필요 등 반려",
       },
@@ -75,24 +66,22 @@ const legends: Record<LegendType, { title: string; items: LegendItem[] }> = {
     items: [
       {
         key: "active",
-        badgeText: "active",
         statusForBadge: "active",
         description: "접근 가능",
       },
       {
         key: "inactive",
-        badgeText: "inactive",
         statusForBadge: "inactive",
         description: "접근 제한",
       },
       {
         key: "master",
-        badgeText: "master",
+        statusForBadge: "master",
         description: "전체 권한",
       },
       {
         key: "operator",
-        badgeText: "operator",
+        statusForBadge: "operator",
         description: "운영 권한",
       },
     ],
@@ -102,25 +91,21 @@ const legends: Record<LegendType, { title: string; items: LegendItem[] }> = {
     items: [
       {
         key: "active",
-        badgeText: "active",
         statusForBadge: "active",
         description: "사용중",
       },
       {
         key: "hidden",
-        badgeText: "hidden",
         statusForBadge: "hidden",
         description: "숨김",
       },
       {
         key: "pending",
-        badgeText: "pending",
         statusForBadge: "pending",
         description: "대기",
       },
       {
         key: "completed",
-        badgeText: "completed",
         statusForBadge: "completed",
         description: "완료",
       },
@@ -148,13 +133,7 @@ export function StatusLegend({
         <span className="d-inline-flex flex-wrap gap-2">
           {legend.items.map((item) => (
             <span key={item.key} className="d-inline-flex align-items-center gap-1">
-              {item.statusForBadge ? (
-                <StatusBadge status={item.statusForBadge} />
-              ) : (
-                <span className="badge text-bg-light text-dark border px-2 py-1 fw-semibold">
-                  {item.badgeText}
-                </span>
-              )}
+              <StatusBadge status={item.statusForBadge} />
               <span className="text-muted">:</span>
               <span className="text-muted">{item.description}</span>
             </span>

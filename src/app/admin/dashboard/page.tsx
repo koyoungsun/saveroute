@@ -254,7 +254,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
   );
   recordDbIssue(
     warnings,
-    "brand_requests (처리 필요 요청: pending·reviewing, 컬럼: status)",
+    "brand_requests (처리 필요 요청: 대기중·검토중, 컬럼: status)",
     resRequestsAttention.error,
   );
   recordDbIssue(
@@ -543,7 +543,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
       "warning",
       "bi-mouse2-fill",
     ],
-    ["처리 필요 업데이트 요청(pending/reviewing)", formatNumber(requestsNeedingWork), "warning", "bi-inboxes"],
+    ["처리 필요 업데이트 요청(대기중·검토중)", formatNumber(requestsNeedingWork), "warning", "bi-inboxes"],
     [
       `${selectedPeriod.label} · 요청 최근 활동 건수`,
       formatNumber(requestsTouchedInPeriod),
@@ -714,7 +714,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
         <DashboardTable
           title="무결과 비율이 높은 검색어 TOP 10"
-          description={`search_logs의 result_status=unmatched 또는 result_count=0 (${selectedPeriod.label})`}
+          description={`search_logs의 미매칭 또는 result_count=0 (${selectedPeriod.label})`}
           columns={["키워드", "검색 수", "0건 수", "0건 비율"]}
           emptyText="무결과로 분류된 검색 로그 샘플이 없습니다."
           rows={noResultKeywords.map((row) => [
@@ -780,7 +780,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <div className="card-header bg-white py-3">
               <div className="fw-bold">카테고리별 브랜드 / 활성 할인 수</div>
               <div className="small text-muted mt-1">
-                브랜드는 brands.category_id 기준·할인은 discounts.status = active 분포입니다.
+                브랜드는 brands.category_id 기준·할인은 활성 상태 분포입니다.
               </div>
             </div>
             <div className="card-body">

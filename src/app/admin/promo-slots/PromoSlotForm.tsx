@@ -8,6 +8,7 @@ import {
   toDatetimeLocalValue,
   type PromoSlotFormState,
 } from "@/lib/promoSlotForm";
+import { LINK_TYPE_OPTIONS } from "@/lib/ui/format-status-label";
 
 export type PromoSlotFormValues = {
   id?: string;
@@ -153,8 +154,11 @@ export function PromoSlotForm({
               className="form-select"
               defaultValue={initialValues.link_type}
             >
-              <option value="internal">internal</option>
-              <option value="external">external</option>
+              {LINK_TYPE_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
             {state.fieldErrors?.link_type ? (
               <div className="form-text text-danger">
@@ -176,7 +180,7 @@ export function PromoSlotForm({
               required
             />
             <div className="form-text">
-              internal은 /search?keyword=브랜드명, external은 https:// 형식을 사용합니다.
+              내부는 /search?keyword=브랜드명, 외부는 https:// 형식을 사용합니다.
             </div>
             {state.fieldErrors?.href ? (
               <div className="form-text text-danger">

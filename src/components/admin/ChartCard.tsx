@@ -29,7 +29,7 @@ export function ChartCard({
             children
           ) : (
             <div className="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-              <div className="spinner-border spinner-border-sm mb-2" role="status" aria-label="loading" />
+              <div className="spinner-border spinner-border-sm mb-2" role="status" aria-label="불러오는 중" />
               <div className="small">데이터 없음</div>
             </div>
           )}

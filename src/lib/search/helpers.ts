@@ -29,6 +29,7 @@ export type DiscountBaseRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  benefit_product_ids?: number[] | null;
   title: string;
   condition_text: string | null;
   installment_condition: string | null;
@@ -111,6 +112,7 @@ export function matchDiscountToBenefits(
       benefit_category_id: discount.benefit_category_id,
       provider_id: discount.provider_id,
       benefit_product_id: discount.benefit_product_id,
+      benefit_product_ids: discount.benefit_product_ids,
     },
     benefits,
     productById,
@@ -231,8 +233,12 @@ export function mapBaseDiscountToResult(
 ): DiscountResult {
   const bc = benefitCategoryById.get(row.benefit_category_id);
   const pr = providerById.get(row.provider_id);
+  const primaryProductId =
+    row.benefit_product_ids && row.benefit_product_ids.length > 0
+      ? row.benefit_product_ids[0]!
+      : row.benefit_product_id;
   const bp =
-    row.benefit_product_id == null ? null : benefitProductById.get(row.benefit_product_id);
+    primaryProductId == null ? null : benefitProductById.get(primaryProductId);
 
   const benefit_category: BenefitCategorySummary | null = bc
     ? { id: bc.id, name: bc.name, code: bc.code }
@@ -261,6 +267,7 @@ export function mapBaseDiscountToResult(
     benefit_category_id: row.benefit_category_id,
     provider_id: row.provider_id,
     benefit_product_id: row.benefit_product_id,
+    benefit_product_ids: row.benefit_product_ids,
     valid_until: row.valid_until,
     has_no_expiry: row.has_no_expiry,
     benefit_category,

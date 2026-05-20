@@ -1,4 +1,5 @@
 import type { AdminUser } from "@/lib/admin/auth";
+import { formatStatusLabel } from "@/lib/ui/format-status-label";
 
 export function AdminHeader({ adminUser }: { adminUser: AdminUser }) {
   return (
@@ -15,7 +16,7 @@ export function AdminHeader({ adminUser }: { adminUser: AdminUser }) {
           {adminUser.email ?? adminUser.userId}
         </span>
         <span className="sr-role-badge badge rounded-pill px-3 py-2">
-          {adminUser.role}
+          {formatStatusLabel(adminUser.role)}
         </span>
         <button type="button" className="btn btn-outline-secondary btn-sm">
           Logout

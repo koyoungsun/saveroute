@@ -1,5 +1,6 @@
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { SEARCH_RESULT_STATUS_OPTIONS } from "@/lib/ui/format-status-label";
 
 const logs = [
   ["01-15 14:32", "롯데월드", "롯데월드", "여성", "20대", "matched"],
@@ -39,8 +40,11 @@ export default function SearchLogsPage() {
             <div className="col-md-2">
               <select className="form-select" defaultValue="">
                 <option value="">결과</option>
-                <option>matched</option>
-                <option>unmatched</option>
+                {SEARCH_RESULT_STATUS_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="col-md-1">

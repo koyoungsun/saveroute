@@ -4,6 +4,11 @@ import { ConfidenceBadge } from "@/components/admin/ConfidenceBadge";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  BRAND_STATUS_FILTER_OPTIONS,
+  CONFIDENCE_OPTIONS,
+  DISCOUNT_STATUS_OPTIONS,
+} from "@/lib/ui/format-status-label";
 
 import { hideDiscountAction } from "./actions";
 
@@ -167,18 +172,21 @@ export default async function AdminDiscountsPage() {
             <div className="col-md-2">
               <select className="form-select" defaultValue="">
                 <option value="">상태</option>
-                <option>active</option>
-                <option>draft</option>
-                <option>hidden</option>
-                <option>expired</option>
+                {DISCOUNT_STATUS_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="col-md-2">
               <select className="form-select" defaultValue="">
                 <option value="">신뢰도</option>
-                <option>high</option>
-                <option>medium</option>
-                <option>low</option>
+                {CONFIDENCE_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
