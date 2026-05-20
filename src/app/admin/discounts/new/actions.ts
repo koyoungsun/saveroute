@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parseNumericInput } from "@/lib/ui/format-money";
 import {
   parseDiscountBenefitProductsFromForm,
   syncDiscountBenefitProductLinks,
@@ -43,12 +44,7 @@ function readString(formData: FormData, key: string) {
 }
 
 function readPositiveNumber(value: string) {
-  if (!value) {
-    return null;
-  }
-
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : null;
+  return parseNumericInput(value);
 }
 
 function normalizeUrl(value: string) {
@@ -75,8 +71,12 @@ function buildConditionText({
   minPaymentAmount: number | null;
 }) {
   const lines = [
-    minPaymentAmount === null ? null : `최소 결제 금액: ${minPaymentAmount}원`,
-    maxDiscountAmount === null ? null : `최대 할인 금액: ${maxDiscountAmount}원`,
+    minPaymentAmount === null
+      ? null
+      : `최소 결제 금액: ${minPaymentAmount.toLocaleString("ko-KR")}원`,
+    maxDiscountAmount === null
+      ? null
+      : `최대 할인 금액: ${maxDiscountAmount.toLocaleString("ko-KR")}원`,
     notice || null,
   ].filter(Boolean);
 

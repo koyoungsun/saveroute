@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parseNumericInput } from "@/lib/ui/format-money";
 import {
   parseDiscountBenefitProductsFromForm,
   syncDiscountBenefitProductLinks,
@@ -52,12 +53,7 @@ function readString(formData: FormData, key: string) {
 }
 
 function readPositiveNumber(value: string) {
-  if (!value) {
-    return null;
-  }
-
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : null;
+  return parseNumericInput(value);
 }
 
 function normalizeUrl(value: string) {

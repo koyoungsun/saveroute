@@ -9,6 +9,8 @@ export type DiscountBenefitProductOption = {
   is_all_product?: boolean;
   product_type?: string | null;
   grade?: string | null;
+  code?: string | null;
+  name_normalized?: string | null;
 };
 
 export function isProviderWideBenefitProduct(

@@ -8,7 +8,10 @@ import {
   type DiscountBenefitProductOption,
 } from "@/lib/benefits/discount-product-options";
 
+import { DiscountAmountInput } from "@/components/admin/DiscountAmountInput";
+
 import { DiscountBenefitProductSelect } from "../../DiscountBenefitProductSelect";
+import { CardBenefitProductCombobox } from "../../CardBenefitProductCombobox";
 import { TelecomDiscountProductMultiSelect } from "../../TelecomDiscountProductMultiSelect";
 import { DISCOUNT_STATUS_OPTIONS } from "@/lib/ui/format-status-label";
 import { updateDiscountAction, type DiscountEditFormState } from "./actions";
@@ -84,6 +87,11 @@ export function EditDiscountForm({
   const [selectedProviderId, setSelectedProviderId] = useState(
     String(discount.provider_id),
   );
+  const [productOptions, setProductOptions] = useState(products);
+  const [selectedBenefitProductId, setSelectedBenefitProductId] = useState(
+    discount.benefit_product_id != null ? String(discount.benefit_product_id) : "",
+  );
+  const [discountUnit, setDiscountUnit] = useState(discount.discount_unit);
 
   const filteredProviders = useMemo(
     () =>
@@ -97,10 +105,12 @@ export function EditDiscountForm({
   );
 
   const selectedCategoryCode = resolveCategoryCode(selectedCategoryId, categories);
+  const cardCategoryId =
+    categories.find((category) => category.code === "card")?.id ?? null;
 
   const filteredProducts = useMemo(
     () =>
-      products.filter((product) => {
+      productOptions.filter((product) => {
         if (selectedProviderId) {
           return product.provider_id === Number(selectedProviderId);
         }
@@ -111,8 +121,21 @@ export function EditDiscountForm({
 
         return true;
       }),
-    [products, selectedCategoryId, selectedProviderId],
+    [productOptions, selectedCategoryId, selectedProviderId],
   );
+
+  const selectedProviderName =
+    filteredProviders.find((provider) => provider.id === Number(selectedProviderId))
+      ?.name ?? "";
+
+  const handleProductUpsert = (product: BenefitProductOption) => {
+    setProductOptions((current) => {
+      if (current.some((row) => row.id === product.id)) {
+        return current.map((row) => (row.id === product.id ? product : row));
+      }
+      return [...current, product];
+    });
+  };
 
   const defaultBenefitProductIds =
     discount.benefit_product_ids && discount.benefit_product_ids.length > 0
@@ -191,6 +214,7 @@ export function EditDiscountForm({
               onChange={(event) => {
                 setSelectedCategoryId(event.target.value);
                 setSelectedProviderId("");
+                setSelectedBenefitProductId("");
               }}
               required
             >
@@ -219,7 +243,10 @@ export function EditDiscountForm({
               name="provider_id"
               className="form-select"
               value={selectedProviderId}
-              onChange={(event) => setSelectedProviderId(event.target.value)}
+              onChange={(event) => {
+                setSelectedProviderId(event.target.value);
+                setSelectedBenefitProductId("");
+              }}
               required
             >
               <option value="" disabled>
@@ -252,6 +279,23 @@ export function EditDiscountForm({
                 disabled={!selectedProviderId}
                 fieldError={state.fieldErrors?.benefit_product_id}
               />
+            ) : selectedCategoryCode === "card" && cardCategoryId != null ? (
+              <CardBenefitProductCombobox
+                products={filteredProducts}
+                providerId={selectedProviderId ? Number(selectedProviderId) : null}
+                cardCategoryId={cardCategoryId}
+                providerName={selectedProviderName}
+                value={selectedBenefitProductId}
+                onChange={setSelectedBenefitProductId}
+                onProductUpsert={handleProductUpsert}
+                disabled={!selectedProviderId}
+                emptyHint={
+                  selectedProviderId
+                    ? "브랜드 직접 할인 / 상품 없음"
+                    : undefined
+                }
+                fieldError={state.fieldErrors?.benefit_product_id}
+              />
             ) : (
               <DiscountBenefitProductSelect
                 categoryCode={selectedCategoryCode}
@@ -266,13 +310,20 @@ export function EditDiscountForm({
               />
             )}
             {selectedCategoryCode !== "telecom" &&
+            selectedCategoryCode !== "card" &&
             state.fieldErrors?.benefit_product_id ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.benefit_product_id}
               </div>
-            ) : selectedCategoryCode !== "telecom" ? (
+            ) : selectedCategoryCode !== "telecom" &&
+              selectedCategoryCode !== "card" ? (
               <div className="form-text">
                 카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
+              </div>
+            ) : selectedCategoryCode === "card" ? (
+              <div className="form-text">
+                카드사 전체 상품은 상단에 노출되며, 특정 카드는 검색으로 찾을 수
+                있습니다. 목록에 없으면 신규 카드를 추가할 수 있습니다.
               </div>
             ) : null}
           </div>
@@ -285,7 +336,8 @@ export function EditDiscountForm({
               id="discount_unit"
               name="discount_unit"
               className="form-select"
-              defaultValue={discount.discount_unit}
+              value={discountUnit}
+              onChange={(event) => setDiscountUnit(event.target.value)}
               required
             >
               <option value="percent">percent</option>
@@ -305,15 +357,11 @@ export function EditDiscountForm({
             <label className="form-label fw-semibold" htmlFor="discount_value">
               할인값
             </label>
-            <input
-              id="discount_value"
-              name="discount_value"
-              className="form-control"
+            <DiscountAmountInput
+              unit={discountUnit}
               defaultValue={discount.discount_value}
-              min="0"
-              step="0.01"
-              type="number"
-              required
+              placeholder={discountUnit === "percent" ? "예: 20" : "예: 10,000"}
+              required={discountUnit !== "free"}
             />
             {state.fieldErrors?.discount_value ? (
               <div className="form-text text-danger">

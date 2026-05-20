@@ -55,7 +55,7 @@ export default async function NewDiscountPage() {
     supabase
       .from("benefit_products")
       .select(
-        "id,name,benefit_category_id,provider_id,benefit_type,is_all_product,product_type,grade",
+        "id,name,benefit_category_id,provider_id,benefit_type,is_all_product,product_type,grade,code,name_normalized",
       )
       .eq("is_active", true)
       .order("name", { ascending: true }),

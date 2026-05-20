@@ -8,7 +8,11 @@ import {
   type DiscountBenefitProductOption,
 } from "@/lib/benefits/discount-product-options";
 
+import { DiscountAmountInput } from "@/components/admin/DiscountAmountInput";
+import { MoneyInput } from "@/components/admin/MoneyInput";
+
 import { DiscountBenefitProductSelect } from "../DiscountBenefitProductSelect";
+import { CardBenefitProductCombobox } from "../CardBenefitProductCombobox";
 import { TelecomDiscountProductMultiSelect } from "../TelecomDiscountProductMultiSelect";
 import { createDiscountAction, type DiscountFormState } from "./actions";
 
@@ -61,6 +65,9 @@ export function DiscountForm({
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedProviderId, setSelectedProviderId] = useState("");
+  const [productOptions, setProductOptions] = useState(products);
+  const [selectedBenefitProductId, setSelectedBenefitProductId] = useState("");
+  const [discountType, setDiscountType] = useState("percent");
 
   const filteredProviders = useMemo(
     () =>
@@ -74,10 +81,12 @@ export function DiscountForm({
   );
 
   const selectedCategoryCode = resolveCategoryCode(selectedCategoryId, categories);
+  const cardCategoryId =
+    categories.find((category) => category.code === "card")?.id ?? null;
 
   const filteredProducts = useMemo(
     () =>
-      products.filter((product) => {
+      productOptions.filter((product) => {
         if (selectedProviderId) {
           return product.provider_id === Number(selectedProviderId);
         }
@@ -88,8 +97,21 @@ export function DiscountForm({
 
         return true;
       }),
-    [products, selectedCategoryId, selectedProviderId],
+    [productOptions, selectedCategoryId, selectedProviderId],
   );
+
+  const selectedProviderName =
+    filteredProviders.find((provider) => provider.id === Number(selectedProviderId))
+      ?.name ?? "";
+
+  const handleProductUpsert = (product: BenefitProductOption) => {
+    setProductOptions((current) => {
+      if (current.some((row) => row.id === product.id)) {
+        return current.map((row) => (row.id === product.id ? product : row));
+      }
+      return [...current, product];
+    });
+  };
 
   return (
     <form action={formAction} className="card sr-block">
@@ -161,6 +183,7 @@ export function DiscountForm({
               onChange={(event) => {
                 setSelectedCategoryId(event.target.value);
                 setSelectedProviderId("");
+                setSelectedBenefitProductId("");
               }}
               required
             >
@@ -189,7 +212,10 @@ export function DiscountForm({
               name="provider_id"
               className="form-select"
               value={selectedProviderId}
-              onChange={(event) => setSelectedProviderId(event.target.value)}
+              onChange={(event) => {
+                setSelectedProviderId(event.target.value);
+                setSelectedBenefitProductId("");
+              }}
               required
             >
               <option value="" disabled>
@@ -221,6 +247,23 @@ export function DiscountForm({
                 disabled={!selectedProviderId}
                 fieldError={state.fieldErrors?.benefit_product_id}
               />
+            ) : selectedCategoryCode === "card" && cardCategoryId != null ? (
+              <CardBenefitProductCombobox
+                products={filteredProducts}
+                providerId={selectedProviderId ? Number(selectedProviderId) : null}
+                cardCategoryId={cardCategoryId}
+                providerName={selectedProviderName}
+                value={selectedBenefitProductId}
+                onChange={setSelectedBenefitProductId}
+                onProductUpsert={handleProductUpsert}
+                disabled={!selectedProviderId}
+                emptyHint={
+                  selectedProviderId
+                    ? "브랜드 직접 할인 / 상품 없음"
+                    : undefined
+                }
+                fieldError={state.fieldErrors?.benefit_product_id}
+              />
             ) : (
               <DiscountBenefitProductSelect
                 categoryCode={selectedCategoryCode}
@@ -234,13 +277,20 @@ export function DiscountForm({
               />
             )}
             {selectedCategoryCode !== "telecom" &&
+            selectedCategoryCode !== "card" &&
             state.fieldErrors?.benefit_product_id ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.benefit_product_id}
               </div>
-            ) : selectedCategoryCode !== "telecom" ? (
+            ) : selectedCategoryCode !== "telecom" &&
+              selectedCategoryCode !== "card" ? (
               <div className="form-text">
                 카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
+              </div>
+            ) : selectedCategoryCode === "card" ? (
+              <div className="form-text">
+                카드사 전체 상품은 상단에 노출되며, 특정 카드는 검색으로 찾을 수
+                있습니다. 목록에 없으면 신규 카드를 추가할 수 있습니다.
               </div>
             ) : null}
           </div>
@@ -253,7 +303,8 @@ export function DiscountForm({
               id="discount_type"
               name="discount_type"
               className="form-select"
-              defaultValue="percent"
+              value={discountType}
+              onChange={(event) => setDiscountType(event.target.value)}
               required
             >
               <option value="percent">percent</option>
@@ -273,15 +324,10 @@ export function DiscountForm({
             <label className="form-label fw-semibold" htmlFor="discount_value">
               할인값
             </label>
-            <input
-              id="discount_value"
-              name="discount_value"
-              className="form-control"
-              min="0"
-              placeholder="예: 20"
-              step="0.01"
-              type="number"
-              required
+            <DiscountAmountInput
+              unit={discountType}
+              placeholder={discountType === "percent" ? "예: 20" : "예: 10,000"}
+              required={discountType !== "free"}
             />
             {state.fieldErrors?.discount_value ? (
               <div className="form-text text-danger">
@@ -297,13 +343,10 @@ export function DiscountForm({
             >
               최대 할인 금액
             </label>
-            <input
+            <MoneyInput
               id="max_discount_amount"
               name="max_discount_amount"
-              className="form-control"
-              min="0"
-              placeholder="예: 10000"
-              type="number"
+              placeholder="예: 10,000"
             />
           </div>
 
@@ -314,13 +357,10 @@ export function DiscountForm({
             >
               최소 결제 금액
             </label>
-            <input
+            <MoneyInput
               id="min_payment_amount"
               name="min_payment_amount"
-              className="form-control"
-              min="0"
-              placeholder="예: 30000"
-              type="number"
+              placeholder="예: 30,000"
             />
           </div>
 
