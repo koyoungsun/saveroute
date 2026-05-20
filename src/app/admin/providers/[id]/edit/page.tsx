@@ -16,6 +16,7 @@ type EditProviderPageProps = {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 export default async function EditProviderPage({ params }: EditProviderPageProps) {
@@ -51,7 +52,7 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
       .maybeSingle(),
     supabase
       .from("benefit_categories")
-      .select("id,name")
+      .select("id,name,code")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
   ]);
@@ -69,6 +70,8 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
   }
 
   const categories = (categoryData ?? []) as BenefitCategoryOption[];
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
   const currentCategoryId = providerData.benefit_category_id as number;
   const hasCurrentCategory = categories.some(
     (category) => category.id === currentCategoryId,
@@ -77,7 +80,7 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
   if (!hasCurrentCategory) {
     const { data: currentCategory } = await supabase
       .from("benefit_categories")
-      .select("id,name")
+      .select("id,name,code")
       .eq("id", currentCategoryId)
       .maybeSingle();
 
@@ -118,6 +121,7 @@ export default async function EditProviderPage({ params }: EditProviderPageProps
       <ProviderForm
         action={updateAction}
         categories={categories}
+        membershipCategoryId={membershipCategoryId}
         initialValues={initialValues}
         mode="edit"
       />

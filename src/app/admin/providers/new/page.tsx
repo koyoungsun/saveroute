@@ -8,13 +8,14 @@ import { ProviderForm } from "../ProviderForm";
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 export default async function NewProviderPage() {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("benefit_categories")
-    .select("id,name")
+    .select("id,name,code")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
@@ -23,6 +24,8 @@ export default async function NewProviderPage() {
   }
 
   const categories = (data ?? []) as BenefitCategoryOption[];
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
 
   return (
     <>
@@ -41,6 +44,7 @@ export default async function NewProviderPage() {
       <ProviderForm
         action={createProviderAction}
         categories={categories}
+        membershipCategoryId={membershipCategoryId}
         mode="create"
       />
     </>

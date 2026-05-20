@@ -6,6 +6,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  MEMBERSHIP_ALL_BENEFIT_TYPE,
+  MEMBERSHIP_ALL_GRADE,
+  MEMBERSHIP_PRODUCT_TYPE,
+  buildMembershipAllProductCode,
+  buildMembershipAllProductName,
+  ensureMembershipAllProduct,
+  isMembershipCatalogProvider,
+} from "@/lib/benefits/membership-catalog";
 
 type ProductType =
   | "telecom_membership"
@@ -38,6 +47,7 @@ type ValidatedProductInput = {
   benefitCategoryId: number;
   providerId: number;
   name: string;
+  code: string;
   isActive: boolean;
   isMvno: boolean;
   mvnoNoticeRequired: boolean;
@@ -45,6 +55,7 @@ type ValidatedProductInput = {
   benefitType: CardBenefitType | null;
   cardType: string | null;
   isAllProduct: boolean;
+  grade: string | null;
 };
 
 export type BenefitProductFormState = {
@@ -107,6 +118,71 @@ function inferProductType({
   }
 
   return null;
+}
+
+function resolveMembershipProductFields({
+  categoryCode,
+  providerType,
+  providerCode,
+  providerName,
+  name,
+}: {
+  categoryCode: string;
+  providerType: ProviderType;
+  providerCode: string;
+  providerName: string;
+  name: string;
+}):
+  | {
+      ok: true;
+      productType: ProductType;
+      benefitType: CardBenefitType;
+      cardType: string | null;
+      isAllProduct: boolean;
+      grade: string;
+      code: string;
+      resolvedName: string;
+      isMvno: boolean;
+      mvnoNoticeRequired: boolean;
+    }
+  | { ok: false; fieldErrors: BenefitProductFormState["fieldErrors"] } {
+  if (categoryCode !== "membership") {
+    return {
+      ok: false,
+      fieldErrors: {
+        benefit_category_id: "membership 카테고리에서만 membership 상품을 등록할 수 있습니다.",
+      },
+    };
+  }
+
+  if (
+    !isMembershipCatalogProvider({
+      categoryCode,
+      providerType,
+    })
+  ) {
+    return {
+      ok: false,
+      fieldErrors: {
+        provider_id: "membership 상품은 membership_company 제공사에만 연결할 수 있습니다.",
+      },
+    };
+  }
+
+  const resolvedName = name.trim() || buildMembershipAllProductName(providerName);
+
+  return {
+    ok: true,
+    productType: MEMBERSHIP_PRODUCT_TYPE,
+    benefitType: MEMBERSHIP_ALL_BENEFIT_TYPE,
+    cardType: null,
+    isAllProduct: true,
+    grade: MEMBERSHIP_ALL_GRADE,
+    code: buildMembershipAllProductCode(providerCode),
+    resolvedName,
+    isMvno: false,
+    mvnoNoticeRequired: false,
+  };
 }
 
 function resolveCardProductFields({
@@ -203,10 +279,6 @@ async function validateBenefitProductForm(
     fieldErrors.provider_id = "제공사를 선택해 주세요.";
   }
 
-  if (!name) {
-    fieldErrors.name = "상품명을 입력해 주세요.";
-  }
-
   if (Object.keys(fieldErrors).length > 0) {
     return { ok: false, state: { fieldErrors } };
   }
@@ -224,7 +296,7 @@ async function validateBenefitProductForm(
       .maybeSingle(),
     supabase
       .from("providers")
-      .select("benefit_category_id,provider_type")
+      .select("benefit_category_id,provider_type,code,name")
       .eq("id", providerId)
       .eq("is_active", true)
       .maybeSingle(),
@@ -238,6 +310,17 @@ async function validateBenefitProductForm(
           benefit_category_id: "활성 혜택 카테고리를 선택해 주세요.",
         },
         message: categoryError?.message,
+      },
+    };
+  }
+
+  if (!name && category.code !== "membership") {
+    return {
+      ok: false,
+      state: {
+        fieldErrors: {
+          name: "상품명을 입력해 주세요.",
+        },
       },
     };
   }
@@ -282,6 +365,38 @@ async function validateBenefitProductForm(
     };
   }
 
+  if (category.code === "membership") {
+    const membershipFields = resolveMembershipProductFields({
+      categoryCode: category.code,
+      providerType: provider.provider_type as ProviderType,
+      providerCode: String(provider.code),
+      providerName: String(provider.name),
+      name,
+    });
+
+    if (!membershipFields.ok) {
+      return { ok: false, state: { fieldErrors: membershipFields.fieldErrors } };
+    }
+
+    return {
+      ok: true,
+      data: {
+        benefitCategoryId: benefitCategoryId!,
+        providerId: providerId!,
+        name: membershipFields.resolvedName,
+        code: membershipFields.code,
+        isActive,
+        isMvno: membershipFields.isMvno,
+        mvnoNoticeRequired: membershipFields.mvnoNoticeRequired,
+        productType: membershipFields.productType,
+        benefitType: membershipFields.benefitType,
+        cardType: membershipFields.cardType,
+        isAllProduct: membershipFields.isAllProduct,
+        grade: membershipFields.grade,
+      },
+    };
+  }
+
   const cardFields = resolveCardProductFields({
     categoryCode: category.code,
     isAllProduct,
@@ -301,6 +416,7 @@ async function validateBenefitProductForm(
       benefitCategoryId: benefitCategoryId!,
       providerId: providerId!,
       name,
+      code: generateProductCode(name),
       isActive,
       isMvno,
       mvnoNoticeRequired,
@@ -308,6 +424,7 @@ async function validateBenefitProductForm(
       benefitType: cardFields.benefitType,
       cardType: cardFields.cardType,
       isAllProduct: cardFields.isAllProduct,
+      grade: null,
     },
   };
 }
@@ -324,12 +441,51 @@ export async function createBenefitProductAction(
 
   const product = validated.data;
   const supabase = createSupabaseAdminClient();
+
+  if (product.productType === MEMBERSHIP_PRODUCT_TYPE) {
+    const { data: provider, error: providerError } = await supabase
+      .from("providers")
+      .select("code,name")
+      .eq("id", product.providerId)
+      .maybeSingle();
+
+    if (providerError || !provider) {
+      return {
+        fieldErrors: {
+          provider_id: "제공사 정보를 확인할 수 없습니다.",
+        },
+        message: providerError?.message,
+      };
+    }
+
+    try {
+      await ensureMembershipAllProduct(supabase, {
+        benefitCategoryId: product.benefitCategoryId,
+        providerId: product.providerId,
+        providerCode: String(provider.code),
+        providerName: String(provider.name),
+        isActive: product.isActive,
+      });
+    } catch (syncError) {
+      return {
+        message:
+          syncError instanceof Error
+            ? `멤버십 상품 저장에 실패했습니다: ${syncError.message}`
+            : "멤버십 상품 저장에 실패했습니다.",
+      };
+    }
+
+    revalidatePath("/admin/benefit-products");
+    redirect("/admin/benefit-products");
+  }
+
   const { error } = await supabase.from("benefit_products").insert({
     benefit_category_id: product.benefitCategoryId,
     provider_id: product.providerId,
     name: product.name,
-    code: generateProductCode(product.name),
+    code: product.code,
     product_type: product.productType,
+    grade: product.grade,
     card_type: product.cardType,
     benefit_type: product.benefitType,
     is_all_product: product.isAllProduct,
@@ -367,6 +523,44 @@ export async function updateBenefitProductAction(
 
   const product = validated.data;
   const supabase = createSupabaseAdminClient();
+
+  if (product.productType === MEMBERSHIP_PRODUCT_TYPE) {
+    const { data: provider, error: providerError } = await supabase
+      .from("providers")
+      .select("code,name")
+      .eq("id", product.providerId)
+      .maybeSingle();
+
+    if (providerError || !provider) {
+      return {
+        fieldErrors: {
+          provider_id: "제공사 정보를 확인할 수 없습니다.",
+        },
+        message: providerError?.message,
+      };
+    }
+
+    try {
+      await ensureMembershipAllProduct(supabase, {
+        benefitCategoryId: product.benefitCategoryId,
+        providerId: product.providerId,
+        providerCode: String(provider.code),
+        providerName: String(provider.name),
+        isActive: product.isActive,
+      });
+    } catch (syncError) {
+      return {
+        message:
+          syncError instanceof Error
+            ? `멤버십 상품 저장에 실패했습니다: ${syncError.message}`
+            : "멤버십 상품 저장에 실패했습니다.",
+      };
+    }
+
+    revalidatePath("/admin/benefit-products");
+    redirect("/admin/benefit-products");
+  }
+
   const { error } = await supabase
     .from("benefit_products")
     .update({
@@ -374,6 +568,7 @@ export async function updateBenefitProductAction(
       provider_id: product.providerId,
       name: product.name,
       product_type: product.productType,
+      grade: product.grade,
       card_type: product.cardType,
       benefit_type: product.benefitType,
       is_all_product: product.isAllProduct,

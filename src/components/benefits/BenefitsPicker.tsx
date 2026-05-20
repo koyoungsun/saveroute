@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CreditCard, Plus, Smartphone, X } from "lucide-react";
+import { Check, CreditCard, Plus, Smartphone, Star, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
+  registerMembershipBenefitAction,
   registerTelecomBenefitAction,
   requestBenefitCardCatalogAction,
   type BenefitActionState,
@@ -68,11 +69,15 @@ const PROVIDER_BY_FIRST: Record<Exclude<TelecomFirstChoiceId, "mvno">, string> =
 export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPickerProps) {
   const router = useRouter();
   const [telecomFirst, setTelecomFirst] = useState<TelecomFirstChoiceId | null>(null);
-  const [membershipProductId, setMembershipProductId] = useState("");
+  const [telecomMembershipProductId, setTelecomMembershipProductId] = useState("");
   const [mvnoProviderId, setMvnoProviderId] = useState("");
   const [telecomOk, setTelecomOk] = useState<string | null>(null);
   const [telecomErr, setTelecomErr] = useState<string | null>(null);
   const [pendingTelecom, startTelecomTransition] = useTransition();
+  const [externalMembershipProductId, setExternalMembershipProductId] = useState("");
+  const [membershipOk, setMembershipOk] = useState<string | null>(null);
+  const [membershipErr, setMembershipErr] = useState<string | null>(null);
+  const [pendingMembership, startMembershipTransition] = useTransition();
   const [selectedCardProviderId, setSelectedCardProviderId] = useState("");
   const [selectedCardProductId, setSelectedCardProductId] = useState("");
   const [selectedCardType, setSelectedCardType] = useState<CardBenefitKind | "">("");
@@ -109,24 +114,57 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     if (!telecomFirst) {
       return null;
     }
-    const pid = Number(membershipProductId);
+    const pid = Number(telecomMembershipProductId);
     if (!Number.isInteger(pid) || pid <= 0) {
       return null;
     }
     return pid;
-  }, [telecomFirst, membershipProductId, mvnoProviderId, payload.mvnoBrandOptions]);
+  }, [telecomFirst, telecomMembershipProductId, mvnoProviderId, payload.mvnoBrandOptions]);
 
   const canRegisterTelecom =
     resolvedTelecomProductId !== null &&
     !pendingTelecom &&
     telecomFirst !== null &&
-    (telecomFirst === "mvno" ? mvnoProviderId !== "" : membershipProductId !== "");
+    (telecomFirst === "mvno" ? mvnoProviderId !== "" : telecomMembershipProductId !== "");
+
+  const registeredExternalMembershipIds = useMemo(
+    () => new Set(payload.externalMembershipProducts.map((product) => product.id)),
+    [payload.externalMembershipProducts],
+  );
+
+  const externalMembershipBenefits = useMemo(() => {
+    if (payload.membershipCategoryId === null) {
+      return [];
+    }
+
+    return payload.userBenefits.filter(
+      (benefit) =>
+        benefit.benefit_category_id === payload.membershipCategoryId &&
+        benefit.benefit_product_id != null &&
+        registeredExternalMembershipIds.has(benefit.benefit_product_id),
+    );
+  }, [
+    payload.userBenefits,
+    payload.membershipCategoryId,
+    registeredExternalMembershipIds,
+  ]);
+
+  const canRegisterExternalMembership =
+    externalMembershipProductId !== "" &&
+    !pendingMembership &&
+    payload.externalMembershipProducts.length > 0;
 
   const telecomAndMvnoBenefits = useMemo(() => {
     const membershipIds = new Set(payload.telecomMembershipProducts.map((p) => p.id));
     const mvnoDefaultIds = new Set(payload.mvnoBrandOptions.map((o) => o.defaultProductId));
     return payload.userBenefits.filter((b) => {
       if (b.benefit_category_id === payload.cardCategoryId) {
+        return false;
+      }
+      if (
+        payload.membershipCategoryId !== null &&
+        b.benefit_category_id === payload.membershipCategoryId
+      ) {
         return false;
       }
       if (payload.mvnoCategoryId !== null) {
@@ -149,13 +187,14 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     payload.telecomCategoryId,
     payload.mvnoCategoryId,
     payload.cardCategoryId,
+    payload.membershipCategoryId,
     payload.telecomMembershipProducts,
     payload.mvnoBrandOptions,
   ]);
 
   function selectTelecomFirst(next: TelecomFirstChoiceId) {
     setTelecomFirst(next);
-    setMembershipProductId("");
+    setTelecomMembershipProductId("");
     setMvnoProviderId("");
     setTelecomErr(null);
     setTelecomOk(null);
@@ -178,9 +217,33 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         } else {
           setTelecomErr(null);
           setTelecomOk(r.message ?? "통신 혜택을 등록했습니다.");
-          setMembershipProductId("");
+          setTelecomMembershipProductId("");
           setMvnoProviderId("");
           setTelecomFirst(null);
+        }
+        router.refresh();
+      });
+    });
+  }
+
+  function handleRegisterExternalMembership() {
+    const productId = Number(externalMembershipProductId);
+    if (!Number.isInteger(productId) || productId <= 0 || !canRegisterExternalMembership) {
+      setMembershipErr("멤버십을 선택해 주세요.");
+      return;
+    }
+
+    setMembershipErr(null);
+    setMembershipOk(null);
+    startMembershipTransition(() => {
+      void registerMembershipBenefitAction(productId).then((r: BenefitActionState) => {
+        if (r.error) {
+          setMembershipErr(r.error);
+          setMembershipOk(null);
+        } else {
+          setMembershipErr(null);
+          setMembershipOk(r.message ?? "멤버십을 등록했습니다.");
+          setExternalMembershipProductId("");
         }
         router.refresh();
       });
@@ -381,6 +444,19 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           {telecomOk}
         </p>
       ) : null}
+      {membershipErr ? (
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {membershipErr}
+        </p>
+      ) : null}
+      {membershipOk ? (
+        <p
+          className="rounded-2xl border px-4 py-3 text-sm font-medium"
+          style={{ borderColor: `${accent}55`, backgroundColor: `${accent}14`, color: accent }}
+        >
+          {membershipOk}
+        </p>
+      ) : null}
 
       {showBenefitsEmptyCta ? (
         <div className="rounded-2xl border border-[#409A53]/25 bg-[#409A53]/08 px-4 py-6 text-center">
@@ -456,9 +532,9 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             </label>
             <select
               id="telecom-membership-grade"
-              value={membershipProductId}
+              value={telecomMembershipProductId}
               onChange={(event) => {
-                setMembershipProductId(event.target.value);
+                setTelecomMembershipProductId(event.target.value);
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
@@ -552,6 +628,87 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           </div>
         ) : null}
       </section>
+
+      {payload.externalMembershipProducts.length > 0 ? (
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
+                멤버십
+              </p>
+              <h2 className="mt-1 text-lg font-extrabold text-gray-950">제휴 멤버십 등록</h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                보유 중인 제휴 멤버십을 선택해 등록해 주세요.
+              </p>
+            </div>
+            <Star className="size-9 shrink-0 text-gray-300" aria-hidden />
+          </div>
+
+          <label htmlFor="external-membership-product" className="mt-4 text-xs font-bold text-gray-700">
+            멤버십 선택
+          </label>
+          <select
+            id="external-membership-product"
+            value={externalMembershipProductId}
+            onChange={(event) => {
+              setExternalMembershipProductId(event.target.value);
+              setMembershipErr(null);
+              setMembershipOk(null);
+            }}
+            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+          >
+            <option value="">멤버십을 선택해 주세요</option>
+            {payload.externalMembershipProducts.map((product) => (
+              <option key={product.id} value={String(product.id)}>
+                {product.providerName ? `${product.providerName} · ${product.name}` : product.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            disabled={!canRegisterExternalMembership}
+            onClick={handleRegisterExternalMembership}
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+          >
+            <Plus className="size-4" aria-hidden />
+            {pendingMembership ? "등록 중..." : "멤버십 등록"}
+          </button>
+
+          {externalMembershipBenefits.length > 0 ? (
+            <div className="mt-5">
+              <p className="text-xs font-bold text-gray-700">등록한 멤버십</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {externalMembershipBenefits.map((benefit) => {
+                  const productName = relationOne(benefit.benefit_product)?.name ?? "멤버십";
+                  const providerName = relationOne(benefit.provider)?.name ?? "";
+                  return (
+                    <div
+                      key={benefit.id}
+                      className="inline-flex max-w-full items-center gap-1 rounded-2xl border border-[#409A53]/35 bg-[#409A53]/10 py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900"
+                    >
+                      <span className="min-w-0 truncate">
+                        {providerName ? `${providerName} · ` : ""}
+                        {productName}
+                      </span>
+                      <form action={deactivateUserBenefitAction}>
+                        <input type="hidden" name="user_benefit_id" value={benefit.id} />
+                        <button
+                          type="submit"
+                          aria-label={`${productName} 삭제`}
+                          className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <X className="size-3.5" aria-hidden />
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
         <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>

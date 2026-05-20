@@ -46,6 +46,8 @@ export default async function NewBenefitProductPage() {
   const providers = (providerData ?? []) as ProviderOption[];
   const cardCategoryId =
     categories.find((category) => category.code === "card")?.id ?? null;
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
 
   return (
     <>
@@ -69,6 +71,7 @@ export default async function NewBenefitProductPage() {
         categories={categories}
         providers={providers}
         cardCategoryId={cardCategoryId}
+        membershipCategoryId={membershipCategoryId}
         mode="create"
       />
     </>

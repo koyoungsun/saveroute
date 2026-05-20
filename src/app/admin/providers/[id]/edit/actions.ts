@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { syncMembershipCatalogForProvider } from "@/lib/benefits/membership-catalog";
 
 import {
   type ProviderFormState,
@@ -44,7 +45,7 @@ export async function updateProviderAction(
 
   const { data: category, error: categoryError } = await supabase
     .from("benefit_categories")
-    .select("id")
+    .select("id,code")
     .eq("id", input.benefitCategoryId)
     .eq("is_active", true)
     .maybeSingle();
@@ -55,6 +56,22 @@ export async function updateProviderAction(
         benefit_category_id: "활성 혜택 카테고리를 선택해 주세요.",
       },
       message: categoryError?.message,
+    };
+  }
+
+  if (category.code === "membership" && input.providerType !== "membership_company") {
+    return {
+      fieldErrors: {
+        provider_type: "membership 카테고리는 membership_company 유형만 사용할 수 있습니다.",
+      },
+    };
+  }
+
+  if (category.code !== "membership" && input.providerType === "membership_company") {
+    return {
+      fieldErrors: {
+        provider_type: "membership_company는 membership 카테고리에서만 사용할 수 있습니다.",
+      },
     };
   }
 
@@ -98,7 +115,19 @@ export async function updateProviderAction(
     };
   }
 
+  try {
+    await syncMembershipCatalogForProvider(supabase, providerId);
+  } catch (syncError) {
+    return {
+      message:
+        syncError instanceof Error
+          ? `멤버십 전체 상품 동기화에 실패했습니다: ${syncError.message}`
+          : "멤버십 전체 상품 동기화에 실패했습니다.",
+    };
+  }
+
   revalidatePath("/admin/providers");
+  revalidatePath("/admin/benefit-products");
   revalidatePath(`/admin/providers/${providerId}/edit`);
   redirect("/admin/providers");
 }

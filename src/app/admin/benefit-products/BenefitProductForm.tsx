@@ -21,6 +21,7 @@ export type BenefitProductFormValues = {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code?: string;
 };
 
 type ProviderOption = {
@@ -57,6 +58,7 @@ export function BenefitProductForm({
   categories,
   providers,
   cardCategoryId,
+  membershipCategoryId,
   initialValues,
   mode,
 }: {
@@ -64,6 +66,7 @@ export function BenefitProductForm({
   categories: BenefitCategoryOption[];
   providers: ProviderOption[];
   cardCategoryId: number | null;
+  membershipCategoryId: number | null;
   initialValues?: BenefitProductFormValues;
   mode: "create" | "edit";
 }) {
@@ -78,11 +81,6 @@ export function BenefitProductForm({
     initialValues?.is_all_product ?? false,
   );
 
-  const isCardCategory =
-    cardCategoryId !== null &&
-    selectedCategoryId !== "" &&
-    Number(selectedCategoryId) === cardCategoryId;
-
   const filteredProviders = useMemo(
     () =>
       selectedCategoryId
@@ -93,6 +91,23 @@ export function BenefitProductForm({
         : providers,
     [providers, selectedCategoryId],
   );
+
+  const isCardCategory =
+    cardCategoryId !== null &&
+    selectedCategoryId !== "" &&
+    Number(selectedCategoryId) === cardCategoryId;
+
+  const isMembershipCategory =
+    membershipCategoryId !== null &&
+    selectedCategoryId !== "" &&
+    Number(selectedCategoryId) === membershipCategoryId;
+
+  const selectedProvider = filteredProviders.find(
+    (provider) => provider.id === Number(selectedProviderId),
+  );
+  const membershipDefaultName = selectedProvider
+    ? `${selectedProvider.name} 전체`
+    : "멤버십명 전체";
 
   const defaultBenefitType = isAllProduct
     ? "all"
@@ -180,15 +195,34 @@ export function BenefitProductForm({
               name="name"
               className="form-control"
               defaultValue={initialValues?.name ?? ""}
-              placeholder="예: KT VIP"
-              required
+              placeholder={
+                isMembershipCategory ? membershipDefaultName : "예: KT VIP"
+              }
+              required={!isMembershipCategory}
             />
+            {isMembershipCategory ? (
+              <div className="form-text">
+                비워두면 제공사명 기준으로 `{membershipDefaultName}` 형식으로
+                저장됩니다. benefit_type=all · is_all_product=true · grade=전체
+                패턴이 적용됩니다.
+              </div>
+            ) : null}
             {state.fieldErrors?.name ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.name}
               </div>
             ) : null}
           </div>
+
+          {isMembershipCategory ? (
+            <div className="col-12">
+              <div className="alert alert-light border mb-0 py-2 small">
+                membership 상품은 제공사별 <strong>전체</strong> 상품 1건으로
+                관리됩니다. 제공사 등록 시 자동 생성되며, 여기서는 이름·활성
+                상태를 동기화할 수 있습니다.
+              </div>
+            </div>
+          ) : null}
 
           {isCardCategory ? (
             <>
@@ -266,6 +300,7 @@ export function BenefitProductForm({
                 className="form-check-input"
                 type="checkbox"
                 defaultChecked={initialValues?.is_mvno ?? false}
+                disabled={isMembershipCategory}
               />
               <label className="form-check-label" htmlFor="is_mvno">
                 알뜰폰 상품
@@ -281,6 +316,7 @@ export function BenefitProductForm({
                 className="form-check-input"
                 type="checkbox"
                 defaultChecked={initialValues?.mvno_notice_required ?? false}
+                disabled={isMembershipCategory}
               />
               <label className="form-check-label" htmlFor="mvno_notice_required">
                 알뜰폰 안내 필요

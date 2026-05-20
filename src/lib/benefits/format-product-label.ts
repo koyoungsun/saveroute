@@ -9,6 +9,9 @@ export function formatBenefitProductOptionLabel(product: {
     if (product.product_type === "telecom_membership") {
       return `${product.name} [통신사 전체 · 등급 무관]`;
     }
+    if (product.product_type === "membership") {
+      return `${product.name} [멤버십 전체]`;
+    }
     return `${product.name} [카드사 전체]`;
   }
 

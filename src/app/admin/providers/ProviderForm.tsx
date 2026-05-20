@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -11,6 +11,7 @@ import {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code?: string;
 };
 
 export type ProviderFormValues = {
@@ -60,15 +61,42 @@ function SubmitButton({ mode }: { mode: "create" | "edit" }) {
 export function ProviderForm({
   action,
   categories,
+  membershipCategoryId,
   initialValues,
   mode,
 }: {
   action: ProviderFormAction;
   categories: BenefitCategoryOption[];
+  membershipCategoryId: number | null;
   initialValues?: ProviderFormValues;
   mode: "create" | "edit";
 }) {
   const [state, formAction] = useActionState(action, initialState);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    initialValues ? String(initialValues.benefit_category_id) : "",
+  );
+  const [selectedProviderType, setSelectedProviderType] = useState<
+    ProviderType | ""
+  >(initialValues?.provider_type ?? "");
+
+  const isMembershipCategory =
+    membershipCategoryId !== null &&
+    selectedCategoryId !== "" &&
+    Number(selectedCategoryId) === membershipCategoryId;
+
+  useEffect(() => {
+    if (isMembershipCategory && selectedProviderType !== "membership_company") {
+      setSelectedProviderType("membership_company");
+    }
+  }, [isMembershipCategory, selectedProviderType]);
+
+  const providerTypeOptions = isMembershipCategory
+    ? PROVIDER_TYPE_OPTIONS.filter(
+        (option) => option.value === "membership_company",
+      )
+    : PROVIDER_TYPE_OPTIONS.filter(
+        (option) => option.value !== "membership_company",
+      );
 
   return (
     <form action={formAction} className="card sr-block">
@@ -111,7 +139,7 @@ export function ProviderForm({
               name="code"
               className="form-control font-monospace"
               defaultValue={initialValues?.code ?? ""}
-              placeholder="예: shinhan_card"
+              placeholder={isMembershipCategory ? "예: naver_plus" : "예: shinhan_card"}
               required
             />
             <div className="form-text">
@@ -130,9 +158,8 @@ export function ProviderForm({
               id="benefit_category_id"
               name="benefit_category_id"
               className="form-select"
-              defaultValue={
-                initialValues ? String(initialValues.benefit_category_id) : ""
-              }
+              value={selectedCategoryId}
+              onChange={(event) => setSelectedCategoryId(event.target.value)}
               required
             >
               <option value="" disabled>
@@ -159,24 +186,43 @@ export function ProviderForm({
               id="provider_type"
               name="provider_type"
               className="form-select"
-              defaultValue={initialValues?.provider_type ?? ""}
+              value={selectedProviderType}
+              onChange={(event) =>
+                setSelectedProviderType(event.target.value as ProviderType)
+              }
               required
+              disabled={isMembershipCategory}
             >
               <option value="" disabled>
                 유형 선택
               </option>
-              {PROVIDER_TYPE_OPTIONS.map((option) => (
+              {providerTypeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
+            {isMembershipCategory ? (
+              <div className="form-text">
+                membership 카테고리는 membership_company 유형으로 고정됩니다.
+              </div>
+            ) : null}
             {state.fieldErrors?.provider_type ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.provider_type}
               </div>
             ) : null}
           </div>
+
+          {isMembershipCategory ? (
+            <div className="col-12">
+              <div className="alert alert-light border mb-0 py-2 small">
+                저장 시 <strong>{`{제공사명} 전체`}</strong> 멤버십 상품이
+                자동 생성·동기화됩니다. benefit_type=all · is_all_product=true ·
+                grade=전체 패턴이 적용됩니다.
+              </div>
+            </div>
+          ) : null}
 
           <div className="col-md-6">
             <label className="form-label fw-semibold" htmlFor="display_order">
@@ -191,7 +237,10 @@ export function ProviderForm({
               className="form-control"
               defaultValue={initialValues?.display_order ?? 500}
             />
-            <div className="form-text">작을수록 목록에서 먼저 노출됩니다.</div>
+            <div className="form-text">
+              작을수록 목록에서 먼저 노출됩니다. 멤버십 등록 화면 정렬에도
+              사용됩니다.
+            </div>
             {state.fieldErrors?.display_order ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.display_order}

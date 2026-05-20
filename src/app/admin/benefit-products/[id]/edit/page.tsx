@@ -93,6 +93,8 @@ export default async function EditBenefitProductPage({
   const providers = (providerData ?? []) as ProviderOption[];
   const cardCategoryId =
     categories.find((category) => category.code === "card")?.id ?? null;
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
   const updateAction = updateBenefitProductAction.bind(null, benefitProduct.id);
 
   return (
@@ -117,6 +119,7 @@ export default async function EditBenefitProductPage({
         categories={categories}
         providers={providers}
         cardCategoryId={cardCategoryId}
+        membershipCategoryId={membershipCategoryId}
         initialValues={benefitProduct}
         mode="edit"
       />

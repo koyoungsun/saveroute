@@ -135,12 +135,37 @@ export function sortMvnoBrandOptions(rows: MvnoBrandOption[]): MvnoBrandOption[]
   });
 }
 
+export type ExternalMembershipOption = {
+  id: number;
+  name: string;
+  provider_id: number;
+  providerName: string;
+  providerCode: string;
+  providerDisplayOrder: number;
+  isAllProduct: boolean;
+};
+
+export function sortExternalMembershipOptions(
+  rows: ExternalMembershipOption[],
+): ExternalMembershipOption[] {
+  return [...rows].sort((a, b) => {
+    if (a.providerDisplayOrder !== b.providerDisplayOrder) {
+      return a.providerDisplayOrder - b.providerDisplayOrder;
+    }
+    const providerCompare = a.providerName.localeCompare(b.providerName, "ko");
+    if (providerCompare !== 0) return providerCompare;
+    return a.name.localeCompare(b.name, "ko");
+  });
+}
+
 export type BenefitsRegistrationPayload = {
   telecomCategoryId: number;
   /** null 이면 DB 에 mvno 행이 없음 · 아래 brand 옵션은 provider_type 로만 로드 */
   mvnoCategoryId: number | null;
   cardCategoryId: number;
+  membershipCategoryId: number | null;
   telecomMembershipProducts: TelecomMembershipOption[];
+  externalMembershipProducts: ExternalMembershipOption[];
   mvnoBrandOptions: MvnoBrandOption[];
   cardProviders: CardProviderOption[];
   cardProducts: CardProductOption[];
@@ -163,10 +188,12 @@ export async function loadBenefitsRegistrationData(
     { data: telecomCat, error: telecomCatError },
     { data: mvnoCat, error: mvnoCatError },
     { data: cardCat, error: cardCatError },
+    { data: membershipCat, error: membershipCatError },
   ] = await Promise.all([
     supabase.from("benefit_categories").select("id").eq("code", "telecom").maybeSingle(),
     supabase.from("benefit_categories").select("id").eq("code", "mvno").maybeSingle(),
     supabase.from("benefit_categories").select("id").eq("code", "card").maybeSingle(),
+    supabase.from("benefit_categories").select("id").eq("code", "membership").maybeSingle(),
   ]);
 
   if (telecomCatError || !telecomCat) {
@@ -178,10 +205,14 @@ export async function loadBenefitsRegistrationData(
   if (cardCatError || !cardCat) {
     throw new Error(`Card category missing: ${cardCatError?.message ?? "no row"}`);
   }
+  if (membershipCatError) {
+    throw new Error(`Membership category query failed: ${membershipCatError.message}`);
+  }
 
   const telecomCategoryId = telecomCat.id;
   const mvnoCategoryId: number | null = mvnoCat?.id ?? null;
   const cardCategoryId = cardCat.id;
+  const membershipCategoryId: number | null = membershipCat?.id ?? null;
 
   const mvnoProviderQuery = mvnoCategoryId
     ? supabase
@@ -196,8 +227,30 @@ export async function loadBenefitsRegistrationData(
         .eq("provider_type", "telecom_mvno")
         .eq("is_active", true);
 
+  const externalMembershipQuery =
+    membershipCategoryId === null
+      ? Promise.resolve({ data: [], error: null })
+      : supabase
+          .from("benefit_products")
+          .select(
+            `
+            id,
+            name,
+            provider_id,
+            benefit_type,
+            is_all_product,
+            provider:providers(name,code,display_order)
+          `,
+          )
+          .eq("benefit_category_id", membershipCategoryId)
+          .eq("product_type", "membership")
+          .eq("is_all_product", true)
+          .eq("is_active", true)
+          .order("id", { ascending: true });
+
   const [
     { data: membershipRaw, error: membershipError },
+    { data: externalMembershipRaw, error: externalMembershipError },
     { data: telecomMajorProvidersRaw, error: telecomMajorProvidersError },
     { data: mvnoProvidersRaw, error: mvnoProvidersError },
     { data: cardProvidersRaw, error: cardProvidersError },
@@ -212,6 +265,7 @@ export async function loadBenefitsRegistrationData(
       .eq("product_type", "telecom_membership")
       .eq("is_active", true)
       .order("id", { ascending: true }),
+    externalMembershipQuery,
     supabase
       .from("providers")
       .select("id,code")
@@ -271,6 +325,9 @@ export async function loadBenefitsRegistrationData(
   if (membershipError) {
     throw new Error(membershipError.message);
   }
+  if (externalMembershipError) {
+    throw new Error(externalMembershipError.message);
+  }
   if (telecomMajorProvidersError) {
     throw new Error(telecomMajorProvidersError.message);
   }
@@ -311,6 +368,28 @@ export async function loadBenefitsRegistrationData(
         };
       }),
     ),
+  );
+
+  const externalMembershipProducts: ExternalMembershipOption[] = sortExternalMembershipOptions(
+    (externalMembershipRaw ?? []).map((row: Record<string, unknown>) => {
+      const provider = relationOne(
+        row.provider as
+          | { name: string; code: string; display_order?: number }
+          | { name: string; code: string; display_order?: number }[]
+          | null,
+      );
+      return {
+        id: row.id as number,
+        name: row.name as string,
+        provider_id: row.provider_id as number,
+        providerName: provider?.name ?? "",
+        providerCode: provider?.code ?? "",
+        providerDisplayOrder: provider?.display_order ?? 500,
+        isAllProduct:
+          Boolean(row.is_all_product) ||
+          String(row.benefit_type ?? "").toLowerCase() === "all",
+      };
+    }),
   );
 
   const mvnoProviderIds = (mvnoProvidersRaw ?? []).map((p) => p.id);
@@ -489,7 +568,9 @@ export async function loadBenefitsRegistrationData(
     telecomCategoryId,
     mvnoCategoryId,
     cardCategoryId,
+    membershipCategoryId,
     telecomMembershipProducts,
+    externalMembershipProducts,
     mvnoBrandOptions,
     cardProviders,
     cardProducts,

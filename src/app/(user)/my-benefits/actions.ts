@@ -150,6 +150,86 @@ export async function registerTelecomBenefitAction(productId: number): Promise<B
   return { message: "통신 혜택을 등록했습니다." };
 }
 
+/** 외부 멤버십(제휴 멤버십) 등록 */
+export async function registerMembershipBenefitAction(
+  productId: number,
+): Promise<BenefitActionState> {
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return { error: "잘못된 멤버십 상품입니다." };
+  }
+
+  const { supabase, userId } = await requireSession();
+
+  const { data: product, error: productError } = await supabase
+    .from("benefit_products")
+    .select(
+      "id, benefit_category_id, provider_id, benefit_type, product_type, is_all_product",
+    )
+    .eq("id", productId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (productError || !product) {
+    return { error: "멤버십 상품을 찾지 못했습니다." };
+  }
+
+  if (product.product_type !== "membership") {
+    return { error: "선택한 상품으로는 멤버십을 등록할 수 없습니다." };
+  }
+
+  const { data: categoryRow, error: catError } = await supabase
+    .from("benefit_categories")
+    .select("code")
+    .eq("id", product.benefit_category_id)
+    .maybeSingle();
+
+  if (catError || !categoryRow) {
+    return { error: "혜택 카테고리를 확인하지 못했습니다." };
+  }
+
+  if (categoryRow.code !== "membership") {
+    return { error: "멤버십 카테고리 상품만 등록할 수 있습니다." };
+  }
+
+  const { data: dupe, error: dupeError } = await supabase
+    .from("user_benefits")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider_id", product.provider_id)
+    .eq("benefit_product_id", productId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (dupeError) {
+    return { error: dupeError.message };
+  }
+
+  if (dupe) {
+    return { error: "이미 등록된 멤버십입니다." };
+  }
+
+  const { error: upsertError } = await supabase.from("user_benefits").upsert(
+    {
+      user_id: userId,
+      benefit_category_id: product.benefit_category_id,
+      provider_id: product.provider_id,
+      benefit_product_id: productId,
+      benefit_type: "all",
+      is_active: true,
+      updated_at: nowIso(),
+    },
+    { onConflict: "user_id,benefit_category_id,provider_id,benefit_product_id" },
+  );
+
+  if (upsertError) {
+    return { error: upsertError.message };
+  }
+
+  revalidatePath("/my-benefits");
+  revalidatePath("/onboarding");
+  return { message: "멤버십을 등록했습니다." };
+}
+
 /** 카드 혜택 상품 추가 (중복 시 재활성화) */
 export async function addCardBenefitAction(
   productId: number,
