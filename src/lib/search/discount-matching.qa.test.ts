@@ -117,6 +117,60 @@ assert.equal(
   true,
 );
 
+const SPECIFIC_CARD_ID_2 = 9003;
+const specificProductMeta2 = {
+  id: SPECIFIC_CARD_ID_2,
+  benefit_type: "debit",
+  is_all_product: false,
+};
+
+const userSpecificBenefit2 = {
+  benefit_category_id: CARD_CAT,
+  provider_id: SAMSUNG,
+  benefit_product_id: SPECIFIC_CARD_ID_2,
+  benefit_type: "debit",
+  product: specificProductMeta2,
+};
+
+const cardProductById = new Map<number, BenefitProductMatchMeta>([
+  [ALL_PRODUCT_ID, allProductMeta],
+  [SPECIFIC_CARD_ID, specificProductMeta],
+  [SPECIFIC_CARD_ID_2, specificProductMeta2],
+]);
+
+const multiCardDiscount = {
+  benefit_category_id: CARD_CAT,
+  provider_id: SAMSUNG,
+  benefit_product_id: ALL_PRODUCT_ID,
+  benefit_product_ids: [ALL_PRODUCT_ID, SPECIFIC_CARD_ID, SPECIFIC_CARD_ID_2],
+};
+
+assert.equal(
+  matchDiscountToBenefits(multiCardDiscount, [userSpecificBenefit], cardProductById),
+  true,
+);
+assert.equal(
+  matchDiscountToBenefits(multiCardDiscount, [userSpecificBenefit2], cardProductById),
+  true,
+);
+assert.equal(
+  matchDiscountToBenefits(multiCardDiscount, [userAllBenefit], cardProductById),
+  true,
+);
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: CARD_CAT,
+      provider_id: SAMSUNG,
+      benefit_product_id: SPECIFIC_CARD_ID,
+      benefit_product_ids: [SPECIFIC_CARD_ID],
+    },
+    [userAllBenefit],
+    cardProductById,
+  ),
+  false,
+);
+
 // --- Telecom membership (same all-product semantics, separate provider scope) ---
 const TELECOM_CAT = 1;
 const SKT = 1;
@@ -296,6 +350,86 @@ assert.equal(
     telecomProductById,
   ),
   true,
+);
+
+// --- Shinhan card: Love vs Deep Dream (no credit-type-wide matching) ---
+const SHINHAN = 20;
+const SHINHAN_ALL_ID = 8001;
+const SHINHAN_LOVE_ID = 8002;
+const SHINHAN_DEEP_DREAM_ID = 8003;
+
+const shinhanAllMeta = {
+  id: SHINHAN_ALL_ID,
+  benefit_type: "all",
+  is_all_product: true,
+};
+
+const shinhanLoveMeta = {
+  id: SHINHAN_LOVE_ID,
+  benefit_type: "credit",
+  is_all_product: false,
+};
+
+const shinhanDeepDreamMeta = {
+  id: SHINHAN_DEEP_DREAM_ID,
+  benefit_type: "credit",
+  is_all_product: false,
+};
+
+const userShinhanLove = {
+  benefit_category_id: CARD_CAT,
+  provider_id: SHINHAN,
+  benefit_product_id: SHINHAN_LOVE_ID,
+  benefit_type: "credit",
+  product: shinhanLoveMeta,
+};
+
+const shinhanProductById = new Map<number, BenefitProductMatchMeta>([
+  [SHINHAN_ALL_ID, shinhanAllMeta],
+  [SHINHAN_LOVE_ID, shinhanLoveMeta],
+  [SHINHAN_DEEP_DREAM_ID, shinhanDeepDreamMeta],
+]);
+
+// Love user matches Shinhan 전체 (all-product) discount
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: CARD_CAT,
+      provider_id: SHINHAN,
+      benefit_product_id: SHINHAN_ALL_ID,
+    },
+    [userShinhanLove],
+    shinhanProductById,
+  ),
+  true,
+);
+
+// Love user matches Love-specific discount
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: CARD_CAT,
+      provider_id: SHINHAN,
+      benefit_product_id: SHINHAN_LOVE_ID,
+    },
+    [userShinhanLove],
+    shinhanProductById,
+  ),
+  true,
+);
+
+// Love user does NOT match Deep Dream-specific discount
+assert.equal(
+  matchDiscountToBenefits(
+    {
+      benefit_category_id: CARD_CAT,
+      provider_id: SHINHAN,
+      benefit_product_id: SHINHAN_DEEP_DREAM_ID,
+    },
+    [userShinhanLove],
+    shinhanProductById,
+  ),
+  false,
 );
 
 console.log("discount-matching QA: PASS");

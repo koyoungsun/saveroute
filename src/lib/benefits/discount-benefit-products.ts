@@ -37,6 +37,10 @@ export function readBenefitProductIdsFromFormData(formData: FormData): number[] 
   return Number.isInteger(parsed) && parsed > 0 ? [parsed] : [];
 }
 
+export function normalizeCardBenefitProductIds(productIds: number[]): number[] {
+  return [...new Set(productIds)];
+}
+
 export function normalizeTelecomBenefitProductIds(
   productIds: number[],
   productById: Map<number, BenefitProductMatchMeta>,

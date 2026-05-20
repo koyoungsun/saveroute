@@ -27,6 +27,8 @@
     "qa:discount-matching": "tsx src/lib/search/discount-matching.qa.test.ts",
     "qa:card-product-search": "tsx src/lib/benefits/card-product-search.qa.test.ts",
     "qa:admin-discount-list": "tsx src/lib/admin/discount-list-query.qa.test.ts",
+    "qa:discount-value-range": "tsx src/lib/discounts/format-discount-value.qa.test.ts",
+    "qa:admin-ops-panel": "tsx src/lib/admin/ops-panel-anonymize.qa.test.ts && tsx src/lib/admin/ops-panel-config.qa.test.ts",
     "qa:rank-items": "tsx src/lib/admin/rank-items.test.ts",
     "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs",
     "apply:061-promo-slots": "node scripts/apply-061-promo-slots-cleanup.cjs",

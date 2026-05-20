@@ -70,7 +70,9 @@ export function PaginatedTable({
                 <tr key={rowKeys?.[rowIndex] ?? rowIndex}>
                   <td className="text-center">{rowIndex + 1}</td>
                   {cells.map((cell, idx) => (
-                    <td key={idx}>{cell}</td>
+                    <td key={idx} className={columns[idx]?.className}>
+                      {cell}
+                    </td>
                   ))}
                 </tr>
               );

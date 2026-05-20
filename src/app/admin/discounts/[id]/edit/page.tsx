@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
 
+import { DiscountEditMeta } from "../../DiscountEditMeta";
 import { EditDiscountForm, type DiscountEditValues } from "./EditDiscountForm";
 
 type EditDiscountPageProps = {
@@ -66,12 +67,20 @@ export default async function EditDiscountPage({
         benefit_product_id,
         title,
         condition_text,
+        apply_basis,
+        stackable_policy,
+        usage_channel,
+        notice_text,
         installment_condition,
         discount_value,
+        discount_value_max,
         discount_unit,
         valid_from,
         valid_until,
         source_url,
+        admin_memo,
+        created_at,
+        updated_at,
         status
       `,
       )
@@ -136,17 +145,22 @@ export default async function EditDiscountPage({
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
         <div>
           <h1 className="h3 mb-1">Edit Discount</h1>
           <p className="text-muted mb-0">
             실제 discounts 테이블 컬럼 기준으로 할인 정보를 수정합니다.
           </p>
         </div>
-        <Link href="/admin/discounts" className="btn btn-outline-secondary">
+        <Link href="/admin/discounts" className="btn btn-outline-secondary sr-discounts-action-btn">
           목록으로
         </Link>
       </div>
+
+      <DiscountEditMeta
+        createdAt={discountWithLinks.created_at}
+        updatedAt={discountWithLinks.updated_at}
+      />
 
       <EditDiscountForm
         discount={discountWithLinks}

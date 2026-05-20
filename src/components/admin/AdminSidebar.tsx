@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 const benefitChildren = [
   {
@@ -52,6 +52,21 @@ const midNavItems = [
 function isBenefitSectionActive(activePathname: string) {
   return benefitHrefs.some(
     (href) => activePathname === href || activePathname.startsWith(`${href}/`),
+  );
+}
+
+function SidebarSectionTitle({
+  icon,
+  children,
+}: {
+  icon: string;
+  children: ReactNode;
+}) {
+  return (
+    <h3 className="sr-sidebar-section-title">
+      <i className={`bi ${icon} sr-sidebar-section-title-icon`} aria-hidden="true" />
+      <span>{children}</span>
+    </h3>
   );
 }
 
@@ -107,12 +122,17 @@ export function AdminSidebar() {
       style={{ width: "240px" }}
     >
       <div className="px-3 py-3 border-bottom border-secondary-subtle">
-        <div className="fw-bold lh-1">SaveRoute</div>
-        <div className="sr-sidebar-section-label mt-1">Admin Console</div>
+        <div className="d-flex align-items-center gap-2">
+          <i className="bi bi-compass sr-sidebar-brand-icon" aria-hidden="true" />
+          <div className="min-w-0">
+            <div className="fw-bold lh-1">SaveRoute</div>
+            <div className="sr-sidebar-section-label mt-1">Admin Console</div>
+          </div>
+        </div>
       </div>
 
       <nav className="nav flex-column px-2 py-3 gap-1" aria-label="관리자 메뉴">
-        <div className="px-2 pb-2 sr-sidebar-section-label">MENU</div>
+        <SidebarSectionTitle icon="bi-grid-3x3-gap">MENU</SidebarSectionTitle>
 
         {topNavItems.map((item) => (
           <NavLink key={item.id} {...item} activePathname={activePathname} />
@@ -133,7 +153,7 @@ export function AdminSidebar() {
             <i className="bi bi-stack sr-nav-icon flex-shrink-0" aria-hidden="true" />
             <span className="fw-semibold flex-grow-1">혜택 데이터</span>
             <i
-              className={`bi ${benefitsOpen ? "bi-chevron-down" : "bi-chevron-right"} flex-shrink-0 opacity-75`}
+              className={`bi ${benefitsOpen ? "bi-chevron-down" : "bi-chevron-right"} flex-shrink-0 sr-sidebar-chevron`}
               aria-hidden="true"
             />
           </button>
@@ -149,6 +169,8 @@ export function AdminSidebar() {
             ))}
           </div>
         </div>
+
+        <SidebarSectionTitle icon="bi-sliders">운영</SidebarSectionTitle>
 
         {midNavItems.map((item) => (
           <NavLink key={item.id} {...item} activePathname={activePathname} />

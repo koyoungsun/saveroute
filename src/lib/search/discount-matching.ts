@@ -1,6 +1,7 @@
 /**
- * 할인 ↔ 사용자 등록 혜택 매칭 (카드사 전체 / 특정 카드 / 카드유형 전체).
- * 통신사 "전체" 상품(is_all_product + benefit_type=all)도 동일 규칙 적용.
+ * 할인 ↔ 사용자 등록 혜택 매칭 (카드사 전체 / 특정 카드).
+ * 특정 카드 할인은 benefit_product_id 정확 일치 시에만 매칭.
+ * 전체 할인(is_all_product / benefit_type=all)은 같은 provider 내 모든 특정 카드 사용자에게 매칭.
  * 통신사 복수 등급은 discount_benefit_products / benefit_product_ids 로 연결.
  */
 
@@ -80,14 +81,12 @@ function matchDiscountProductToUserBenefit(
   benefit: UserBenefitMatchRow,
 ): boolean {
   const userAll = userHoldsProviderAllProduct(benefit);
-  const userBenefitType = normalizeBenefitType(benefit.benefit_type);
 
   if (!discountProduct) {
     return false;
   }
 
   const discountAll = isAllProductMeta(discountProduct);
-  const discountTypeWide = isCardTypeWideProductMeta(discountProduct);
 
   if (userAll) {
     return discountAll;
@@ -98,14 +97,6 @@ function matchDiscountProductToUserBenefit(
   }
 
   if (discountAll) {
-    return true;
-  }
-
-  if (
-    discountTypeWide &&
-    userBenefitType &&
-    normalizeBenefitType(discountProduct.benefit_type) === userBenefitType
-  ) {
     return true;
   }
 

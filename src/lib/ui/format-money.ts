@@ -1,3 +1,5 @@
+import { formatDiscountValueDisplay } from "@/lib/discounts/format-discount-value";
+
 export type DiscountAmountUnit =
   | "percent"
   | "won"
@@ -76,28 +78,12 @@ export function sanitizePercentInput(raw: string): string {
 export function formatAdminDiscountListValue(
   value: number | string,
   unit: string,
+  valueMax?: number | string | null,
 ): string {
-  const numberValue = Number(value) || 0;
-
-  if (unit === "free") {
-    return "무료";
-  }
-
-  if (unit === "percent") {
-    return `${numberValue}%`;
-  }
-
-  if (unit === "won") {
-    return `${numberValue.toLocaleString("ko-KR")}원`;
-  }
-
-  if (unit === "special_price") {
-    return `${numberValue.toLocaleString("ko-KR")}원 특가`;
-  }
-
-  if (unit === "unknown") {
-    return "할인 혜택";
-  }
-
-  return String(value);
+  return formatDiscountValueDisplay({
+    value,
+    valueMax,
+    unit,
+    style: "admin-list",
+  });
 }

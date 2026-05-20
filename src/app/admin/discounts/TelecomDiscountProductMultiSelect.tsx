@@ -63,8 +63,8 @@ export function TelecomDiscountProductMultiSelect({
 
   return (
     <div>
-      <fieldset disabled={disabled} className="border rounded-3 p-3 mb-0">
-        <legend className="float-none w-auto px-2 fs-6 fw-semibold mb-2">
+      <fieldset disabled={disabled} className="border rounded-3 p-3 mb-0 sr-admin-discounts-telecom-fieldset">
+        <legend className="sr-discounts-group-title sr-discounts-group-title--sub mb-2">
           혜택상품 (복수 선택)
         </legend>
 
@@ -127,9 +127,9 @@ export function TelecomDiscountProductMultiSelect({
       ))}
 
       {fieldError ? (
-        <div className="form-text text-danger">{fieldError}</div>
+        <div className="sr-discounts-field__error form-text mb-0">{fieldError}</div>
       ) : (
-        <div className="form-text">
+        <div className="sr-discounts-field__hint form-text mb-0">
           전체를 선택하면 모든 등급 회원에게, 등급별 복수 선택 시 해당 등급 회원에게만
           매칭됩니다. 전체와 등급별은 동시에 선택할 수 없습니다.
         </div>

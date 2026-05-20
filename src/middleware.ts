@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  createVisitorSessionId,
+  VISITOR_SESSION_COOKIE,
+} from "@/lib/session/visitor-session";
+
 const PROTECTED_PREFIXES = ["/my-benefits", "/mypage", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
@@ -45,6 +50,15 @@ export async function middleware(request: NextRequest) {
     const login = new URL("/auth/login", request.url);
     login.searchParams.set("redirect", pathname);
     return NextResponse.redirect(login);
+  }
+
+  if (!isAdminRoute && !request.cookies.get(VISITOR_SESSION_COOKIE)?.value) {
+    response.cookies.set(VISITOR_SESSION_COOKIE, createVisitorSessionId(), {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+    });
   }
 
   return response;

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.discounts (
   condition_text TEXT,
   installment_condition TEXT,
   discount_value NUMERIC NOT NULL DEFAULT 0,
+  discount_value_max NUMERIC,
   discount_unit TEXT NOT NULL
     CHECK (discount_unit IN ('percent', 'won', 'special_price', 'free', 'unknown')),
   special_price NUMERIC,
@@ -46,6 +47,10 @@ CREATE TABLE IF NOT EXISTS public.discounts (
 
 COMMENT ON COLUMN public.discounts.installment_condition IS
   '할부·결제 조건 안내 문구. 할인 계산에는 사용하지 않음(UI 표시용).';
+COMMENT ON COLUMN public.discounts.discount_value IS
+  '할인값(최소). 범위 할인 시 하한, 단일 할인 시 기본값.';
+COMMENT ON COLUMN public.discounts.discount_value_max IS
+  '할인값(최대). percent/won 범위 할인 시 상한. null이면 단일 할인값.';
 COMMENT ON COLUMN public.discounts.benefit_product_id IS
   '카드사 전체 할인은 "{카드사명} 전체" benefit_products.id 를 연결. null 지양.';
 

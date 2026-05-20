@@ -1,10 +1,38 @@
 import type { DiscountBenefitProductOption } from "@/lib/benefits/discount-product-options";
 import { isProviderWideBenefitProduct } from "@/lib/benefits/discount-product-options";
 
+import { normalizeCardProductSearchKey } from "./card-product-name-normalize";
+
+export { normalizeCardProductSearchKey };
+
 export const CARD_PRODUCT_SEARCH_MIN_LENGTH = 1;
 
+/** @deprecated normalizeCardProductSearchKey 사용 */
 export function compactCardSearchKey(raw: string): string {
-  return raw.trim().replace(/\s+/g, " ").toLowerCase();
+  return normalizeCardProductSearchKey(raw);
+}
+
+function buildCardProductSearchHaystacks(
+  product: Pick<
+    DiscountBenefitProductOption,
+    "name" | "code" | "name_normalized"
+  >,
+): string[] {
+  const values = [product.name, product.code, product.name_normalized];
+  const haystacks = new Set<string>();
+
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      continue;
+    }
+
+    const normalized = normalizeCardProductSearchKey(value);
+    if (normalized) {
+      haystacks.add(normalized);
+    }
+  }
+
+  return [...haystacks];
 }
 
 export function matchesCardProductSearch(
@@ -15,16 +43,14 @@ export function matchesCardProductSearch(
   query: string,
   minLength = CARD_PRODUCT_SEARCH_MIN_LENGTH,
 ): boolean {
-  const normalizedQuery = compactCardSearchKey(query);
+  const normalizedQuery = normalizeCardProductSearchKey(query);
   if (normalizedQuery.length < minLength) {
     return false;
   }
 
-  const haystacks = [product.name, product.code, product.name_normalized]
-    .filter((value): value is string => typeof value === "string" && value.length > 0)
-    .map(compactCardSearchKey);
-
-  return haystacks.some((haystack) => haystack.includes(normalizedQuery));
+  return buildCardProductSearchHaystacks(product).some((haystack) =>
+    haystack.includes(normalizedQuery),
+  );
 }
 
 export function partitionCardDiscountProducts(
@@ -52,7 +78,7 @@ export function filterCardProductsForSearch(
   query: string,
 ): DiscountBenefitProductOption[] {
   const { allProducts, specificProducts } = partitionCardDiscountProducts(products);
-  const normalizedQuery = compactCardSearchKey(query);
+  const normalizedQuery = normalizeCardProductSearchKey(query);
 
   if (normalizedQuery.length < CARD_PRODUCT_SEARCH_MIN_LENGTH) {
     return allProducts;
@@ -61,7 +87,7 @@ export function filterCardProductsForSearch(
   return [
     ...allProducts,
     ...specificProducts.filter((product) =>
-      matchesCardProductSearch(product, normalizedQuery),
+      matchesCardProductSearch(product, query),
     ),
   ];
 }

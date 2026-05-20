@@ -27,7 +27,7 @@ export function DiscountAmountInput({
       <>
         <input id={id} className="form-control" value="0" readOnly disabled />
         <input type="hidden" name={name} value="0" readOnly />
-        <div className="form-text">무료 할인은 할인값 0으로 저장됩니다.</div>
+        <div className="sr-discounts-field__hint form-text mb-0">무료 할인은 할인값 0으로 저장됩니다.</div>
       </>
     );
   }

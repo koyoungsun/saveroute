@@ -17,14 +17,12 @@ import {
 } from "./card-product-actions";
 
 type CardBenefitProductComboboxProps = {
-  id?: string;
-  name?: string;
   products: DiscountBenefitProductOption[];
   providerId: number | null;
   cardCategoryId: number;
   providerName?: string;
-  value: string;
-  onChange: (productId: string) => void;
+  selectedIds: number[];
+  onChangeSelectedIds: (ids: number[]) => void;
   onProductUpsert: (product: DiscountBenefitProductOption) => void;
   disabled?: boolean;
   emptyHint?: string;
@@ -32,14 +30,12 @@ type CardBenefitProductComboboxProps = {
 };
 
 export function CardBenefitProductCombobox({
-  id = "benefit_product_id",
-  name = "benefit_product_id",
   products,
   providerId,
   cardCategoryId,
   providerName,
-  value,
-  onChange,
+  selectedIds,
+  onChangeSelectedIds,
   onProductUpsert,
   disabled,
   emptyHint,
@@ -86,13 +82,15 @@ export function CardBenefitProductCombobox({
     }
   };
 
-  const finalizeCardSelection = (
+  const addToSelection = (
     product: DiscountBenefitProductOption,
     message?: string,
   ) => {
     onProductUpsert(product);
-    onChange(String(product.id));
-    setSearchQuery(product.name);
+    if (!selectedIds.includes(product.id)) {
+      onChangeSelectedIds([...selectedIds, product.id]);
+    }
+    setSearchQuery("");
     setIsOpen(false);
     closeAddPanel();
 
@@ -103,10 +101,19 @@ export function CardBenefitProductCombobox({
     }
   };
 
-  const selectedProduct = useMemo(
-    () => products.find((product) => String(product.id) === value) ?? null,
-    [products, value],
+  const removeFromSelection = (productId: number) => {
+    onChangeSelectedIds(selectedIds.filter((id) => id !== productId));
+  };
+
+  const selectedProducts = useMemo(
+    () =>
+      selectedIds
+        .map((id) => products.find((product) => product.id === id))
+        .filter((product): product is DiscountBenefitProductOption => product != null),
+    [products, selectedIds],
   );
+
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const { allProducts, specificProducts } = useMemo(
     () => partitionCardDiscountProducts(products),
@@ -119,12 +126,16 @@ export function CardBenefitProductCombobox({
   );
 
   const visibleSpecificProducts = useMemo(
-    () => visibleProducts.filter((product) => !allProducts.some((all) => all.id === product.id)),
+    () =>
+      visibleProducts.filter(
+        (product) => !allProducts.some((allProduct) => allProduct.id === product.id),
+      ),
     [allProducts, visibleProducts],
   );
 
   const normalizedQuery = compactCardSearchKey(searchQuery);
   const canSearchSpecific = normalizedQuery.length >= CARD_PRODUCT_SEARCH_MIN_LENGTH;
+  const shouldShowAddPanel = showAddPanel && !disabled;
 
   useEffect(() => {
     return () => {
@@ -155,53 +166,14 @@ export function CardBenefitProductCombobox({
     }
   }, [providerId]);
 
-  useEffect(() => {
-    if (!value || showAddPanel) {
-      return;
-    }
-
-    const product = products.find((row) => String(row.id) === value);
-    if (product) {
-      setSearchQuery(product.name);
-    }
-  }, [value, products, showAddPanel]);
-
-  const handleSelect = (productId: string) => {
-    const product = products.find((row) => String(row.id) === productId);
-    if (product) {
-      finalizeCardSelection(product);
-      return;
-    }
-
-    onChange(productId);
-    setIsOpen(false);
-    closeAddPanel();
-    setFeedback(null);
-  };
-
-  const handleClear = () => {
-    onChange("");
-    setSearchQuery("");
-    closeAddPanel();
-    setIsOpen(false);
-    setFeedback(null);
-    if (feedbackTimerRef.current) {
-      clearTimeout(feedbackTimerRef.current);
-      feedbackTimerRef.current = null;
-    }
-  };
-
   const applyInlineCreateResult = (result: CreateCardBenefitProductInlineResult) => {
     if (result.ok) {
-      finalizeCardSelection(
-        result.product,
-        result.message ?? "카드 추가 완료",
-      );
+      addToSelection(result.product, result.message ?? "카드 추가 완료");
       return;
     }
 
     if (result.duplicateProduct) {
-      finalizeCardSelection(result.duplicateProduct, result.message);
+      addToSelection(result.duplicateProduct, result.message);
       return;
     }
 
@@ -236,7 +208,7 @@ export function CardBenefitProductCombobox({
 
   const openAddPanel = () => {
     setShowAddPanel(true);
-    setAddName(searchQuery.trim() || selectedProduct?.name || "");
+    setAddName(searchQuery.trim());
     setIsOpen(false);
     setFeedback(null);
     if (feedbackTimerRef.current) {
@@ -245,11 +217,71 @@ export function CardBenefitProductCombobox({
     }
   };
 
-  const shouldShowAddPanel = showAddPanel && !disabled;
+  const renderProductOption = (product: DiscountBenefitProductOption) => {
+    const isSelected = selectedIdSet.has(product.id);
+    return (
+      <button
+        key={product.id}
+        type="button"
+        className={`list-group-item list-group-item-action py-2 ${
+          isSelected ? "active" : ""
+        }`}
+        onClick={() => {
+          if (isSelected) {
+            removeFromSelection(product.id);
+          } else {
+            addToSelection(product);
+          }
+        }}
+      >
+        <div className="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div>{formatBenefitProductOptionLabel(product)}</div>
+            {product.code ? (
+              <div className="small text-muted font-monospace">{product.code}</div>
+            ) : null}
+          </div>
+          {isSelected ? (
+            <span className="badge text-bg-success">선택됨</span>
+          ) : (
+            <span className="badge text-bg-light border">추가</span>
+          )}
+        </div>
+      </button>
+    );
+  };
 
   return (
-    <div ref={rootRef}>
-      <input type="hidden" id={id} name={name} value={value} readOnly />
+    <div ref={rootRef} className="sr-discounts-card-select-area">
+      {selectedIds.map((id) => (
+        <input key={id} type="hidden" name="benefit_product_ids" value={id} />
+      ))}
+
+      {selectedProducts.length > 0 ? (
+        <div className="sr-admin-discounts-chips">
+          {selectedProducts.map((product) => (
+            <span
+              key={product.id}
+              className="badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-1 py-2 px-3"
+            >
+              {formatBenefitProductOptionLabel(product)}
+              <button
+                type="button"
+                className="btn-close btn-close-sm ms-1"
+                aria-label={`${product.name} 선택 해제`}
+                onClick={() => removeFromSelection(product.id)}
+                disabled={disabled}
+              />
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="sr-discounts-field__hint form-text mb-2">
+          {disabled
+            ? "제공사 선택 후 카드 상품을 검색할 수 있습니다."
+            : emptyHint ?? "브랜드 직접 할인 / 상품 없음"}
+        </div>
+      )}
 
       <div className="position-relative">
         <div className="input-group">
@@ -259,15 +291,11 @@ export function CardBenefitProductCombobox({
             placeholder={
               disabled
                 ? "제공사 선택 후 검색"
-                : "카드명·코드 검색 (1글자 이상)"
+                : "카드명·코드 검색 후 선택 목록에 추가"
             }
             value={searchQuery}
             onChange={(event) => {
-              const nextQuery = event.target.value;
-              setSearchQuery(nextQuery);
-              if (selectedProduct && nextQuery !== selectedProduct.name) {
-                onChange("");
-              }
+              setSearchQuery(event.target.value);
               setIsOpen(true);
               setFeedback(null);
               if (feedbackTimerRef.current) {
@@ -288,27 +316,21 @@ export function CardBenefitProductCombobox({
           />
           <button
             type="button"
-            className="btn btn-outline-secondary"
-            onClick={handleClear}
-            disabled={disabled || !value}
+            className="btn btn-dark sr-discounts-action-btn"
+            onClick={() => {
+              onChangeSelectedIds([]);
+              setSearchQuery("");
+              closeAddPanel();
+              setIsOpen(false);
+              setFeedback(null);
+            }}
+            disabled={disabled || selectedIds.length === 0}
           >
-            선택 해제
+            전체 해제
           </button>
         </div>
 
-        {selectedProduct ? (
-          <div className="form-text text-success">
-            선택됨: {formatBenefitProductOptionLabel(selectedProduct)}
-          </div>
-        ) : (
-          <div className="form-text">
-            {disabled
-              ? "제공사 선택 후 카드 상품을 검색할 수 있습니다."
-              : emptyHint ?? "브랜드 직접 할인 / 상품 없음"}
-          </div>
-        )}
-
-        {isOpen && !disabled && (!selectedProduct || searchQuery !== selectedProduct.name) ? (
+        {isOpen && !disabled ? (
           <div
             id={listboxId}
             className="list-group position-absolute top-100 start-0 end-0 mt-1 shadow-sm"
@@ -320,18 +342,7 @@ export function CardBenefitProductCombobox({
                 <div className="list-group-item list-group-item-light py-1 small fw-semibold">
                   카드사 전체
                 </div>
-                {allProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    type="button"
-                    className={`list-group-item list-group-item-action py-2 ${
-                      String(product.id) === value ? "active" : ""
-                    }`}
-                    onClick={() => handleSelect(String(product.id))}
-                  >
-                    {formatBenefitProductOptionLabel(product)}
-                  </button>
-                ))}
+                {allProducts.map((product) => renderProductOption(product))}
               </>
             ) : null}
 
@@ -341,23 +352,7 @@ export function CardBenefitProductCombobox({
                   <div className="list-group-item list-group-item-light py-1 small fw-semibold">
                     검색 결과 ({visibleSpecificProducts.length}건)
                   </div>
-                  {visibleSpecificProducts.map((product) => (
-                    <button
-                      key={product.id}
-                      type="button"
-                      className={`list-group-item list-group-item-action py-2 ${
-                        String(product.id) === value ? "active" : ""
-                      }`}
-                      onClick={() => handleSelect(String(product.id))}
-                    >
-                      <div>{formatBenefitProductOptionLabel(product)}</div>
-                      {product.code ? (
-                        <div className="small text-muted font-monospace">
-                          {product.code}
-                        </div>
-                      ) : null}
-                    </button>
-                  ))}
+                  {visibleSpecificProducts.map((product) => renderProductOption(product))}
                 </>
               ) : (
                 <div className="list-group-item py-2 small text-muted">
@@ -378,7 +373,7 @@ export function CardBenefitProductCombobox({
         <div className="mt-2 d-flex flex-wrap align-items-center gap-2">
           <button
             type="button"
-            className="btn btn-sm btn-outline-primary"
+            className="btn btn-outline-primary sr-discounts-action-btn"
             onClick={() => (showAddPanel ? closeAddPanel() : openAddPanel())}
             disabled={pending}
           >
@@ -387,32 +382,35 @@ export function CardBenefitProductCombobox({
           {providerName ? (
             <span className="small text-muted">카드사: {providerName}</span>
           ) : null}
+          {selectedIds.length > 0 ? (
+            <span className="small text-muted">{selectedIds.length}개 선택</span>
+          ) : null}
         </div>
       ) : null}
 
       {shouldShowAddPanel ? (
-        <div className="border rounded p-3 mt-2 bg-light">
-          <p className="small fw-semibold mb-2">신규 카드 상품 추가</p>
+        <div className="sr-discounts-card-add-panel">
+          <h4 className="sr-discounts-card-add-panel__title">신규 카드 추가</h4>
           <div className="row g-2">
             <div className="col-md-6">
-              <label className="form-label small mb-1" htmlFor={`${id}-add-name`}>
+              <label className="form-label mb-1" htmlFor="card-add-name">
                 카드명 <span className="text-danger">*</span>
               </label>
               <input
-                id={`${id}-add-name`}
-                className="form-control form-control-sm"
+                id="card-add-name"
+                className="form-control"
                 value={addName}
                 onChange={(event) => setAddName(event.target.value)}
                 placeholder="예: 삼성카드 taptap O"
               />
             </div>
             <div className="col-md-6">
-              <label className="form-label small mb-1" htmlFor={`${id}-add-type`}>
+              <label className="form-label mb-1" htmlFor="card-add-type">
                 카드 유형 <span className="text-danger">*</span>
               </label>
               <select
-                id={`${id}-add-type`}
-                className="form-select form-select-sm"
+                id="card-add-type"
+                className="form-select"
                 value={addBenefitType}
                 onChange={(event) =>
                   setAddBenefitType(event.target.value as "credit" | "debit")
@@ -425,25 +423,25 @@ export function CardBenefitProductCombobox({
             <div className="col-12">
               <div className="form-check">
                 <input
-                  id={`${id}-add-active`}
+                  id="card-add-active"
                   className="form-check-input"
                   type="checkbox"
                   checked={addIsActive}
                   onChange={(event) => setAddIsActive(event.target.checked)}
                 />
-                <label className="form-check-label small" htmlFor={`${id}-add-active`}>
+                <label className="form-check-label" htmlFor="card-add-active">
                   활성 상태로 등록
                 </label>
               </div>
-              <div className="form-text small">
-                코드는 저장 시 자동 생성됩니다. 같은 카드사·카드명·카드 유형이 이미 있으면
-                새로 만들지 않고 기존 상품을 선택합니다.
+              <div className="sr-discounts-field__hint form-text mb-0">
+                저장 후 선택 목록에 자동 추가됩니다. 같은 카드사·카드명·카드 유형이
+                이미 있으면 기존 상품을 선택합니다.
               </div>
             </div>
             <div className="col-12 d-flex justify-content-end gap-2">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary"
+                className="btn btn-outline-secondary sr-discounts-action-btn"
                 onClick={closeAddPanel}
                 disabled={pending}
               >
@@ -451,11 +449,11 @@ export function CardBenefitProductCombobox({
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-primary"
+                className="btn btn-primary sr-discounts-action-btn"
                 onClick={handleCreateCard}
                 disabled={pending}
               >
-                {pending ? "저장 중..." : "카드 저장 후 선택"}
+                {pending ? "저장 중..." : "카드 저장 후 선택 목록 추가"}
               </button>
             </div>
           </div>
@@ -464,14 +462,21 @@ export function CardBenefitProductCombobox({
 
       {feedback ? (
         <div
-          className={`form-text ${feedbackTone === "danger" ? "text-danger" : "text-primary"}`}
+          className="sr-discounts-field__hint form-text mb-0"
           role="status"
         >
           {feedback}
         </div>
       ) : null}
 
-      {fieldError ? <div className="form-text text-danger">{fieldError}</div> : null}
+      {fieldError ? (
+        <div className="sr-discounts-field__error mb-0">{fieldError}</div>
+      ) : (
+        <div className="sr-discounts-field__hint form-text mb-0">
+          카드사 전체와 특정 카드를 함께 선택할 수 있습니다. 검색 결과를 눌러 선택
+          목록에 추가하세요.
+        </div>
+      )}
     </div>
   );
 }

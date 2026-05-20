@@ -1,0 +1,777 @@
+/* Discount admin pages only — scoped under .sr-admin .sr-admin-discounts */
+
+.sr-admin .sr-admin-discounts {
+  --sr-discounts-field-height: 40px;
+  --sr-discounts-textarea-sm-height: 80px;
+  --sr-discounts-max-width: 1320px;
+
+  width: 100%;
+  max-width: var(--sr-discounts-max-width);
+  margin-inline: auto;
+}
+
+.sr-admin .sr-admin-discounts-header {
+  margin-bottom: 1.25rem;
+}
+
+/* Filter toolbar */
+.sr-admin .sr-admin-discounts-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 148px 168px auto;
+  gap: 0.75rem 1rem;
+  align-items: end;
+}
+
+.sr-admin .sr-admin-discounts-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 1199.98px) {
+  .sr-admin .sr-admin-discounts-toolbar {
+    grid-template-columns: minmax(200px, 1fr) minmax(140px, 180px);
+  }
+
+  .sr-admin .sr-admin-discounts-toolbar__actions {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Form card */
+.sr-admin .sr-admin-discounts-form.card {
+  border: 1px solid var(--sr-border);
+  --sr-discounts-label-width: 8.5rem;
+  --sr-discounts-field-gap: 0.75rem;
+  --sr-discounts-label-font-size: 15px;
+  --sr-discounts-control-font-size: 13px;
+  --sr-discounts-help-font-size: 12px;
+  --sr-discounts-help-color: #ff8a00;
+  --sr-discounts-field-height: 40px;
+  --sr-discounts-field-row-gap: 0.625rem;
+  --sr-discounts-w50: min(50%, 480px);
+  --sr-discounts-w60: min(60%, 576px);
+}
+
+.sr-admin .sr-admin-discounts-form .card-body {
+  padding: 1rem 1.25rem !important;
+}
+
+.sr-admin .sr-admin-discounts-form .card-footer {
+  padding: 0.75rem 1.25rem !important;
+}
+
+.sr-admin .sr-admin-discounts-form .form-label,
+.sr-admin .sr-admin-discounts-form .sr-discounts-field__label,
+.sr-admin .sr-admin-discounts-form .form-check-label,
+.sr-admin .sr-admin-discounts-form .sr-discounts-card-add-panel .form-label {
+  margin-bottom: 0.25rem;
+  font-size: var(--sr-discounts-label-font-size);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-option-group .sr-admin-discounts-option-body .form-check-label {
+  font-size: var(--sr-discounts-label-font-size);
+  font-weight: 600;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.sr-admin .sr-discounts-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sr-admin .sr-discounts-form-row {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--sr-border);
+}
+
+.sr-admin .sr-discounts-form-row:first-child {
+  padding-top: 0;
+}
+
+.sr-admin .sr-discounts-form-row > .sr-discounts-form-fields {
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-form-section .sr-discounts-form-fields {
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-compact-row {
+  display: grid;
+  grid-template-columns: minmax(0, 40%) minmax(0, 40%);
+  gap: 0.625rem 1.25rem;
+  max-width: 720px;
+}
+
+.sr-admin .sr-discounts-discount-info-fields {
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-discount-info-fields .sr-discounts-field--discount-type .sr-discounts-field__control {
+  max-width: var(--sr-discounts-w50);
+  min-width: min(100%, 220px);
+}
+
+.sr-admin .sr-discounts-discount-info-fields .sr-discounts-field--discount-value .sr-discounts-field__control {
+  max-width: 100%;
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-discount-info-fields .sr-discounts-field--discount-value .form-control,
+.sr-admin .sr-discounts-discount-info-fields .sr-discounts-field--discount-value .input-group {
+  max-width: 100%;
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-discount-info-fields .sr-discounts-value-range-row {
+  max-width: 100%;
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-benefit-group__category-provider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-benefit-group__category-provider .sr-discounts-field__control {
+  max-width: var(--sr-discounts-w50);
+  min-width: min(100%, 220px);
+}
+
+.sr-admin .sr-discounts-benefit-group__product .sr-discounts-field__control {
+  max-width: var(--sr-discounts-w60);
+  min-width: min(100%, 280px);
+}
+
+.sr-admin .sr-discounts-benefit-group__product .sr-discounts-card-select-area,
+.sr-admin .sr-discounts-benefit-group__product .sr-admin-discounts-telecom-fieldset,
+.sr-admin .sr-discounts-benefit-group__product .sr-discounts-card-add-panel {
+  max-width: 100%;
+}
+
+.sr-admin .sr-discounts-value-range-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  max-width: var(--sr-discounts-w60);
+}
+
+@media (max-width: 767.98px) {
+  .sr-admin .sr-discounts-value-range-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sr-admin .sr-discounts-benefit-group__product {
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* Group section titles (text only) */
+.sr-admin .sr-discounts-group-title {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.625rem;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  color: #c2410c;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.sr-admin .sr-discounts-group-title--sub {
+  font-size: 14px;
+  margin-bottom: 0.5rem;
+}
+
+.sr-admin .sr-discounts-benefit-group > legend.sr-discounts-group-title,
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset > legend.sr-discounts-group-title {
+  float: none;
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-option-group__header.sr-discounts-group-title {
+  margin-bottom: 0.375rem;
+  background: none;
+}
+
+.sr-admin .sr-discounts-option-group__header .form-check {
+  margin-bottom: 0;
+  min-height: 0;
+  padding-left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sr-admin .sr-discounts-option-group__header .form-check-input {
+  float: none;
+  margin-left: 0;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.sr-admin .sr-discounts-option-group__header .form-check-label {
+  margin-bottom: 0;
+  padding-left: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  color: #c2410c;
+  cursor: pointer;
+}
+
+.sr-admin .sr-discounts-field {
+  display: grid;
+  grid-template-columns: var(--sr-discounts-label-width) minmax(0, 1fr);
+  gap: 0.375rem var(--sr-discounts-field-gap);
+  align-items: center;
+}
+
+.sr-admin .sr-discounts-field__label {
+  margin-bottom: 0;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.sr-admin .sr-discounts-field__hint {
+  margin-top: 0.35rem;
+  color: var(--sr-discounts-help-color) !important;
+  font-size: var(--sr-discounts-help-font-size);
+  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.sr-admin .sr-discounts-field__hint::before {
+  content: "- ";
+}
+
+.sr-admin .sr-discounts-field__error {
+  margin-top: 0.35rem;
+  color: #f00 !important;
+  font-size: var(--sr-discounts-help-font-size);
+  line-height: 1.45;
+}
+
+.sr-admin .sr-discounts-field__required {
+  color: #f00;
+  font-size: var(--sr-discounts-label-font-size);
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.sr-admin .sr-discounts-field__body {
+  min-width: 0;
+}
+
+.sr-admin .sr-discounts-field--stack {
+  align-items: start;
+}
+
+.sr-admin .sr-discounts-field--stack .sr-discounts-field__label {
+  padding-top: 0.55rem;
+}
+
+.sr-admin .sr-discounts-form-row--last {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sr-admin .sr-discounts-benefit-group {
+  border: 0;
+  border-top: 1px solid var(--sr-border);
+  border-radius: 0;
+  padding: 0.75rem 0 0;
+  margin: 0;
+  background: transparent;
+}
+
+.sr-admin .sr-discounts-brand-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 34%) minmax(0, 66%);
+  gap: 0.75rem 1rem;
+}
+
+.sr-admin .sr-discounts-form-section {
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-condition-section .sr-discounts-field:has(#condition_text) .sr-discounts-field__control,
+.sr-admin .sr-discounts-condition-section .sr-discounts-field:has(#installment_condition) .sr-discounts-field__control {
+  max-width: var(--sr-discounts-w60);
+  min-width: min(100%, 280px);
+}
+
+.sr-admin .sr-discounts-condition-selects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-condition-selects .sr-discounts-field__control {
+  max-width: var(--sr-discounts-w50);
+  min-width: min(100%, 220px);
+}
+
+.sr-admin .sr-discounts-period-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, var(--sr-discounts-w50)));
+  gap: var(--sr-discounts-field-row-gap) 1rem;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  .sr-admin .sr-discounts-period-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sr-admin .sr-discounts-period-row .sr-discounts-field__control {
+  max-width: 100%;
+  min-width: min(100%, 180px);
+}
+
+.sr-admin .sr-discounts-form-section .sr-discounts-form-fields {
+  gap: var(--sr-discounts-field-row-gap);
+}
+
+.sr-admin .sr-discounts-field-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.sr-admin .sr-discounts-field-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.sr-admin .sr-discounts-field-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.sr-admin .sr-discounts-field-row-2 .sr-discounts-field,
+.sr-admin .sr-discounts-field-row-3 .sr-discounts-field,
+.sr-admin .sr-discounts-field-row-4 .sr-discounts-field {
+  grid-template-columns: var(--sr-discounts-label-width) minmax(0, 1fr);
+}
+
+.sr-admin .sr-discounts-field-row-3 .sr-discounts-field--stack {
+  align-items: start;
+}
+
+.sr-admin .sr-discounts-field-row-3 .sr-discounts-field--stack .sr-discounts-field__label {
+  padding-top: 0.55rem;
+}
+
+.sr-admin .sr-admin-discounts-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.sr-admin .sr-admin-discounts-meta-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.sr-admin .sr-admin-discounts-meta-date {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.3px;
+}
+
+.sr-admin .sr-admin-discounts-meta-sep {
+  color: #cbd5e1;
+}
+
+.sr-admin .sr-admin-discounts-meta-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.sr-admin .sr-admin-discounts-elapsed-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(249, 115, 22, 0.28);
+  background: rgba(255, 237, 213, 0.65);
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sr-admin .sr-admin-discounts-form .row.g-3 {
+  --bs-gutter-y: 0.75rem;
+}
+
+.sr-admin .sr-admin-discounts-form .form-control,
+.sr-admin .sr-admin-discounts-form .form-select,
+.sr-admin .sr-admin-discounts-form textarea.form-control,
+.sr-admin .sr-admin-discounts-form .btn,
+.sr-admin .sr-admin-discounts-form .list-group-item,
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-chips .badge {
+  font-size: var(--sr-discounts-control-font-size);
+}
+
+.sr-admin .sr-admin-discounts-form .form-control::placeholder,
+.sr-admin .sr-admin-discounts-form textarea.form-control::placeholder {
+  font-size: var(--sr-discounts-control-font-size);
+  opacity: 1;
+}
+
+.sr-admin .sr-discounts-card-select-area .small.text-muted {
+  font-size: var(--sr-discounts-help-font-size);
+  color: #64748b !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset .small.text-muted,
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset .form-check-label {
+  font-size: var(--sr-discounts-control-font-size);
+  font-weight: 500;
+  color: inherit;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset > .mb-3 > .small.fw-semibold,
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset > div > .small.fw-semibold {
+  font-size: var(--sr-discounts-control-font-size);
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+
+.sr-admin .sr-discounts-card-add-panel__title {
+  margin: 0 0 0.75rem;
+  font-size: var(--sr-discounts-label-font-size);
+  font-weight: 700;
+  color: #9a3412;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+}
+
+.sr-admin .sr-discounts-card-select-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.sr-admin .sr-discounts-card-add-panel {
+  margin-top: 0.625rem;
+  padding: 0.75rem 0 0;
+  border: 0;
+  border-top: 1px dashed rgba(249, 115, 22, 0.35);
+  border-radius: 0;
+  background: transparent;
+}
+
+.sr-admin .sr-discounts-card-add-panel .form-control,
+.sr-admin .sr-discounts-card-add-panel .form-select {
+  height: var(--sr-discounts-field-height);
+  min-height: var(--sr-discounts-field-height);
+}
+
+.sr-admin .sr-admin-discounts-form .form-control:not(textarea),
+.sr-admin .sr-admin-discounts-form .form-select,
+.sr-admin .sr-admin-discounts-toolbar .form-control:not(textarea),
+.sr-admin .sr-admin-discounts-toolbar .form-select {
+  height: var(--sr-discounts-field-height);
+  min-height: var(--sr-discounts-field-height);
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+.sr-admin .sr-admin-discounts-form .input-group .form-control,
+.sr-admin .sr-admin-discounts-form .input-group .btn,
+.sr-admin .sr-admin-discounts-toolbar .input-group .form-control,
+.sr-admin .sr-admin-discounts-toolbar .input-group .btn {
+  height: var(--sr-discounts-field-height);
+}
+
+/* Top / inline action buttons (Bootstrap tone, 13px) */
+.sr-admin .sr-admin-discounts .sr-discounts-action-btn {
+  font-size: var(--sr-discounts-control-font-size);
+  font-weight: 500;
+  line-height: 1.5;
+  min-height: 38px;
+  padding: 0.375rem 0.875rem;
+  border-width: 1px;
+}
+
+.sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-outline-secondary {
+  --bs-btn-color: #495057;
+  --bs-btn-border-color: #adb5bd;
+  --bs-btn-hover-color: #212529;
+  --bs-btn-hover-bg: #f8f9fa;
+  --bs-btn-hover-border-color: #6c757d;
+  --bs-btn-active-color: #212529;
+  --bs-btn-active-bg: #e9ecef;
+  --bs-btn-active-border-color: #6c757d;
+}
+
+.sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-dark {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #212529;
+  --bs-btn-border-color: #212529;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #343a40;
+  --bs-btn-hover-border-color: #343a40;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #1a1e21;
+  --bs-btn-active-border-color: #1a1e21;
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.75);
+  --bs-btn-disabled-bg: #495057;
+  --bs-btn-disabled-border-color: #495057;
+}
+
+.sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-outline-primary {
+  --bs-btn-color: #0d6efd;
+  --bs-btn-border-color: #0d6efd;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0d6efd;
+  --bs-btn-hover-border-color: #0d6efd;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #0a58ca;
+  --bs-btn-active-border-color: #0a58ca;
+}
+
+.sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #0d6efd;
+  --bs-btn-border-color: #0d6efd;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0b5ed7;
+  --bs-btn-hover-border-color: #0a58ca;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #0a58ca;
+  --bs-btn-active-border-color: #0a53be;
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.85);
+  --bs-btn-disabled-bg: #6ea8fe;
+  --bs-btn-disabled-border-color: #6ea8fe;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-card-select-area .input-group .sr-discounts-action-btn {
+  min-height: var(--sr-discounts-field-height);
+}
+
+/* Bottom form actions — centered, larger */
+.sr-admin .sr-admin-discounts-form .sr-discounts-form-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding: 1.5rem 1.25rem 1.25rem !important;
+  border-top: 1px solid var(--sr-border);
+  background: #fff;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .btn {
+  min-width: 148px;
+  min-height: 46px;
+  padding: 0.625rem 1.75rem;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .sr-discounts-cancel-btn {
+  --bs-btn-color: #495057;
+  --bs-btn-border-color: #adb5bd;
+  --bs-btn-hover-color: #212529;
+  --bs-btn-hover-bg: #f8f9fa;
+  --bs-btn-hover-border-color: #6c757d;
+  --bs-btn-active-color: #212529;
+  --bs-btn-active-bg: #e9ecef;
+  --bs-btn-active-border-color: #6c757d;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .sr-discounts-submit-btn {
+  min-width: 168px;
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #0d6efd;
+  --bs-btn-border-color: #0d6efd;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0b5ed7;
+  --bs-btn-hover-border-color: #0a58ca;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #0a58ca;
+  --bs-btn-active-border-color: #0a53be;
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.88);
+  --bs-btn-disabled-bg: #6ea8fe;
+  --bs-btn-disabled-border-color: #6ea8fe;
+  box-shadow: 0 1px 2px rgba(13, 110, 253, 0.2);
+}
+
+.sr-admin .sr-admin-discounts-form textarea#condition_text,
+.sr-admin .sr-admin-discounts-form textarea#notice_text {
+  height: var(--sr-discounts-textarea-sm-height);
+  min-height: var(--sr-discounts-textarea-sm-height);
+  resize: vertical;
+  margin-top: 0;
+  max-width: 100%;
+}
+
+.sr-admin .sr-admin-discounts-form textarea#installment_condition {
+  min-height: 80px;
+  height: 80px;
+  resize: vertical;
+  max-width: 100%;
+}
+
+.sr-admin .sr-discounts-field--stack .sr-discounts-field__hint,
+.sr-admin .sr-discounts-field--stack .sr-discounts-field__error {
+  margin-top: 0.35rem;
+}
+
+.sr-admin .sr-admin-discounts-form textarea#admin_memo {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.sr-admin .sr-admin-discounts-form .form-select,
+.sr-admin .sr-admin-discounts-form .position-relative {
+  max-width: 100%;
+}
+
+/* Card multi-select chips */
+.sr-admin .sr-admin-discounts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  max-height: 112px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+  padding: 0.125rem;
+}
+
+.sr-admin .sr-admin-discounts-chips .badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+}
+
+/* Telecom multi-select inside form */
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Option groups */
+.sr-admin .sr-admin-discounts-option-group {
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.625rem 0 0;
+  margin-bottom: 0;
+}
+
+.sr-admin .sr-admin-discounts-option-group.is-open {
+  padding-bottom: 0;
+}
+
+.sr-admin .sr-admin-discounts-option-group .form-check {
+  margin-bottom: 0;
+}
+
+.sr-admin .sr-admin-discounts-option-body {
+  margin-top: 0.5rem;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sr-admin .sr-admin-discounts-form hr.my-1 {
+  margin-block: 0.5rem !important;
+}
+
+/* List table */
+.sr-admin .sr-admin-discounts-list .table-responsive {
+  padding: 0.75rem 1rem !important;
+}
+
+.sr-admin .sr-admin-discounts-list table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.sr-admin .sr-admin-discounts-list table th,
+.sr-admin .sr-admin-discounts-list table td {
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.sr-admin .sr-admin-discounts-list table th:nth-child(3),
+.sr-admin .sr-admin-discounts-list table td:nth-child(3) {
+  width: 9%;
+}
+
+.sr-admin .sr-admin-discounts-list table th:nth-child(4),
+.sr-admin .sr-admin-discounts-list table td:nth-child(4) {
+  width: 16%;
+}
+
+.sr-admin .sr-admin-discounts-list table th:nth-child(5),
+.sr-admin .sr-admin-discounts-list table td:nth-child(5) {
+  width: 8%;
+}
+
+.sr-admin .sr-admin-discounts-list table th:nth-child(6),
+.sr-admin .sr-admin-discounts-list table td:nth-child(6) {
+  width: 9%;
+}
+
+.sr-admin .sr-admin-discounts-list table th:nth-child(7),
+.sr-admin .sr-admin-discounts-list table td:nth-child(7) {
+  width: 12%;
+}
+
+.sr-admin .sr-admin-discounts-clip-1 {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-admin .sr-admin-discounts-clip-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-all;
+}
+
+.sr-admin .sr-admin-discounts-meta.card .card-body {
+  padding: 0.75rem 1rem !important;
+}

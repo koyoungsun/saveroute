@@ -1,3 +1,7 @@
+import {
+  getEffectiveDiscountValueForSort,
+  formatDiscountValueDisplay,
+} from "@/lib/discounts/format-discount-value";
 import type {
   BenefitCategorySummary,
   BenefitProductSummary,
@@ -32,8 +36,13 @@ export type DiscountBaseRow = {
   benefit_product_ids?: number[] | null;
   title: string;
   condition_text: string | null;
+  notice_text: string | null;
+  apply_basis: string | null;
+  stackable_policy: string | null;
+  usage_channel: string | null;
   installment_condition: string | null;
   discount_value: number | string;
+  discount_value_max?: number | string | null;
   discount_unit: DiscountUnit;
   usage_type: string;
   is_stackable: boolean;
@@ -120,7 +129,7 @@ export function matchDiscountToBenefits(
 }
 
 export function getDiscountScore(discount: DiscountResult) {
-  const value = Number(discount.discount_value) || 0;
+  const value = getEffectiveDiscountValueForSort(discount);
 
   if (discount.discount_unit === "free") {
     return 1_000_000_000;
@@ -146,7 +155,9 @@ export function sortDiscountsByRate(desc: DiscountResult[]) {
   return [...desc].sort((a, b) => {
     const scoreDiff = getDiscountScore(b) - getDiscountScore(a);
     if (scoreDiff !== 0) return scoreDiff;
-    return (Number(b.discount_value) || 0) - (Number(a.discount_value) || 0);
+    return (
+      getEffectiveDiscountValueForSort(b) - getEffectiveDiscountValueForSort(a)
+    );
   });
 }
 
@@ -157,30 +168,23 @@ export function sortDiscountsPrioritizeOwned(discounts: DiscountResult[], owned:
     if (ownedDiff !== 0) return ownedDiff;
     const scoreDiff = getDiscountScore(b) - getDiscountScore(a);
     if (scoreDiff !== 0) return scoreDiff;
-    return (Number(b.discount_value) || 0) - (Number(a.discount_value) || 0);
+    return (
+      getEffectiveDiscountValueForSort(b) - getEffectiveDiscountValueForSort(a)
+    );
   });
 }
 
-export function formatDiscountValue(value: number | string, unit: DiscountUnit) {
-  const numberValue = Number(value) || 0;
-
-  if (unit === "percent") {
-    return `${numberValue}%`;
-  }
-
-  if (unit === "won" || unit === "amount") {
-    return `${numberValue.toLocaleString()}원 할인`;
-  }
-
-  if (unit === "special_price") {
-    return `${numberValue.toLocaleString()}원 특가`;
-  }
-
-  if (unit === "free") {
-    return "무료";
-  }
-
-  return "할인 혜택";
+export function formatDiscountValue(
+  value: number | string,
+  unit: DiscountUnit,
+  valueMax?: number | string | null,
+) {
+  return formatDiscountValueDisplay({
+    value,
+    valueMax,
+    unit,
+    style: "search",
+  });
 }
 
 export function formatValidUntil(discount: DiscountResult) {
@@ -260,8 +264,13 @@ export function mapBaseDiscountToResult(
     brand_id: row.brand_id,
     title: row.title,
     condition_text: row.condition_text,
+    notice_text: row.notice_text,
+    apply_basis: row.apply_basis,
+    stackable_policy: row.stackable_policy,
+    usage_channel: row.usage_channel,
     installment_condition: row.installment_condition,
     discount_value: row.discount_value,
+    discount_value_max: row.discount_value_max,
     discount_unit: row.discount_unit,
     usage_type: row.usage_type,
     benefit_category_id: row.benefit_category_id,

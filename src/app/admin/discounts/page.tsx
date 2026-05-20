@@ -3,19 +3,23 @@ import Link from "next/link";
 import { ConfidenceBadge } from "@/components/admin/ConfidenceBadge";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
 import {
   DISCOUNT_SORT_OPTIONS,
   escapeIlikePattern,
+  formatAdminDiscountTimestamp,
   getDiscountBrandMeta,
   getDiscountRelationName,
   parseDiscountListQuery,
   sortDiscountListRows,
   type DiscountListRow,
 } from "@/lib/admin/discount-list-query";
+import { formatUsageChannelLabel } from "@/lib/discounts/discount-detail-fields";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatAdminDiscountListValue } from "@/lib/ui/format-money";
 
 import { hideDiscountAction } from "./actions";
+import { DiscountBenefitProductsCell } from "./DiscountBenefitProductsCell";
 
 type BrandFilterOption = {
   id: number;
@@ -44,6 +48,26 @@ function formatUsageType(usageType: string) {
   return labels[usageType] ?? usageType;
 }
 
+function formatUsageLabel(discount: DiscountListRow) {
+  return (
+    formatUsageChannelLabel(discount.usage_channel) ??
+    formatUsageType(discount.usage_type)
+  );
+}
+
+const TEXT_COLUMN_CLASS = "text-start";
+
+function clipCellText(text: string, lines: 1 | 2 = 1) {
+  return (
+    <span
+      className={lines === 1 ? "sr-admin-discounts-clip-1" : "sr-admin-discounts-clip-2"}
+      title={text}
+    >
+      {text}
+    </span>
+  );
+}
+
 export default async function AdminDiscountsPage({
   searchParams,
 }: AdminDiscountsPageProps) {
@@ -69,12 +93,15 @@ export default async function AdminDiscountsPage({
           id,
           title,
           discount_value,
+          discount_value_max,
           discount_unit,
           usage_type,
+          usage_channel,
           status,
           data_confidence,
           valid_until,
           created_at,
+          updated_at,
           brand:brands(name,slug),
           benefit_category:benefit_categories(name),
           provider:providers(name),
@@ -139,16 +166,66 @@ export default async function AdminDiscountsPage({
     sort,
   );
 
+  const discountIds = discounts.map((discount) => discount.id);
+  const linkedProductIdsByDiscount = await loadDiscountBenefitProductIdsByDiscountId(
+    supabase,
+    discountIds,
+  );
+
+  const linkedProductIdSet = new Set<number>();
+  for (const discount of discounts) {
+    const junctionIds = linkedProductIdsByDiscount.get(discount.id) ?? [];
+    if (junctionIds.length > 0) {
+      for (const id of junctionIds) {
+        linkedProductIdSet.add(id);
+      }
+    }
+  }
+
+  const productNameById = new Map<number, string>();
+  if (linkedProductIdSet.size > 0) {
+    const { data: linkedProducts, error: linkedProductsError } = await supabase
+      .from("benefit_products")
+      .select("id,name")
+      .in("id", [...linkedProductIdSet]);
+
+    if (linkedProductsError) {
+      throw new Error(
+        `Failed to load linked benefit products: ${linkedProductsError.message}`,
+      );
+    }
+
+    for (const row of linkedProducts ?? []) {
+      productNameById.set(row.id as number, row.name as string);
+    }
+  }
+
   const rows = discounts.map((discount) => {
     const key = `${discount.id}-${discount.title}`;
+    const junctionIds = linkedProductIdsByDiscount.get(discount.id) ?? [];
+    const linkedNames =
+      junctionIds.length > 0
+        ? junctionIds
+            .map((id) => productNameById.get(id))
+            .filter((name): name is string => typeof name === "string")
+        : [getDiscountRelationName(discount.benefit_product)].filter(
+            (name) => name !== "-",
+          );
+
     return [
-      getDiscountBrandMeta(discount).name,
-      discount.title,
+      clipCellText(getDiscountBrandMeta(discount).name),
+      clipCellText(discount.title, 2),
       getDiscountRelationName(discount.benefit_category),
-      getDiscountRelationName(discount.provider),
-      getDiscountRelationName(discount.benefit_product),
-      formatAdminDiscountListValue(discount.discount_value, discount.discount_unit),
-      formatUsageType(discount.usage_type),
+      clipCellText(getDiscountRelationName(discount.provider)),
+      <DiscountBenefitProductsCell key={`${key}-products`} names={linkedNames} />,
+      formatAdminDiscountListValue(
+        discount.discount_value,
+        discount.discount_unit,
+        discount.discount_value_max,
+      ),
+      formatUsageLabel(discount),
+      formatAdminDiscountTimestamp(discount.created_at),
+      formatAdminDiscountTimestamp(discount.updated_at),
       <StatusBadge key={`${key}-status`} status={discount.status} />,
       <ConfidenceBadge
         key={`${key}-conf`}
@@ -178,7 +255,7 @@ export default async function AdminDiscountsPage({
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
         <h1 className="h3 mb-0">Discounts</h1>
         <Link href="/admin/discounts/new" className="btn btn-primary">
           + 할인 등록
@@ -187,8 +264,8 @@ export default async function AdminDiscountsPage({
 
       <div className="sr-block card mb-4">
         <div className="card-body">
-          <form method="get" className="row g-3 align-items-end">
-            <div className="col-lg-4">
+          <form method="get" className="sr-admin-discounts-toolbar">
+            <div className="sr-admin-discounts-toolbar__search">
               <label htmlFor="discount-q" className="form-label small text-muted mb-1">
                 검색
               </label>
@@ -207,7 +284,7 @@ export default async function AdminDiscountsPage({
               </div>
             </div>
 
-            <div className="col-md-3 col-lg-2">
+            <div className="sr-admin-discounts-toolbar__brand">
               <label htmlFor="discount-brand" className="form-label small text-muted mb-1">
                 브랜드
               </label>
@@ -226,7 +303,7 @@ export default async function AdminDiscountsPage({
               </select>
             </div>
 
-            <div className="col-md-3 col-lg-2">
+            <div className="sr-admin-discounts-toolbar__sort">
               <label htmlFor="discount-sort" className="form-label small text-muted mb-1">
                 정렬
               </label>
@@ -244,7 +321,7 @@ export default async function AdminDiscountsPage({
               </select>
             </div>
 
-            <div className="col-md-6 col-lg-4 d-flex gap-2">
+            <div className="sr-admin-discounts-toolbar__actions">
               <button type="submit" className="btn btn-outline-primary">
                 필터 적용
               </button>
@@ -269,15 +346,17 @@ export default async function AdminDiscountsPage({
           legendType="discount"
           pageSize={10}
           fixedRows={10}
-          className="sr-block"
+          className="sr-block sr-admin-discounts-list"
           columns={[
-            { header: "브랜드" },
-            { header: "제목" },
+            { header: "브랜드", className: TEXT_COLUMN_CLASS },
+            { header: "제목", className: TEXT_COLUMN_CLASS },
             { header: "카테고리" },
-            { header: "제공사" },
-            { header: "혜택상품" },
+            { header: "제공사", className: TEXT_COLUMN_CLASS },
+            { header: "혜택상품", className: TEXT_COLUMN_CLASS },
             { header: "할인값" },
-            { header: "방식" },
+            { header: "채널" },
+            { header: "작성일" },
+            { header: "수정일" },
             { header: "상태" },
             { header: "신뢰도" },
             { header: "만료일" },

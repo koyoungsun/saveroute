@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseNumericInput } from "@/lib/ui/format-money";
+import {
+  readDiscountConditionFields,
+  readDiscountDataManagementFields,
+  readDiscountNoticeFields,
+  readDiscountPeriodFields,
+  readDiscountVisibilityFields,
+} from "@/lib/admin/read-discount-option-form";
 import {
   parseDiscountBenefitProductsFromForm,
   syncDiscountBenefitProductLinks,
 } from "@/lib/admin/discount-benefit-product-links";
+import { isDiscountOptionGroupEnabled } from "@/lib/admin/discount-form-option-groups";
+import { parseDiscountValueFields } from "@/lib/admin/parse-discount-value-fields";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parseNumericInput } from "@/lib/ui/format-money";
 
 type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
 
@@ -23,6 +32,7 @@ export type DiscountFormState = {
       | "title"
       | "discount_type"
       | "discount_value"
+      | "discount_value_max"
       | "source_url"
       | "end_date",
       string
@@ -62,22 +72,22 @@ function normalizeUrl(value: string) {
 }
 
 function buildConditionText({
-  notice,
+  conditionSummary,
   maxDiscountAmount,
   minPaymentAmount,
 }: {
-  notice: string;
+  conditionSummary: string;
   maxDiscountAmount: number | null;
   minPaymentAmount: number | null;
 }) {
   const lines = [
+    conditionSummary || null,
     minPaymentAmount === null
       ? null
       : `최소 결제 금액: ${minPaymentAmount.toLocaleString("ko-KR")}원`,
     maxDiscountAmount === null
       ? null
       : `최대 할인 금액: ${maxDiscountAmount.toLocaleString("ko-KR")}원`,
-    notice || null,
   ].filter(Boolean);
 
   return lines.length > 0 ? lines.join("\n") : null;
@@ -96,15 +106,14 @@ export async function createDiscountAction(
   const providerIdValue = readString(formData, "provider_id");
   const title = readString(formData, "title");
   const discountTypeValue = readString(formData, "discount_type");
-  const discountValueValue = readString(formData, "discount_value");
   const maxDiscountAmountValue = readString(formData, "max_discount_amount");
   const minPaymentAmountValue = readString(formData, "min_payment_amount");
-  const startDate = readString(formData, "start_date");
-  const endDate = readString(formData, "end_date");
-  const sourceUrlValue = readString(formData, "source_url");
-  const notice = readString(formData, "notice");
-  const installmentCondition = readString(formData, "installment_condition");
-  const isActive = formData.get("is_active") === "on";
+  const noticeFields = readDiscountNoticeFields(formData, "create");
+
+  const periodFields = readDiscountPeriodFields(formData, "create");
+  const conditionFields = readDiscountConditionFields(formData);
+  const dataFields = readDiscountDataManagementFields(formData, "create");
+  const visibilityFields = readDiscountVisibilityFields(formData, "create");
 
   const fieldErrors: DiscountFormState["fieldErrors"] = {};
 
@@ -136,25 +145,39 @@ export async function createDiscountAction(
     fieldErrors.discount_type = "할인 유형을 선택해 주세요.";
   }
 
-  const discountValue =
-    discountType === "free" ? 0 : readPositiveNumber(discountValueValue);
-  if (discountValue === null) {
-    fieldErrors.discount_value = "0 이상의 할인값을 입력해 주세요.";
+  const parsedDiscountValues =
+    discountType && discountUnits.has(discountType)
+      ? parseDiscountValueFields(formData, discountType)
+      : null;
+
+  let discountValue: number | null = null;
+  let discountValueMax: number | null = null;
+
+  if (parsedDiscountValues && !parsedDiscountValues.ok) {
+    Object.assign(fieldErrors, parsedDiscountValues.fieldErrors);
+  } else if (parsedDiscountValues?.ok) {
+    discountValue = parsedDiscountValues.value.discountValue;
+    discountValueMax = parsedDiscountValues.value.discountValueMax;
   }
 
   const maxDiscountAmount = readPositiveNumber(maxDiscountAmountValue);
   const minPaymentAmount = readPositiveNumber(minPaymentAmountValue);
 
-  const sourceUrl = normalizeUrl(sourceUrlValue);
-  if (sourceUrlValue && !sourceUrl) {
-    fieldErrors.source_url = "올바른 출처 URL을 입력해 주세요.";
-  }
-
-  if (startDate && endDate && startDate > endDate) {
+  if (
+    isDiscountOptionGroupEnabled(formData, "period") &&
+    periodFields.valid_from &&
+    periodFields.valid_until &&
+    periodFields.valid_from > periodFields.valid_until
+  ) {
     fieldErrors.end_date = "종료일은 시작일 이후여야 합니다.";
   }
 
-  if (Object.keys(fieldErrors).length > 0) {
+  const sourceUrl = normalizeUrl(dataFields.source_url_raw);
+  if (isDiscountOptionGroupEnabled(formData, "data") && dataFields.source_url_raw && !sourceUrl) {
+    fieldErrors.source_url = "올바른 출처 URL을 입력해 주세요.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0 || discountValue === null) {
     return { fieldErrors };
   }
 
@@ -210,21 +233,27 @@ export async function createDiscountAction(
       title,
       summary: title,
       condition_text: buildConditionText({
-        notice,
+        conditionSummary: conditionFields.condition_text ?? "",
         maxDiscountAmount,
         minPaymentAmount,
       }),
-      installment_condition: installmentCondition || null,
+      apply_basis: conditionFields.apply_basis,
+      stackable_policy: conditionFields.stackable_policy,
+      usage_channel: conditionFields.usage_channel,
+      notice_text: noticeFields.notice_text,
+      installment_condition: conditionFields.installment_condition,
       discount_value: discountValue,
+      discount_value_max: discountValueMax,
       discount_unit: discountType,
       usage_type: "unknown",
-      valid_from: startDate || null,
-      valid_until: endDate || null,
-      has_no_expiry: !endDate,
+      valid_from: periodFields.valid_from,
+      valid_until: periodFields.valid_until,
+      has_no_expiry: periodFields.has_no_expiry,
       source_url: sourceUrl,
+      admin_memo: dataFields.admin_memo,
       last_checked_at: today(),
       data_confidence: "medium",
-      status: isActive ? "active" : "hidden",
+      status: visibilityFields.status,
     })
     .select("id")
     .single();

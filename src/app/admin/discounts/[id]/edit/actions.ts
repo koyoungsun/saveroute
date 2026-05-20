@@ -3,12 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseNumericInput } from "@/lib/ui/format-money";
+import {
+  readDiscountConditionFields,
+  readDiscountDataManagementFields,
+  readDiscountNoticeFields,
+  readDiscountPeriodFields,
+  readDiscountVisibilityFields,
+} from "@/lib/admin/read-discount-option-form";
 import {
   parseDiscountBenefitProductsFromForm,
   syncDiscountBenefitProductLinks,
 } from "@/lib/admin/discount-benefit-product-links";
+import { isDiscountOptionGroupEnabled } from "@/lib/admin/discount-form-option-groups";
+import { parseDiscountValueFields } from "@/lib/admin/parse-discount-value-fields";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
 type DiscountStatus = "draft" | "active" | "expired" | "hidden";
@@ -24,6 +32,7 @@ export type DiscountEditFormState = {
       | "title"
       | "discount_unit"
       | "discount_value"
+      | "discount_value_max"
       | "source_url"
       | "valid_until"
       | "status",
@@ -52,10 +61,6 @@ function readString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function readPositiveNumber(value: string) {
-  return parseNumericInput(value);
-}
-
 function normalizeUrl(value: string) {
   if (!value) {
     return null;
@@ -80,13 +85,6 @@ export async function updateDiscountAction(
   const providerIdValue = readString(formData, "provider_id");
   const title = readString(formData, "title");
   const discountUnitValue = readString(formData, "discount_unit");
-  const discountValueValue = readString(formData, "discount_value");
-  const conditionText = readString(formData, "condition_text");
-  const installmentCondition = readString(formData, "installment_condition");
-  const validFrom = readString(formData, "valid_from");
-  const validUntil = readString(formData, "valid_until");
-  const sourceUrlValue = readString(formData, "source_url");
-  const statusValue = readString(formData, "status");
 
   const fieldErrors: DiscountEditFormState["fieldErrors"] = {};
 
@@ -118,31 +116,96 @@ export async function updateDiscountAction(
     fieldErrors.discount_unit = "할인 유형을 선택해 주세요.";
   }
 
-  const discountValue =
-    discountUnit === "free" ? 0 : readPositiveNumber(discountValueValue);
-  if (discountValue === null) {
-    fieldErrors.discount_value = "0 이상의 할인값을 입력해 주세요.";
-  }
+  const parsedDiscountValues =
+    discountUnit && discountUnits.has(discountUnit)
+      ? parseDiscountValueFields(formData, discountUnit)
+      : null;
 
-  const sourceUrl = normalizeUrl(sourceUrlValue);
-  if (sourceUrlValue && !sourceUrl) {
-    fieldErrors.source_url = "올바른 출처 URL을 입력해 주세요.";
-  }
+  let discountValue: number | null = null;
+  let discountValueMax: number | null = null;
 
-  if (validFrom && validUntil && validFrom > validUntil) {
-    fieldErrors.valid_until = "종료일은 시작일 이후여야 합니다.";
-  }
-
-  const status = statusValue as DiscountStatus;
-  if (!discountStatuses.has(status)) {
-    fieldErrors.status = "상태를 선택해 주세요.";
-  }
-
-  if (Object.keys(fieldErrors).length > 0) {
-    return { fieldErrors };
+  if (parsedDiscountValues && !parsedDiscountValues.ok) {
+    Object.assign(fieldErrors, parsedDiscountValues.fieldErrors);
+  } else if (parsedDiscountValues?.ok) {
+    discountValue = parsedDiscountValues.value.discountValue;
+    discountValueMax = parsedDiscountValues.value.discountValueMax;
   }
 
   const supabase = createSupabaseAdminClient();
+  const { data: existingDiscount, error: existingError } = await supabase
+    .from("discounts")
+    .select(
+      `
+      valid_from,
+      valid_until,
+      has_no_expiry,
+      condition_text,
+      apply_basis,
+      stackable_policy,
+      usage_channel,
+      installment_condition,
+      notice_text,
+      source_url,
+      admin_memo,
+      status
+    `,
+    )
+    .eq("id", discountId)
+    .maybeSingle();
+
+  if (existingError || !existingDiscount) {
+    return {
+      message: existingError?.message ?? "할인 정보를 불러오지 못했습니다.",
+    };
+  }
+
+  const existing = {
+    valid_from: existingDiscount.valid_from as string | null,
+    valid_until: existingDiscount.valid_until as string | null,
+    has_no_expiry: existingDiscount.has_no_expiry as boolean,
+    condition_text: existingDiscount.condition_text as string | null,
+    apply_basis: existingDiscount.apply_basis as string | null,
+    stackable_policy: existingDiscount.stackable_policy as string | null,
+    usage_channel: existingDiscount.usage_channel as string | null,
+    installment_condition: existingDiscount.installment_condition as string | null,
+    notice_text: existingDiscount.notice_text as string | null,
+    source_url: existingDiscount.source_url as string | null,
+    admin_memo: existingDiscount.admin_memo as string | null,
+    status: existingDiscount.status as string,
+  };
+
+  const noticeFields = readDiscountNoticeFields(formData, "edit", existing);
+  const periodFields = readDiscountPeriodFields(formData, "edit", existing);
+  const conditionFields = readDiscountConditionFields(formData);
+  const dataFields = readDiscountDataManagementFields(formData, "edit", existing);
+  const visibilityFields = readDiscountVisibilityFields(formData, "edit", existing);
+
+  const sourceUrl = normalizeUrl(dataFields.source_url_raw);
+  if (isDiscountOptionGroupEnabled(formData, "data") && dataFields.source_url_raw && !sourceUrl) {
+    fieldErrors.source_url = "올바른 출처 URL을 입력해 주세요.";
+  }
+
+  if (
+    isDiscountOptionGroupEnabled(formData, "period") &&
+    periodFields.valid_from &&
+    periodFields.valid_until &&
+    periodFields.valid_from > periodFields.valid_until
+  ) {
+    fieldErrors.valid_until = "종료일은 시작일 이후여야 합니다.";
+  }
+
+  const status = visibilityFields.status as DiscountStatus;
+  if (
+    isDiscountOptionGroupEnabled(formData, "visibility") &&
+    !discountStatuses.has(status)
+  ) {
+    fieldErrors.status = "상태를 선택해 주세요.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0 || discountValue === null) {
+    return { fieldErrors };
+  }
+
   const { data: provider, error: providerError } = await supabase
     .from("providers")
     .select("benefit_category_id")
@@ -193,14 +256,20 @@ export async function updateDiscountAction(
       benefit_product_id: benefitProductId,
       title,
       summary: title,
-      condition_text: conditionText || null,
-      installment_condition: installmentCondition || null,
+      condition_text: conditionFields.condition_text,
+      apply_basis: conditionFields.apply_basis,
+      stackable_policy: conditionFields.stackable_policy,
+      usage_channel: conditionFields.usage_channel,
+      notice_text: noticeFields.notice_text,
+      installment_condition: conditionFields.installment_condition,
       discount_value: discountValue,
+      discount_value_max: discountValueMax,
       discount_unit: discountUnit,
-      valid_from: validFrom || null,
-      valid_until: validUntil || null,
-      has_no_expiry: !validUntil,
+      valid_from: periodFields.valid_from,
+      valid_until: periodFields.valid_until,
+      has_no_expiry: periodFields.has_no_expiry,
       source_url: sourceUrl,
+      admin_memo: dataFields.admin_memo,
       status,
     })
     .eq("id", discountId);

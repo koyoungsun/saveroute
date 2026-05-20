@@ -14,6 +14,8 @@ import {
 
 } from "@/lib/search/helpers";
 
+import { buildDiscountMetaSummary } from "@/lib/discounts/discount-detail-fields";
+
 import type { DiscountResult } from "@/types/search";
 
 
@@ -58,7 +60,11 @@ export function SearchResultCard({
 
 }: SearchResultCardProps) {
 
-  const discountLabel = formatDiscountValue(discount.discount_value, discount.discount_unit);
+  const discountLabel = formatDiscountValue(
+    discount.discount_value,
+    discount.discount_unit,
+    discount.discount_value_max,
+  );
 
 
 
@@ -86,6 +92,14 @@ export function SearchResultCard({
   })();
 
   const validLabel = formatValidUntil(discount);
+
+  const metaSummary = buildDiscountMetaSummary(discount);
+
+  const hasDetailContent = Boolean(
+    discount.notice_text ||
+      discount.installment_condition ||
+      metaSummary.length > 0,
+  );
 
 
 
@@ -255,19 +269,13 @@ export function SearchResultCard({
 
 
 
-        {discount.installment_condition ? (
-          <p className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-            결제 조건: {discount.installment_condition}
-          </p>
-        ) : null}
-
         {discount.condition_text ? (
 
           <p className="mt-3 line-clamp-2 rounded-xl border border-[color:var(--sr-soft-border)] bg-[color:var(--sr-soft-bg)] px-3 py-2.5 text-xs leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300">
 
             <span className="font-semibold" style={{ color: ACCENT }}>
 
-              적용 방법{" "}
+              조건 요약{" "}
 
             </span>
 
@@ -275,6 +283,41 @@ export function SearchResultCard({
 
           </p>
 
+        ) : null}
+
+        {hasDetailContent ? (
+          <details className="group mt-2 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/40">
+            <summary className="cursor-pointer list-none text-xs font-semibold text-gray-600 marker:content-none dark:text-gray-300 [&::-webkit-details-marker]:hidden">
+              <span className="group-open:hidden">자세히 보기</span>
+              <span className="hidden group-open:inline">접기</span>
+            </summary>
+            <div className="mt-2 space-y-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+              {metaSummary.length > 0 ? (
+                <p>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    적용 정보{" "}
+                  </span>
+                  {metaSummary.join(" · ")}
+                </p>
+              ) : null}
+              {discount.installment_condition ? (
+                <p>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    결제 조건{" "}
+                  </span>
+                  {discount.installment_condition}
+                </p>
+              ) : null}
+              {discount.notice_text ? (
+                <p>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    주의사항{" "}
+                  </span>
+                  {discount.notice_text}
+                </p>
+              ) : null}
+            </div>
+          </details>
         ) : null}
 
       </div>

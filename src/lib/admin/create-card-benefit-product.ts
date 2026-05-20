@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { DiscountBenefitProductOption } from "@/lib/benefits/discount-product-options";
+import { normalizeCardProductSearchKey } from "@/lib/benefits/card-product-name-normalize";
 
 export type CardBenefitType = "credit" | "debit";
 
@@ -140,6 +141,7 @@ export async function createCardBenefitProduct(
       benefit_category_id: input.benefitCategoryId,
       provider_id: input.providerId,
       name: trimmedName,
+      name_normalized: normalizeCardProductSearchKey(trimmedName),
       code,
       product_type: fields.productType,
       grade: fields.grade,

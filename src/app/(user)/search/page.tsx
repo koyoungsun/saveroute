@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 
 import { BrandFavicon } from "@/components/brand/BrandFavicon";
@@ -7,6 +8,7 @@ import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { ThemeParkConditionFilters } from "@/components/search/ThemeParkConditionFilters";
 import { performSearch } from "@/lib/search/perform-search";
 import { sortDiscountsPrioritizeOwned } from "@/lib/search/helpers";
+import { VISITOR_SESSION_COOKIE } from "@/lib/session/visitor-session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SearchPageProps = {
@@ -34,7 +36,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   let result;
   try {
     const supabase = await createServerSupabaseClient();
-    result = await performSearch(supabase, keyword);
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get(VISITOR_SESSION_COOKIE)?.value ?? null;
+    result = await performSearch(supabase, keyword, { sessionId });
   } catch {
     return <EmptyState keyword={keyword} variant="search_error" />;
   }

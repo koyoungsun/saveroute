@@ -73,14 +73,14 @@ export default async function NewDiscountPage() {
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
         <div>
           <h1 className="h3 mb-1">New Discount</h1>
           <p className="text-muted mb-0">
             브랜드를 선택하고 할인 기본 정보를 입력합니다.
           </p>
         </div>
-        <Link href="/admin/discounts" className="btn btn-outline-secondary">
+        <Link href="/admin/discounts" className="btn btn-outline-secondary sr-discounts-action-btn">
           목록으로
         </Link>
       </div>

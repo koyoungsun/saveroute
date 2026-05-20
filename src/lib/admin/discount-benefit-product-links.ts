@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
+  normalizeCardBenefitProductIds,
   normalizeTelecomBenefitProductIds,
   readBenefitProductIdsFromFormData,
   resolvePrimaryBenefitProductId,
@@ -107,10 +108,25 @@ export async function parseDiscountBenefitProductsFromForm(
     };
   }
 
+  if (category.code === "card") {
+    const normalizedIds = normalizeCardBenefitProductIds(requestedIds);
+    const useJunctionTable = normalizedIds.length > 1;
+
+    return {
+      ok: true,
+      value: {
+        normalizedIds,
+        primaryBenefitProductId: resolvePrimaryBenefitProductId(normalizedIds),
+        useJunctionTable,
+        productById,
+      },
+    };
+  }
+
   if (requestedIds.length > 1) {
     return {
       ok: false,
-      message: "카드/기타 카테고리는 혜택상품을 하나만 선택할 수 있습니다.",
+      message: "멤버십/쿠폰 등 기타 카테고리는 혜택상품을 하나만 선택할 수 있습니다.",
     };
   }
 

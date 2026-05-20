@@ -44,6 +44,7 @@ const BRAND_SELECT =
 export async function performSearch(
   supabase: SupabaseClient,
   keywordRaw: string,
+  options?: { sessionId?: string | null },
 ): Promise<SearchApiPayload> {
   const keyword = keywordRaw.trim();
   const normalized = normalizeKeyword(keyword);
@@ -70,6 +71,7 @@ export async function performSearch(
   } = await supabase.auth.getUser();
   const userId = user?.id ?? null;
   const authenticated = Boolean(userId);
+  const sessionId = options?.sessionId ?? null;
 
   if (!keyword) {
     return empty(authenticated);
@@ -204,8 +206,13 @@ export async function performSearch(
       benefit_product_id,
       title,
       condition_text,
+      notice_text,
+      apply_basis,
+      stackable_policy,
+      usage_channel,
       installment_condition,
       discount_value,
+      discount_value_max,
       discount_unit,
       usage_type,
       is_stackable,
@@ -340,6 +347,16 @@ export async function performSearch(
       result_count: resultCount,
       user_id: userId,
     });
+
+    if (userId || sessionId) {
+      await supabase.from("activity_logs").insert({
+        user_id: userId,
+        session_id: userId ? null : sessionId,
+        event_type: "search",
+        keyword,
+        path: "/search",
+      });
+    }
 
     const today = new Date().toISOString().slice(0, 10);
     const { data: dailyExisting } = await supabase

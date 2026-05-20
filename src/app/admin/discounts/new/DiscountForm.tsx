@@ -8,12 +8,16 @@ import {
   type DiscountBenefitProductOption,
 } from "@/lib/benefits/discount-product-options";
 
-import { DiscountAmountInput } from "@/components/admin/DiscountAmountInput";
+import { DiscountValueFields } from "@/components/admin/DiscountValueFields";
 import { MoneyInput } from "@/components/admin/MoneyInput";
 
-import { DiscountBenefitProductSelect } from "../DiscountBenefitProductSelect";
-import { CardBenefitProductCombobox } from "../CardBenefitProductCombobox";
-import { TelecomDiscountProductMultiSelect } from "../TelecomDiscountProductMultiSelect";
+import { DiscountBenefitInfoGroup } from "../DiscountBenefitInfoGroup";
+import { DiscountConditionDetailFields } from "../DiscountConditionDetailFields";
+import { DiscountFormField } from "../DiscountFormField";
+import { DiscountFormOptionGroup } from "../DiscountFormOptionGroup";
+import { DiscountFormRow } from "../DiscountFormRow";
+import { DiscountNoticeFields } from "../DiscountNoticeFields";
+import { DiscountVisibilityFields } from "../DiscountVisibilityFields";
 import { createDiscountAction, type DiscountFormState } from "./actions";
 
 type BrandOption = {
@@ -42,7 +46,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" className="btn btn-primary" disabled={pending}>
+    <button type="submit" className="btn btn-primary sr-discounts-submit-btn" disabled={pending}>
       {pending ? "등록 중..." : "할인 등록"}
     </button>
   );
@@ -59,14 +63,11 @@ export function DiscountForm({
   providers: ProviderOption[];
   products: BenefitProductOption[];
 }) {
-  const [state, formAction] = useActionState(
-    createDiscountAction,
-    initialState,
-  );
+  const [state, formAction] = useActionState(createDiscountAction, initialState);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedProviderId, setSelectedProviderId] = useState("");
   const [productOptions, setProductOptions] = useState(products);
-  const [selectedBenefitProductId, setSelectedBenefitProductId] = useState("");
+  const [selectedBenefitProductIds, setSelectedBenefitProductIds] = useState<number[]>([]);
   const [discountType, setDiscountType] = useState("percent");
 
   const filteredProviders = useMemo(
@@ -113,8 +114,19 @@ export function DiscountForm({
     });
   };
 
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedProviderId("");
+    setSelectedBenefitProductIds([]);
+  };
+
+  const handleProviderChange = (providerId: string) => {
+    setSelectedProviderId(providerId);
+    setSelectedBenefitProductIds([]);
+  };
+
   return (
-    <form action={formAction} className="card sr-block">
+    <form action={formAction} className="card sr-block sr-admin-discounts-form">
       <div className="card-body">
         {state.message ? (
           <div className="alert alert-danger" role="alert">
@@ -122,344 +134,219 @@ export function DiscountForm({
           </div>
         ) : null}
 
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label className="form-label fw-semibold" htmlFor="brand_id">
-              브랜드
-            </label>
-            <select
-              id="brand_id"
-              name="brand_id"
-              className="form-select"
-              defaultValue=""
-              required
-            >
-              <option value="" disabled>
-                브랜드 선택
-              </option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name} ({brand.slug})
-                </option>
-              ))}
-            </select>
-            {state.fieldErrors?.brand_id ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.brand_id}
-              </div>
-            ) : null}
-          </div>
+        <div className="sr-discounts-form-fields">
+          <DiscountFormRow>
+            <div className="sr-discounts-brand-title-row">
+              <DiscountFormField
+                label="브랜드"
+                htmlFor="brand_id"
+                required
+                error={state.fieldErrors?.brand_id}
+              >
+                <select
+                  id="brand_id"
+                  name="brand_id"
+                  className="form-select"
+                  defaultValue=""
+                  required
+                >
+                  <option value="" disabled>
+                    브랜드 선택
+                  </option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name} ({brand.slug})
+                    </option>
+                  ))}
+                </select>
+              </DiscountFormField>
 
-          <div className="col-md-6">
-            <label className="form-label fw-semibold" htmlFor="title">
-              할인 제목
-            </label>
-            <input
-              id="title"
-              name="title"
-              className="form-control"
-              placeholder="예: VIP 20% 할인"
-              required
-            />
-            {state.fieldErrors?.title ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.title}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label
-              className="form-label fw-semibold"
-              htmlFor="benefit_category_id"
-            >
-              혜택 카테고리
-            </label>
-            <select
-              id="benefit_category_id"
-              name="benefit_category_id"
-              className="form-select"
-              value={selectedCategoryId}
-              onChange={(event) => {
-                setSelectedCategoryId(event.target.value);
-                setSelectedProviderId("");
-                setSelectedBenefitProductId("");
-              }}
-              required
-            >
-              <option value="" disabled>
-                카테고리 선택
-              </option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            {state.fieldErrors?.benefit_category_id ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.benefit_category_id}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label fw-semibold" htmlFor="provider_id">
-              제공사
-            </label>
-            <select
-              id="provider_id"
-              name="provider_id"
-              className="form-select"
-              value={selectedProviderId}
-              onChange={(event) => {
-                setSelectedProviderId(event.target.value);
-                setSelectedBenefitProductId("");
-              }}
-              required
-            >
-              <option value="" disabled>
-                제공사 선택
-              </option>
-              {filteredProviders.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
-            {state.fieldErrors?.provider_id ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.provider_id}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label
-              className="form-label fw-semibold"
-              htmlFor="benefit_product_id"
-            >
-              혜택상품
-            </label>
-            {selectedCategoryCode === "telecom" ? (
-              <TelecomDiscountProductMultiSelect
-                products={filteredProducts}
-                disabled={!selectedProviderId}
-                fieldError={state.fieldErrors?.benefit_product_id}
-              />
-            ) : selectedCategoryCode === "card" && cardCategoryId != null ? (
-              <CardBenefitProductCombobox
-                products={filteredProducts}
-                providerId={selectedProviderId ? Number(selectedProviderId) : null}
-                cardCategoryId={cardCategoryId}
-                providerName={selectedProviderName}
-                value={selectedBenefitProductId}
-                onChange={setSelectedBenefitProductId}
-                onProductUpsert={handleProductUpsert}
-                disabled={!selectedProviderId}
-                emptyHint={
-                  selectedProviderId
-                    ? "브랜드 직접 할인 / 상품 없음"
-                    : undefined
-                }
-                fieldError={state.fieldErrors?.benefit_product_id}
-              />
-            ) : (
-              <DiscountBenefitProductSelect
-                categoryCode={selectedCategoryCode}
-                products={filteredProducts}
-                disabled={!selectedProviderId}
-                emptyHint={
-                  selectedProviderId
-                    ? "브랜드 직접 할인 / 상품 없음"
-                    : undefined
-                }
-              />
-            )}
-            {selectedCategoryCode !== "telecom" &&
-            selectedCategoryCode !== "card" &&
-            state.fieldErrors?.benefit_product_id ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.benefit_product_id}
-              </div>
-            ) : selectedCategoryCode !== "telecom" &&
-              selectedCategoryCode !== "card" ? (
-              <div className="form-text">
-                카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
-              </div>
-            ) : selectedCategoryCode === "card" ? (
-              <div className="form-text">
-                카드사 전체 상품은 상단에 노출되며, 특정 카드는 검색으로 찾을 수
-                있습니다. 목록에 없으면 신규 카드를 추가할 수 있습니다.
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label fw-semibold" htmlFor="discount_type">
-              할인 유형
-            </label>
-            <select
-              id="discount_type"
-              name="discount_type"
-              className="form-select"
-              value={discountType}
-              onChange={(event) => setDiscountType(event.target.value)}
-              required
-            >
-              <option value="percent">percent</option>
-              <option value="won">won</option>
-              <option value="special_price">special_price</option>
-              <option value="free">free</option>
-              <option value="unknown">unknown</option>
-            </select>
-            {state.fieldErrors?.discount_type ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.discount_type}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label fw-semibold" htmlFor="discount_value">
-              할인값
-            </label>
-            <DiscountAmountInput
-              unit={discountType}
-              placeholder={discountType === "percent" ? "예: 20" : "예: 10,000"}
-              required={discountType !== "free"}
-            />
-            {state.fieldErrors?.discount_value ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.discount_value}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-md-4">
-            <label
-              className="form-label fw-semibold"
-              htmlFor="max_discount_amount"
-            >
-              최대 할인 금액
-            </label>
-            <MoneyInput
-              id="max_discount_amount"
-              name="max_discount_amount"
-              placeholder="예: 10,000"
-            />
-          </div>
-
-          <div className="col-md-4">
-            <label
-              className="form-label fw-semibold"
-              htmlFor="min_payment_amount"
-            >
-              최소 결제 금액
-            </label>
-            <MoneyInput
-              id="min_payment_amount"
-              name="min_payment_amount"
-              placeholder="예: 30,000"
-            />
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label fw-semibold" htmlFor="start_date">
-              시작일
-            </label>
-            <input
-              id="start_date"
-              name="start_date"
-              className="form-control"
-              type="date"
-            />
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label fw-semibold" htmlFor="end_date">
-              종료일
-            </label>
-            <input
-              id="end_date"
-              name="end_date"
-              className="form-control"
-              type="date"
-            />
-            {state.fieldErrors?.end_date ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.end_date}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-12">
-            <label className="form-label fw-semibold" htmlFor="source_url">
-              출처 URL
-            </label>
-            <input
-              id="source_url"
-              name="source_url"
-              className="form-control"
-              placeholder="https://example.com"
-              type="url"
-            />
-            {state.fieldErrors?.source_url ? (
-              <div className="form-text text-danger">
-                {state.fieldErrors.source_url}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="col-12">
-            <label className="form-label fw-semibold" htmlFor="installment_condition">
-              할부 조건
-            </label>
-            <input
-              id="installment_condition"
-              name="installment_condition"
-              className="form-control"
-              placeholder="예) 2~3개월 할부 시 적용 / 일시불 결제 시 적용 / 일시불·할부 모두 가능"
-            />
-            <div className="form-text">선택 입력 · 검색 결과에 결제 조건으로 표시됩니다.</div>
-          </div>
-
-          <div className="col-12">
-            <label className="form-label fw-semibold" htmlFor="notice">
-              안내/유의사항
-            </label>
-            <textarea
-              id="notice"
-              name="notice"
-              className="form-control"
-              placeholder="할인 조건, 제외 항목, 이용 유의사항"
-              rows={4}
-            />
-            <div className="form-text">
-              현재 DB에는 별도 notice/max/min 컬럼이 없어 조건 문구로 함께
-              저장됩니다.
+              <DiscountFormField
+                label="할인 제목"
+                htmlFor="title"
+                required
+                error={state.fieldErrors?.title}
+              >
+                <input
+                  id="title"
+                  name="title"
+                  className="form-control"
+                  placeholder="예: VIP 20% 할인"
+                  required
+                />
+              </DiscountFormField>
             </div>
-          </div>
+          </DiscountFormRow>
 
-          <div className="col-12">
-            <div className="form-check form-switch">
-              <input
-                id="is_active"
-                name="is_active"
-                className="form-check-input"
-                type="checkbox"
-                defaultChecked
-              />
-              <label className="form-check-label" htmlFor="is_active">
-                활성 상태로 등록
-              </label>
+          <DiscountFormRow>
+            <DiscountBenefitInfoGroup
+              categories={categories}
+              filteredProviders={filteredProviders}
+              filteredProducts={filteredProducts}
+              selectedCategoryId={selectedCategoryId}
+              selectedProviderId={selectedProviderId}
+              selectedCategoryCode={selectedCategoryCode}
+              cardCategoryId={cardCategoryId}
+              selectedProviderName={selectedProviderName}
+              selectedBenefitProductIds={selectedBenefitProductIds}
+              onCategoryChange={handleCategoryChange}
+              onProviderChange={handleProviderChange}
+              onChangeSelectedIds={setSelectedBenefitProductIds}
+              onProductUpsert={handleProductUpsert}
+              fieldErrors={state.fieldErrors}
+            />
+          </DiscountFormRow>
+
+          <DiscountFormRow>
+            <div className="sr-discounts-form-section">
+              <p className="sr-discounts-group-title mb-2">할인 정보</p>
+              <div className="sr-discounts-form-fields sr-discounts-discount-info-fields">
+                <DiscountFormField
+                    label="할인 유형"
+                  htmlFor="discount_type"
+                  required
+                  className="sr-discounts-field--discount-type"
+                  error={state.fieldErrors?.discount_type}
+                  >
+                    <select
+                      id="discount_type"
+                      name="discount_type"
+                      className="form-select"
+                      value={discountType}
+                      onChange={(event) => setDiscountType(event.target.value)}
+                      required
+                    >
+                      <option value="percent">percent</option>
+                      <option value="won">won</option>
+                      <option value="special_price">special_price</option>
+                      <option value="free">free</option>
+                      <option value="unknown">unknown</option>
+                    </select>
+                  </DiscountFormField>
+
+                  <DiscountFormField
+                    label="할인값"
+                  htmlFor="discount_value"
+                  required
+                  className="sr-discounts-field--discount-value"
+                  error={
+                      state.fieldErrors?.discount_value &&
+                      !state.fieldErrors?.discount_value_max
+                        ? state.fieldErrors.discount_value
+                        : undefined
+                    }
+                  >
+                    <DiscountValueFields
+                      unit={discountType}
+                      required={discountType !== "free"}
+                      valueError={state.fieldErrors?.discount_value}
+                      valueMaxError={state.fieldErrors?.discount_value_max}
+                    />
+                  </DiscountFormField>
+
+                <div className="sr-discounts-compact-row">
+                  <DiscountFormField
+                    label="최대 할인 한도 금액"
+                    htmlFor="max_discount_amount"
+                    hint="할인율/할인값 범위와 별개 · 실제 적용되는 할인 상한 금액"
+                  >
+                    <MoneyInput
+                      id="max_discount_amount"
+                      name="max_discount_amount"
+                      placeholder="예: 10,000"
+                    />
+                  </DiscountFormField>
+
+                  <DiscountFormField label="최소 결제 금액" htmlFor="min_payment_amount">
+                    <MoneyInput
+                      id="min_payment_amount"
+                      name="min_payment_amount"
+                      placeholder="예: 30,000"
+                    />
+                  </DiscountFormField>
+                </div>
+              </div>
             </div>
-          </div>
+          </DiscountFormRow>
+
+          <DiscountFormRow>
+            <DiscountConditionDetailFields />
+          </DiscountFormRow>
+
+          <DiscountFormRow>
+            <DiscountVisibilityFields mode="create" />
+          </DiscountFormRow>
+
+          <DiscountFormRow className="sr-discounts-form-row--last">
+            <p className="sr-discounts-group-title mb-2">추가 옵션</p>
+
+            <div className="sr-discounts-form-fields">
+              <DiscountFormOptionGroup group="notice" label="주의사항 입력">
+                <DiscountNoticeFields />
+              </DiscountFormOptionGroup>
+
+              <DiscountFormOptionGroup group="period" label="기간 설정">
+                <div className="col-12 sr-discounts-period-row">
+                  <DiscountFormField label="시작일" htmlFor="start_date">
+                    <input
+                      id="start_date"
+                      name="start_date"
+                      className="form-control"
+                      type="date"
+                    />
+                  </DiscountFormField>
+
+                  <DiscountFormField
+                    label="종료일"
+                    htmlFor="end_date"
+                    error={state.fieldErrors?.end_date}
+                  >
+                    <input
+                      id="end_date"
+                      name="end_date"
+                      className="form-control"
+                      type="date"
+                    />
+                  </DiscountFormField>
+                </div>
+              </DiscountFormOptionGroup>
+
+              <DiscountFormOptionGroup group="data" label="데이터 관리">
+                <div className="col-12">
+                  <DiscountFormField
+                    label="공식 URL"
+                    htmlFor="source_url"
+                    error={state.fieldErrors?.source_url}
+                  >
+                    <input
+                      id="source_url"
+                      name="source_url"
+                      className="form-control"
+                      placeholder="https://example.com"
+                      type="url"
+                    />
+                  </DiscountFormField>
+                </div>
+
+                <div className="col-12">
+                  <DiscountFormField label="관리자 메모" htmlFor="admin_memo" stack>
+                    <textarea
+                      id="admin_memo"
+                      name="admin_memo"
+                      className="form-control"
+                      rows={3}
+                      placeholder="내부 확인용 메모 (사용자에게 노출되지 않음)"
+                    />
+                  </DiscountFormField>
+                </div>
+              </DiscountFormOptionGroup>
+            </div>
+          </DiscountFormRow>
         </div>
       </div>
 
-      <div className="card-footer bg-white d-flex justify-content-end gap-2">
-        <a href="/admin/discounts" className="btn btn-outline-secondary">
+      <div className="card-footer sr-discounts-form-footer">
+        <a href="/admin/discounts" className="btn btn-outline-secondary sr-discounts-cancel-btn">
           취소
         </a>
         <SubmitButton />

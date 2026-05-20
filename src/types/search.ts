@@ -37,8 +37,13 @@ export type DiscountResult = {
   brand_id: number;
   title: string;
   condition_text: string | null;
+  notice_text: string | null;
+  apply_basis: string | null;
+  stackable_policy: string | null;
+  usage_channel: string | null;
   installment_condition: string | null;
   discount_value: number | string;
+  discount_value_max?: number | string | null;
   discount_unit: DiscountUnit;
   usage_type: string;
   benefit_category_id: number;
