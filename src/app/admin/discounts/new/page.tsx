@@ -13,6 +13,7 @@ type BrandOption = {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 type ProviderOption = {
@@ -43,7 +44,7 @@ export default async function NewDiscountPage() {
       .order("name", { ascending: true }),
     supabase
       .from("benefit_categories")
-      .select("id,name")
+      .select("id,name,code")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
     supabase
@@ -53,7 +54,9 @@ export default async function NewDiscountPage() {
       .order("name", { ascending: true }),
     supabase
       .from("benefit_products")
-      .select("id,name,benefit_category_id,provider_id,benefit_type,is_all_product")
+      .select(
+        "id,name,benefit_category_id,provider_id,benefit_type,is_all_product,product_type,grade",
+      )
       .eq("is_active", true)
       .order("name", { ascending: true }),
   ]);

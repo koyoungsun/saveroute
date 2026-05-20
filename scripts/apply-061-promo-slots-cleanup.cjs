@@ -2,75 +2,21 @@
  * 061 migration fallback — promo_slot_histories + sample cleanup (service role).
  * Usage: npm run apply:061-promo-slots
  */
-const { createClient } = require("@supabase/supabase-js");
-const fs = require("fs");
-const path = require("path");
-
-function loadEnvLocal() {
-  const envPath = path.join(process.cwd(), ".env.local");
-  const env = {};
-  if (!fs.existsSync(envPath)) return env;
-  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const i = line.indexOf("=");
-    if (i <= 0 || line.trim().startsWith("#")) continue;
-    let val = line.slice(i + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    env[line.slice(0, i).trim()] = val;
-  }
-  return env;
-}
-
-function buildSnapshot(row) {
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    badge: row.badge,
-    image_url: row.image_url,
-    href: row.href,
-    priority: row.priority,
-    is_active: row.is_active,
-    is_sponsored: row.is_sponsored,
-    sponsor_name: row.sponsor_name,
-    starts_at: row.starts_at,
-    ends_at: row.ends_at,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    link_type: row.link_type,
-    hashtags: row.hashtags,
-    click_count: row.click_count,
-    impression_count: row.impression_count,
-  };
-}
+const {
+  createServiceClient,
+  promoSlotHistoriesTableReady,
+  buildSnapshot,
+} = require("./lib/promo-slots-061.cjs");
 
 async function main() {
-  const env = loadEnvLocal();
-  const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    console.error("FAIL: missing .env.local Supabase credentials");
-    process.exit(1);
-  }
+  const supabase = createServiceClient();
+  const tableReady = await promoSlotHistoriesTableReady(supabase);
 
-  const supabase = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { error: historyProbeError } = await supabase
-    .from("promo_slot_histories")
-    .select("id")
-    .limit(1);
-
-  if (historyProbeError) {
-    console.error(
-      "FAIL: promo_slot_histories table missing. Apply supabase/migrations/061_promo_slot_histories.sql first.",
-    );
-    console.error(historyProbeError.message);
+  if (!tableReady) {
+    console.error("FAIL: promo_slot_histories table missing in PostgREST schema cache.");
+    console.error("1) Supabase SQL Editor에서 supabase/migrations/061_promo_slot_histories.sql 실행");
+    console.error("2) Dashboard → Settings → API → Reload schema (또는 NOTIFY pgrst 포함 migration 재실행)");
+    console.error("3) npm run apply:061-promo-slots 재실행");
     process.exit(1);
   }
 
@@ -78,7 +24,7 @@ async function main() {
     .from("promo_slots")
     .select("*")
     .order("priority", { ascending: false })
-    .order("id", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (loadError) {
     console.error("FAIL: load promo_slots", loadError.message);
@@ -93,7 +39,7 @@ async function main() {
     );
   }
 
-  let keep =
+  const keep =
     rows.find(
       (row) =>
         row.title === "이번 주 인기 할인 모아보기" &&

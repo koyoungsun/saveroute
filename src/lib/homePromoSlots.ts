@@ -1,5 +1,5 @@
 export type HomePromoSlot = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   badge: string;
@@ -15,7 +15,7 @@ export type HomePromoSlot = {
 };
 
 export type HomePromoSlotRow = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   badge: string;

@@ -9,7 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type PromoSlotHistoryRow = {
   id: number;
-  promo_slot_id: number | null;
+  promo_slot_id: string | null;
   title: string;
   link_url: string;
   ended_at: string | null;

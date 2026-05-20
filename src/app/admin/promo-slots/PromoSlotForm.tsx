@@ -10,7 +10,7 @@ import {
 } from "@/lib/promoSlotForm";
 
 export type PromoSlotFormValues = {
-  id?: number;
+  id?: string;
   title: string;
   description: string;
   badge: string;

@@ -11,14 +11,15 @@ import {
   type PromoSlotSnapshot,
 } from "@/lib/admin/promo-slot-history";
 import { parsePromoSlotForm, type PromoSlotFormState } from "@/lib/promoSlotForm";
+import { parsePromoSlotId } from "@/lib/promoSlotId";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function updatePromoSlotAction(
-  slotId: number,
+  slotId: string,
   _prevState: PromoSlotFormState,
   formData: FormData,
 ): Promise<PromoSlotFormState> {
-  if (!Number.isInteger(slotId) || slotId <= 0) {
+  if (!parsePromoSlotId(slotId)) {
     return { message: "올바른 프로모션 구좌를 선택해 주세요." };
   }
 

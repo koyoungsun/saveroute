@@ -467,7 +467,11 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               <option value="">등급을 선택해 주세요</option>
               {membershipOptionsForCarrier.map((opt) => (
                 <option key={opt.id} value={String(opt.id)}>
-                  {opt.grade ? `${opt.grade} — ${opt.name}` : opt.name}
+                  {opt.isAllProduct || opt.benefit_type === "all"
+                    ? `전체 — ${opt.name} (등급 무관)`
+                    : opt.grade
+                      ? `${opt.grade} — ${opt.name}`
+                      : opt.name}
                 </option>
               ))}
             </select>

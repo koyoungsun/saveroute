@@ -3,8 +3,12 @@ export function formatBenefitProductOptionLabel(product: {
   name: string;
   benefit_type?: string | null;
   is_all_product?: boolean;
+  product_type?: string | null;
 }): string {
   if (product.is_all_product || product.benefit_type === "all") {
+    if (product.product_type === "telecom_membership") {
+      return `${product.name} [통신사 전체 · 등급 무관]`;
+    }
     return `${product.name} [카드사 전체]`;
   }
 

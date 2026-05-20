@@ -65,7 +65,9 @@ export async function registerTelecomBenefitAction(productId: number): Promise<B
 
   const { data: product, error: productError } = await supabase
     .from("benefit_products")
-    .select("id, benefit_category_id, provider_id, product_type")
+    .select(
+      "id, benefit_category_id, provider_id, benefit_type, product_type, is_all_product",
+    )
     .eq("id", productId)
     .eq("is_active", true)
     .maybeSingle();
@@ -128,6 +130,11 @@ export async function registerTelecomBenefitAction(productId: number): Promise<B
       benefit_category_id: product.benefit_category_id,
       provider_id: product.provider_id,
       benefit_product_id: productId,
+      benefit_type:
+        Boolean(product.is_all_product) ||
+        String(product.benefit_type ?? "").toLowerCase() === "all"
+          ? "all"
+          : null,
       is_active: true,
       updated_at: nowIso(),
     },

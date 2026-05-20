@@ -66,6 +66,7 @@ export type TelecomMembershipOption = {
   providerCode: string;
   provider_id: number;
   benefit_type: string | null;
+  isAllProduct: boolean;
 };
 
 export type MvnoBrandOption = {
@@ -96,7 +97,7 @@ export const MVNO_BRAND_DISPLAY_ORDER: string[] = [
   "토스모바일",
 ];
 
-const GRADE_ORDER = ["일반", "VIP", "VVIP"];
+const GRADE_ORDER = ["전체", "일반", "VIP", "VVIP"];
 
 export function sortTelecomMembershipOptions(rows: TelecomMembershipOption[]): TelecomMembershipOption[] {
   return [...rows].sort((a, b) => {
@@ -206,7 +207,7 @@ export async function loadBenefitsRegistrationData(
   ] = await Promise.all([
     supabase
       .from("benefit_products")
-      .select("id,name,grade,provider_id,benefit_type")
+      .select("id,name,grade,provider_id,benefit_type,is_all_product")
       .eq("benefit_category_id", telecomCategoryId)
       .eq("product_type", "telecom_membership")
       .eq("is_active", true)
@@ -304,6 +305,9 @@ export async function loadBenefitsRegistrationData(
           providerCode: telecomProviderCodeById.get(pid) ?? "",
           provider_id: pid,
           benefit_type: (row.benefit_type as string | null) ?? null,
+          isAllProduct:
+            Boolean(row.is_all_product) ||
+            String(row.benefit_type ?? "").toLowerCase() === "all",
         };
       }),
     ),

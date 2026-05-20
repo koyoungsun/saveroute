@@ -3,8 +3,12 @@
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import { formatBenefitProductOptionLabel } from "@/lib/benefits/format-product-label";
+import {
+  resolveCategoryCode,
+  type DiscountBenefitProductOption,
+} from "@/lib/benefits/discount-product-options";
 
+import { DiscountBenefitProductSelect } from "../../DiscountBenefitProductSelect";
 import { updateDiscountAction, type DiscountEditFormState } from "./actions";
 
 type BrandOption = {
@@ -16,6 +20,7 @@ type BrandOption = {
 type BenefitCategoryOption = {
   id: number;
   name: string;
+  code: string;
 };
 
 type ProviderOption = {
@@ -24,14 +29,7 @@ type ProviderOption = {
   benefit_category_id: number;
 };
 
-type BenefitProductOption = {
-  id: number;
-  name: string;
-  benefit_category_id: number;
-  provider_id: number;
-  benefit_type?: string | null;
-  is_all_product?: boolean;
-};
+type BenefitProductOption = DiscountBenefitProductOption;
 
 export type DiscountEditValues = {
   id: number;
@@ -95,25 +93,21 @@ export function EditDiscountForm({
     [providers, selectedCategoryId],
   );
 
+  const selectedCategoryCode = resolveCategoryCode(selectedCategoryId, categories);
+
   const filteredProducts = useMemo(
     () =>
-      products
-        .filter((product) => {
-          if (selectedProviderId) {
-            return product.provider_id === Number(selectedProviderId);
-          }
+      products.filter((product) => {
+        if (selectedProviderId) {
+          return product.provider_id === Number(selectedProviderId);
+        }
 
-          if (selectedCategoryId) {
-            return product.benefit_category_id === Number(selectedCategoryId);
-          }
+        if (selectedCategoryId) {
+          return product.benefit_category_id === Number(selectedCategoryId);
+        }
 
-          return true;
-        })
-        .sort((a, b) => {
-          if (a.is_all_product && !b.is_all_product) return -1;
-          if (!a.is_all_product && b.is_all_product) return 1;
-          return a.name.localeCompare(b.name, "ko");
-        }),
+        return true;
+      }),
     [products, selectedCategoryId, selectedProviderId],
   );
 
@@ -241,31 +235,28 @@ export function EditDiscountForm({
             >
               혜택상품
             </label>
-            <select
-              id="benefit_product_id"
-              name="benefit_product_id"
-              className="form-select"
-              defaultValue={discount.benefit_product_id ?? ""}
+            <DiscountBenefitProductSelect
+              categoryCode={selectedCategoryCode}
+              products={filteredProducts}
+              defaultValue={discount.benefit_product_id}
               disabled={!selectedProviderId}
-            >
-              <option value="">
-                {selectedProviderId
-                  ? "브랜드 직접 할인 / 상품 없음"
-                  : "제공사 선택 후 선택 가능"}
-              </option>
-              {filteredProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {formatBenefitProductOptionLabel(product)}
-                </option>
-              ))}
-            </select>
+              emptyHint={
+                selectedProviderId
+                  ? selectedCategoryCode === "telecom"
+                    ? "전체(등급 무관) 또는 등급별 상품 선택"
+                    : "브랜드 직접 할인 / 상품 없음"
+                  : undefined
+              }
+            />
             {state.fieldErrors?.benefit_product_id ? (
               <div className="form-text text-danger">
                 {state.fieldErrors.benefit_product_id}
               </div>
             ) : (
               <div className="form-text">
-                카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다.
+                {selectedCategoryCode === "telecom"
+                  ? "통신사 전체는 모든 등급 회원에게, 등급별은 해당 등급 회원에게만 매칭됩니다."
+                  : "카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다."}
               </div>
             )}
           </div>

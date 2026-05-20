@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parsePromoSlotId } from "@/lib/promoSlotId";
 
 import { PromoSlotForm, type PromoSlotFormValues } from "../../PromoSlotForm";
 import { updatePromoSlotAction } from "./actions";
@@ -14,9 +15,9 @@ type EditPromoSlotPageProps = {
 
 export default async function EditPromoSlotPage({ params }: EditPromoSlotPageProps) {
   const { id } = await params;
-  const slotId = Number(id);
+  const slotId = parsePromoSlotId(id);
 
-  if (!Number.isInteger(slotId) || slotId <= 0) {
+  if (!slotId) {
     notFound();
   }
 
@@ -53,7 +54,7 @@ export default async function EditPromoSlotPage({ params }: EditPromoSlotPagePro
   }
 
   const promoSlot = data as PromoSlotFormValues;
-  const updateAction = updatePromoSlotAction.bind(null, promoSlot.id ?? slotId);
+  const updateAction = updatePromoSlotAction.bind(null, slotId);
 
   return (
     <>

@@ -10,7 +10,7 @@ export type PromoSlotEventType =
   | "completed";
 
 export type PromoSlotSnapshot = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   badge: string;
@@ -48,7 +48,7 @@ type RecordPromoSlotHistoryInput = {
   eventType: PromoSlotEventType;
   reason?: string | null;
   createdBy?: string | null;
-  promoSlotId?: number | null;
+  promoSlotId?: string | null;
 };
 
 export async function recordPromoSlotHistory(

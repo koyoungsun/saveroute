@@ -100,4 +100,83 @@ assert.equal(
   true,
 );
 
+// --- Telecom membership (same all-product semantics, separate provider scope) ---
+const TELECOM_CAT = 1;
+const SKT = 1;
+const SKT_ALL_ID = 7001;
+const SKT_VIP_ID = 7002;
+
+const sktAllMeta = {
+  id: SKT_ALL_ID,
+  benefit_type: "all",
+  is_all_product: true,
+};
+
+const sktVipMeta = {
+  id: SKT_VIP_ID,
+  benefit_type: null,
+  is_all_product: false,
+};
+
+const userSktVip = {
+  benefit_category_id: TELECOM_CAT,
+  provider_id: SKT,
+  benefit_product_id: SKT_VIP_ID,
+  benefit_type: null,
+  product: sktVipMeta,
+};
+
+const userSktAll = {
+  benefit_category_id: TELECOM_CAT,
+  provider_id: SKT,
+  benefit_product_id: SKT_ALL_ID,
+  benefit_type: "all",
+  product: sktAllMeta,
+};
+
+assert.equal(userHoldsProviderAllProduct(userSktAll), true);
+assert.equal(userHoldsProviderAllProduct(userSktVip), false);
+
+// VIP user matches SKT 전체 discount
+assert.equal(
+  matchDiscountToUserBenefit(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_ALL_ID,
+    },
+    userSktVip,
+    sktAllMeta,
+  ),
+  true,
+);
+
+// SKT 전체 user does NOT match VIP-only discount
+assert.equal(
+  matchDiscountToUserBenefit(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_VIP_ID,
+    },
+    userSktAll,
+    sktVipMeta,
+  ),
+  false,
+);
+
+// SKT 전체 user matches SKT 전체 discount
+assert.equal(
+  matchDiscountToUserBenefit(
+    {
+      benefit_category_id: TELECOM_CAT,
+      provider_id: SKT,
+      benefit_product_id: SKT_ALL_ID,
+    },
+    userSktAll,
+    sktAllMeta,
+  ),
+  true,
+);
+
 console.log("discount-matching QA: PASS");

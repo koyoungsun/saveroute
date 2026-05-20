@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { parsePromoSlotId } from "@/lib/promoSlotId";
 
 type RouteContext = {
   params: Promise<{
@@ -9,7 +10,7 @@ type RouteContext = {
 };
 
 type PromoSlotClickRow = {
-  id: number;
+  id: string;
   href: string;
   link_type: "internal" | "external";
   starts_at: string | null;
@@ -47,10 +48,10 @@ function isWithinActivePeriod(slot: PromoSlotClickRow) {
 
 export async function GET(request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const promoSlotId = Number(id);
+  const promoSlotId = parsePromoSlotId(id);
   const fallbackUrl = new URL("/", request.url);
 
-  if (!Number.isInteger(promoSlotId) || promoSlotId <= 0) {
+  if (!promoSlotId) {
     return NextResponse.redirect(fallbackUrl);
   }
 

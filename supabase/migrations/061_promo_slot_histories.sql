@@ -1,6 +1,9 @@
+-- promo_slot_histories: 종료/비활성/삭제 이벤트 보관
+-- NOTE: 원격 promo_slots.id 는 UUID 타입입니다.
+
 CREATE TABLE IF NOT EXISTS public.promo_slot_histories (
   id BIGSERIAL PRIMARY KEY,
-  promo_slot_id BIGINT NULL REFERENCES public.promo_slots(id) ON DELETE SET NULL,
+  promo_slot_id UUID NULL REFERENCES public.promo_slots(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   link_url TEXT NOT NULL,
   image_url TEXT NULL,
@@ -50,12 +53,30 @@ CREATE POLICY "admins can insert promo slot histories"
   ON public.promo_slot_histories FOR INSERT
   WITH CHECK (public.is_admin());
 
--- Sample cleanup: keep one canonical active promo slot, archive then delete the rest.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.promo_slot_histories TO postgres, service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.promo_slot_histories_id_seq TO postgres, service_role;
+
+-- click_count RPC: promo_slots.id UUID 호환
+DROP FUNCTION IF EXISTS public.increment_promo_slot_click_count(BIGINT);
+
+CREATE OR REPLACE FUNCTION public.increment_promo_slot_click_count(slot_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.promo_slots
+  SET click_count = click_count + 1
+  WHERE id = slot_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE ALL ON FUNCTION public.increment_promo_slot_click_count(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.increment_promo_slot_click_count(UUID) TO service_role;
+
+-- Sample cleanup: canonical 1건만 active 유지
 DO $$
 DECLARE
   total_count INTEGER;
   after_count INTEGER;
-  keep_id BIGINT;
+  keep_id UUID;
   candidate RECORD;
 BEGIN
   SELECT COUNT(*) INTO total_count FROM public.promo_slots;
@@ -64,7 +85,7 @@ BEGIN
   FOR candidate IN
     SELECT id, title, href, is_active, priority
     FROM public.promo_slots
-    ORDER BY priority DESC, id ASC
+    ORDER BY priority DESC, created_at ASC
   LOOP
     RAISE NOTICE 'promo_slots candidate id=%, title=%, href=%, is_active=%, priority=%',
       candidate.id, candidate.title, candidate.href, candidate.is_active, candidate.priority;
@@ -75,14 +96,14 @@ BEGIN
   FROM public.promo_slots ps
   WHERE ps.title = '이번 주 인기 할인 모아보기'
     AND ps.href = '/search?keyword=스타벅스'
-  ORDER BY ps.id
+  ORDER BY ps.created_at ASC
   LIMIT 1;
 
   IF keep_id IS NULL THEN
     SELECT ps.id
     INTO keep_id
     FROM public.promo_slots ps
-    ORDER BY ps.priority DESC, ps.id ASC
+    ORDER BY ps.priority DESC, ps.created_at ASC
     LIMIT 1;
   END IF;
 
@@ -152,3 +173,5 @@ BEGIN
   SELECT COUNT(*) INTO after_count FROM public.promo_slots;
   RAISE NOTICE 'promo_slots COUNT after cleanup: %', after_count;
 END $$;
+
+NOTIFY pgrst, 'reload schema';

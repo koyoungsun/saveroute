@@ -8,13 +8,14 @@ import {
   recordPromoSlotHistory,
   type PromoSlotSnapshot,
 } from "@/lib/admin/promo-slot-history";
+import { parsePromoSlotId } from "@/lib/promoSlotId";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function togglePromoSlotActiveAction(formData: FormData) {
-  const slotId = Number(formData.get("promo_slot_id"));
+  const slotId = parsePromoSlotId(formData.get("promo_slot_id")?.toString() ?? null);
   const nextActive = formData.get("next_active") === "true";
 
-  if (!Number.isInteger(slotId) || slotId <= 0) {
+  if (!slotId) {
     return;
   }
 

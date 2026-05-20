@@ -28,6 +28,7 @@
     "qa:rank-items": "tsx src/lib/admin/rank-items.test.ts",
     "apply:060-cleanup": "node scripts/apply-060-test-card-cleanup.cjs",
     "apply:061-promo-slots": "node scripts/apply-061-promo-slots-cleanup.cjs",
+    "apply:061-migration": "node scripts/run-061-migration.cjs",
     "qa:promo-slot-history": "node scripts/qa-promo-slot-history.cjs",
     "cleanup:test-operational-data": "node scripts/run-clear-test-operational-data.cjs"
   },
@@ -57,6 +58,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "pg": "^8.21.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

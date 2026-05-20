@@ -1,5 +1,6 @@
 /**
  * 할인 ↔ 사용자 등록 혜택 매칭 (카드사 전체 / 특정 카드 / 카드유형 전체).
+ * 통신사 "전체" 상품(is_all_product + benefit_type=all)도 동일 규칙 적용.
  */
 
 export type BenefitProductMatchMeta = {

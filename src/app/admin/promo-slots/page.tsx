@@ -7,7 +7,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { togglePromoSlotActiveAction } from "./actions";
 
 type PromoSlotRow = {
-  id: number;
+  id: string;
   title: string;
   badge: string;
   link_type: "internal" | "external";
@@ -35,7 +35,7 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function renderHashtags(hashtags: string[] | null, slotId: number) {
+function renderHashtags(hashtags: string[] | null, slotId: string) {
   if (!hashtags?.length) {
     return "-";
   }
