@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 import {
   MEMBERSHIP_ALL_BENEFIT_TYPE,
   MEMBERSHIP_ALL_GRADE,
@@ -479,7 +480,7 @@ export async function createBenefitProductAction(
     redirect("/admin/benefit-products");
   }
 
-  const { error } = await supabase.from("benefit_products").insert({
+  const { data: createdProduct, error } = await supabase.from("benefit_products").insert({
     benefit_category_id: product.benefitCategoryId,
     provider_id: product.providerId,
     name: product.name,
@@ -492,13 +493,21 @@ export async function createBenefitProductAction(
     is_active: product.isActive,
     is_mvno: product.isMvno,
     mvno_notice_required: product.mvnoNoticeRequired,
-  });
+  }).select("id").single();
 
-  if (error) {
+  if (error || !createdProduct) {
     return {
-      message: `혜택상품 등록에 실패했습니다: ${error.message}`,
+      message: `혜택상품 등록에 실패했습니다: ${error?.message ?? "unknown error"}`,
     };
   }
+
+  await writeAdminAuditLog({
+    action: "create",
+    targetTable: "benefit_products",
+    targetId: createdProduct.id as number,
+    summary: `혜택상품 생성: ${product.name}`,
+    afterData: { name: product.name, product_type: product.productType },
+  });
 
   revalidatePath("/admin/benefit-products");
   redirect("/admin/benefit-products");
@@ -583,6 +592,14 @@ export async function updateBenefitProductAction(
       message: `혜택상품 수정에 실패했습니다: ${error.message}`,
     };
   }
+
+  await writeAdminAuditLog({
+    action: "update",
+    targetTable: "benefit_products",
+    targetId: benefitProductId,
+    summary: `혜택상품 수정: ${product.name}`,
+    afterData: { name: product.name, is_active: product.isActive },
+  });
 
   revalidatePath("/admin/benefit-products");
   redirect("/admin/benefit-products");

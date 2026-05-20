@@ -47,6 +47,7 @@ export const STATUS_BADGE_CLASS_NAMES: Record<string, string> = {
   completed: "text-bg-success",
   ignored: "text-bg-light text-dark border",
   rejected: "text-bg-secondary",
+  approved: "text-bg-success",
   inactive: "text-bg-light text-dark border",
   scheduled: "text-bg-info",
   view_detail: "text-bg-info",
@@ -55,7 +56,6 @@ export const STATUS_BADGE_CLASS_NAMES: Record<string, string> = {
   unmatched: "text-bg-secondary",
   success: "text-bg-success",
   failed: "text-bg-danger",
-  approved: "text-bg-success",
   master: "text-bg-dark",
   operator: "text-bg-primary",
   admin: "text-bg-primary",
@@ -96,6 +96,18 @@ export const BRAND_REQUEST_STATUS_OPTIONS = [
   { value: "pending", label: "대기중" },
   { value: "reviewing", label: "검토중" },
   { value: "completed", label: "완료" },
+  { value: "rejected", label: "반려" },
+] as const;
+
+export const BENEFIT_PRODUCT_REQUEST_STATUS_OPTIONS = [
+  { value: "pending", label: "대기중" },
+  { value: "approved", label: "승인" },
+  { value: "rejected", label: "반려" },
+] as const;
+
+export const PROVIDER_REQUEST_STATUS_OPTIONS = [
+  { value: "pending", label: "대기중" },
+  { value: "approved", label: "승인" },
   { value: "rejected", label: "반려" },
 ] as const;
 

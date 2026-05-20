@@ -10,9 +10,9 @@ import {
   deactivateUserBenefitAction,
   registerMembershipBenefitAction,
   registerTelecomBenefitAction,
-  requestBenefitCardCatalogAction,
+  requestBenefitProductAction,
   type BenefitActionState,
-  type BenefitCardCatalogRequestKind,
+  type BenefitProductRequestKind,
 } from "@/app/(user)/my-benefits/actions";
 import {
   type CardBenefitKind,
@@ -35,13 +35,11 @@ const CARD_KIND_LABEL: Record<CardBenefitKind, string> = {
 };
 
 const REQUEST_KIND_UI: readonly {
-  id: BenefitCardCatalogRequestKind;
+  id: BenefitProductRequestKind;
   label: string;
 }[] = [
-  { id: "unknown", label: "모름 · 미확정" },
   { id: "credit", label: "신용카드" },
   { id: "debit", label: "체크카드" },
-  { id: "prepaid", label: "선불카드" },
 ];
 
 function compactSearchKey(raw: string) {
@@ -86,7 +84,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
   const [pendingCard, startCardTransition] = useTransition();
   const [manualCatalogCardName, setManualCatalogCardName] = useState("");
   const [manualCatalogKind, setManualCatalogKind] =
-    useState<BenefitCardCatalogRequestKind>("unknown");
+    useState<BenefitProductRequestKind>("credit");
   const [manualCatalogMsg, setManualCatalogMsg] = useState<string | null>(null);
   const manualCatalogNameEditedRef = useRef(false);
   const [pendingCatalogRequest, startCatalogRequestTransition] = useTransition();
@@ -339,7 +337,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     if (!selectedCardProviderId) {
       manualCatalogNameEditedRef.current = false;
       setManualCatalogCardName("");
-      setManualCatalogKind("unknown");
+      setManualCatalogKind("credit");
       setManualCatalogMsg(null);
     }
   }, [selectedCardProviderId]);
@@ -409,7 +407,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     }
     setManualCatalogMsg(null);
     startCatalogRequestTransition(() => {
-      void requestBenefitCardCatalogAction(pid, nameTrim, manualCatalogKind).then(
+      void requestBenefitProductAction(pid, nameTrim, manualCatalogKind).then(
         (r: BenefitActionState) => {
           if (r.error) {
             setManualCatalogMsg(r.error);
@@ -417,7 +415,9 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           }
           manualCatalogNameEditedRef.current = false;
           setManualCatalogMsg(r.message ?? "요청이 접수되었습니다.");
-          setManualCatalogKind("unknown");
+          setManualCatalogKind("credit");
+          setManualCatalogCardName("");
+          setCardSearchQuery("");
           router.refresh();
         },
       );
@@ -802,10 +802,11 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
                   {showManualCatalogRequest ? (
                     <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                      <p className="text-xs font-medium text-gray-700">
+                      <p className="text-xs font-bold text-[#409A53]">직접 카드명 입력하기</p>
+                      <p className="mt-1 text-xs font-medium text-gray-700">
                         {cardProductsForProvider.length === 0
-                          ? "표시할 카드 상품이 없습니다. DB 마스터에 해당 카드사 상품이 아직 없을 수 있어요."
-                          : "검색 결과가 없습니다. 보유 중인 카드명을 직접 입력해 마스터 추가를 요청할 수 있어요."}
+                          ? "등록 가능한 카드가 없습니다. 카드명을 직접 입력해 요청할 수 있어요."
+                          : "검색 결과가 없습니다. 보유 중인 카드명을 직접 입력해 요청할 수 있어요."}
                       </p>
                       <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
                         <div>
@@ -835,7 +836,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-700">카드 유형</p>
-                          <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1 sm:grid-cols-4">
+                          <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1">
                             {REQUEST_KIND_UI.map((item) => (
                               <button
                                 key={item.id}
@@ -856,7 +857,8 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                           </div>
                         </div>
                         <p className="text-xs text-gray-500">
-                          요청이 접수되면 검토 후 카드 목록에 반영됩니다.
+                          요청 후 내 혜택에 «검토중»으로 등록됩니다. 승인 전까지 할인 매칭이
+                          제한될 수 있어요.
                         </p>
                         <button
                           type="button"
@@ -864,7 +866,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                           onClick={handleSubmitCatalogRequest}
                           className="flex h-11 w-full items-center justify-center rounded-xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
                         >
-                          {pendingCatalogRequest ? "접수 중..." : "카드 마스터 추가 요청"}
+                          {pendingCatalogRequest ? "등록 중..." : "카드 요청 등록"}
                         </button>
                         {manualCatalogMsg ? (
                           <p className="text-xs font-medium text-gray-600">{manualCatalogMsg}</p>
@@ -941,14 +943,45 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
         <div className="mt-4 flex flex-wrap gap-2">
           {cardBenefits.map((b) => {
-            const productName = relationOne(b.benefit_product)?.name ?? "카드";
+            const requestRow = relationOne(b.benefit_product_request);
+            const productName =
+              relationOne(b.benefit_product)?.name ??
+              b.custom_name ??
+              requestRow?.requested_name ??
+              "카드";
             const providerName = relationOne(b.provider)?.name ?? "";
             const benefitTypeLabel = formatUserBenefitTypeLabel(b.benefit_type);
             const hasConnectedDiscounts = b.connectedDiscountCount > 0;
+            const approvalStatus = b.approval_status ?? requestRow?.status ?? null;
+            const isPending = approvalStatus === "pending";
+            const isRejected = approvalStatus === "rejected";
+            const rejectMemo = isRejected ? requestRow?.admin_memo?.trim() : "";
+
+            let statusLabel = hasConnectedDiscounts
+              ? `연결된 할인 ${b.connectedDiscountCount}개`
+              : "혜택 확인중";
+            let statusClass = hasConnectedDiscounts
+              ? "bg-white text-[#409A53]"
+              : "bg-white text-gray-500";
+
+            if (isPending) {
+              statusLabel = "검토중";
+              statusClass = "bg-amber-50 text-amber-800";
+            } else if (isRejected) {
+              statusLabel = "승인 반려";
+              statusClass = "bg-red-50 text-red-700";
+            }
+
             return (
               <div
                 key={b.id}
-                className="inline-flex max-w-full items-center gap-1 rounded-2xl border border-[#409A53]/35 bg-[#409A53]/10 py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900"
+                className={`inline-flex max-w-full items-center gap-1 rounded-2xl border py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900 ${
+                  isRejected
+                    ? "border-red-200 bg-red-50/60"
+                    : isPending
+                      ? "border-amber-200 bg-amber-50/60"
+                      : "border-[#409A53]/35 bg-[#409A53]/10"
+                }`}
               >
                 <span className="min-w-0">
                   <span className="block truncate">
@@ -957,16 +990,20 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                     {benefitTypeLabel ? ` · ${benefitTypeLabel}` : ""}
                   </span>
                   <span
-                    className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
-                      hasConnectedDiscounts
-                        ? "bg-white text-[#409A53]"
-                        : "bg-white text-gray-500"
-                    }`}
+                    className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${statusClass}`}
                   >
-                    {hasConnectedDiscounts
-                      ? `연결된 할인 ${b.connectedDiscountCount}개`
-                      : "혜택 확인중"}
+                    {statusLabel}
                   </span>
+                  {isPending ? (
+                    <span className="mt-1 block text-[11px] font-normal leading-snug text-amber-800/90">
+                      승인 전까지 할인 매칭이 제한될 수 있습니다.
+                    </span>
+                  ) : null}
+                  {rejectMemo ? (
+                    <span className="mt-1 block text-[11px] font-normal leading-snug text-red-700">
+                      사유: {rejectMemo}
+                    </span>
+                  ) : null}
                 </span>
                 <form action={deactivateUserBenefitAction}>
                   <input type="hidden" name="user_benefit_id" value={b.id} />

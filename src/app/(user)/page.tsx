@@ -27,6 +27,7 @@ import {
   resolveDiscountBenefitProductIds,
 } from "@/lib/benefits/discount-benefit-products";
 import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
+import { isUserBenefitEligibleForMatching } from "@/lib/benefits/benefit-product-request-status";
 
 const popularBrands = ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"];
 const telecomCategoryCodes = new Set(["telecom", "membership", "mvno"]);
@@ -171,6 +172,7 @@ export default async function HomePage() {
           provider_id,
           benefit_product_id,
           benefit_type,
+          approval_status,
           benefit_category:benefit_categories(code,name),
           product:benefit_products(id,benefit_type,is_all_product)
         `,
@@ -198,11 +200,19 @@ export default async function HomePage() {
     ]);
 
     userBenefits = ((benefitData ?? []) as Array<Omit<UserBenefitRow, "product"> & {
+      approval_status: string | null;
       product:
         | { id: number; benefit_type: string | null; is_all_product: boolean }
         | { id: number; benefit_type: string | null; is_all_product: boolean }[]
         | null;
-    }>).map((row) => {
+    }>)
+      .filter((row) =>
+        isUserBenefitEligibleForMatching({
+          benefit_product_id: row.benefit_product_id,
+          approval_status: row.approval_status,
+        }),
+      )
+      .map((row) => {
       const prod = getRelation(row.product);
       return {
         benefit_category_id: row.benefit_category_id,

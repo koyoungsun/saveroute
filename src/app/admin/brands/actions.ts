@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export async function deactivateBrandAction(formData: FormData) {
   const brandId = Number(formData.get("brand_id"));
@@ -24,6 +25,14 @@ export async function deactivateBrandAction(formData: FormData) {
     });
     return;
   }
+
+  await writeAdminAuditLog({
+    action: "deactivate",
+    targetTable: "brands",
+    targetId: brandId,
+    summary: "브랜드 비활성",
+    afterData: { is_active: false },
+  });
 
   revalidatePath("/admin/brands");
 }

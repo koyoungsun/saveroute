@@ -56,6 +56,7 @@ export async function middleware(request: NextRequest) {
     response.cookies.set(VISITOR_SESSION_COOKIE, createVisitorSessionId(), {
       httpOnly: true,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 30,
       path: "/",
     });

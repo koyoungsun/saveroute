@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { saveRecentSearch } from "./recentSearchesStorage";
+import { submitExplicitSearch } from "@/lib/search/submit-explicit-search";
 
 interface PopularBrandChipsProps {
   brands: string[];
@@ -12,8 +12,7 @@ export function PopularBrandChips({ brands }: PopularBrandChipsProps) {
   const router = useRouter();
 
   const handleClick = (brand: string) => {
-    saveRecentSearch(brand);
-    router.push(`/search?keyword=${encodeURIComponent(brand)}`);
+    void submitExplicitSearch(router, brand);
   };
 
   return (

@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin/promo-slot-history";
 import { parsePromoSlotId } from "@/lib/promoSlotId";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export async function togglePromoSlotActiveAction(formData: FormData) {
   const slotId = parsePromoSlotId(formData.get("promo_slot_id")?.toString() ?? null);
@@ -64,6 +65,15 @@ export async function togglePromoSlotActiveAction(formData: FormData) {
   } catch (historyError) {
     console.error(historyError);
   }
+
+  await writeAdminAuditLog({
+    action: nextActive ? "update" : "deactivate",
+    targetTable: "promo_slots",
+    targetId: slotId,
+    summary: nextActive ? "프로모션 슬롯 활성화" : "프로모션 슬롯 비활성화",
+    beforeData: { is_active: snapshot.is_active },
+    afterData: { is_active: nextActive, title: snapshot.title },
+  });
 
   revalidatePath("/admin/promo-slots");
   revalidatePath("/admin/promo-slots/history");

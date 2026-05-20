@@ -11,14 +11,12 @@ export type BenefitActionState = {
   error?: string;
 };
 
-export type BenefitCardCatalogRequestKind = "credit" | "debit" | "prepaid" | "unknown";
+export type BenefitProductRequestKind = "credit" | "debit";
 
-function normalizeBenefitCatalogRequestKind(
-  value: BenefitCardCatalogRequestKind | string,
-): BenefitCardCatalogRequestKind | null {
-  return value === "credit" || value === "debit" || value === "prepaid" || value === "unknown"
-    ? value
-    : null;
+function normalizeBenefitProductRequestKind(
+  value: BenefitProductRequestKind | string,
+): BenefitProductRequestKind | null {
+  return value === "credit" || value === "debit" ? value : null;
 }
 
 function readPositiveInteger(formData: FormData, key: string) {
@@ -325,11 +323,11 @@ export async function addCardBenefitAction(
   return { message: "보유카드에 추가되었습니다." };
 }
 
-/** benefit_products 에 없어도 카드 마스터 추가 요청 (상태 pending) */
-export async function requestBenefitCardCatalogAction(
+/** 카드 마스터에 없는 카드 — 요청 등록 + 내 혜택 임시(pending) 등록 */
+export async function requestBenefitProductAction(
   providerId: number,
   rawCardName: string,
-  cardBenefitType: BenefitCardCatalogRequestKind,
+  cardBenefitType: BenefitProductRequestKind,
 ): Promise<BenefitActionState> {
   if (!Number.isInteger(providerId) || providerId <= 0) {
     return { error: "카드사를 선택해 주세요." };
@@ -340,9 +338,9 @@ export async function requestBenefitCardCatalogAction(
     return { error: "카드명을 1~200자로 입력해 주세요." };
   }
 
-  const normalizedKind = normalizeBenefitCatalogRequestKind(cardBenefitType);
+  const normalizedKind = normalizeBenefitProductRequestKind(cardBenefitType);
   if (!normalizedKind) {
-    return { error: "카드 유형을 선택해 주세요." };
+    return { error: "카드 유형(신용/체크)을 선택해 주세요." };
   }
 
   const { supabase, userId } = await requireSession();
@@ -368,22 +366,94 @@ export async function requestBenefitCardCatalogAction(
     return { error: "등록 가능한 카드사만 요청할 수 있습니다." };
   }
 
-  const { error: insertError } = await supabase.from("benefit_card_catalog_requests").insert({
+  const { data: existingProduct } = await supabase
+    .from("benefit_products")
+    .select("id")
+    .eq("provider_id", providerId)
+    .eq("name", cardName)
+    .eq("benefit_type", normalizedKind)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (existingProduct) {
+    return {
+      error: "이미 등록된 카드입니다. 목록에서 선택해 주세요.",
+    };
+  }
+
+  const { data: pendingRequest } = await supabase
+    .from("benefit_product_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider_id", providerId)
+    .eq("requested_name", cardName)
+    .eq("requested_benefit_type", normalizedKind)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (pendingRequest) {
+    return { error: "동일한 카드 요청이 이미 검토 중입니다." };
+  }
+
+  const { data: pendingBenefit } = await supabase
+    .from("user_benefits")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider_id", providerId)
+    .eq("approval_status", "pending")
+    .eq("custom_name", cardName)
+    .eq("benefit_type", normalizedKind)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (pendingBenefit) {
+    return { error: "이미 검토 중인 카드가 내 혜택에 등록되어 있습니다." };
+  }
+
+  const now = nowIso();
+
+  const { data: insertedRequest, error: requestError } = await supabase
+    .from("benefit_product_requests")
+    .insert({
+      user_id: userId,
+      provider_id: providerId,
+      category_code: "card",
+      requested_name: cardName,
+      requested_benefit_type: normalizedKind,
+      status: "pending",
+      updated_at: now,
+    })
+    .select("id")
+    .single();
+
+  if (requestError || !insertedRequest) {
+    return { error: requestError?.message ?? "카드 요청 등록에 실패했습니다." };
+  }
+
+  const { error: benefitError } = await supabase.from("user_benefits").insert({
     user_id: userId,
+    benefit_category_id: provider.benefit_category_id,
     provider_id: providerId,
-    card_name: cardName,
-    card_benefit_type: normalizedKind,
-    status: "pending",
-    updated_at: nowIso(),
+    benefit_product_id: null,
+    benefit_product_request_id: insertedRequest.id,
+    approval_status: "pending",
+    benefit_type: normalizedKind,
+    custom_name: cardName,
+    is_active: true,
+    updated_at: now,
   });
 
-  if (insertError) {
-    return { error: insertError.message };
+  if (benefitError) {
+    await supabase.from("benefit_product_requests").delete().eq("id", insertedRequest.id);
+    return { error: benefitError.message };
   }
 
   revalidatePath("/my-benefits");
   revalidatePath("/onboarding");
-  return { message: "카드 추가 요청이 접수되었습니다. 처리 후 마스터에 반영할게요." };
+  revalidatePath("/admin/benefit-product-requests");
+  return {
+    message: "카드 요청을 등록했습니다. 검토 중이며, 승인 전까지 할인 매칭이 제한될 수 있어요.",
+  };
 }
 
 export async function deactivateUserBenefitAction(formData: FormData) {

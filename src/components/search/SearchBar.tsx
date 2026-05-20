@@ -5,11 +5,12 @@ import {
   FormEvent,
   KeyboardEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 
-import { saveRecentSearch } from "./recentSearchesStorage";
+import { submitExplicitSearch } from "@/lib/search/submit-explicit-search";
 
 interface SearchBarProps {
   defaultValue?: string;
@@ -28,6 +29,8 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const trimmedKeyword = keyword.trim();
   const canSuggest = trimmedKeyword.length >= 1;
 
@@ -67,13 +70,17 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
 
   const submitSearch = (value = keyword) => {
     const nextKeyword = value.trim();
-    if (!nextKeyword) {
+    if (!nextKeyword || submittingRef.current) {
       return;
     }
 
+    submittingRef.current = true;
+    setIsSubmitting(true);
     setShowSuggestions(false);
-    saveRecentSearch(nextKeyword);
-    router.push(`/search?keyword=${encodeURIComponent(nextKeyword)}`);
+    void submitExplicitSearch(router, nextKeyword).finally(() => {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -196,7 +203,8 @@ export function SearchBar({ defaultValue = "" }: SearchBarProps) {
 
       <button
         type="submit"
-        className="mx-auto mt-2 flex h-12 w-[70%] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover"
+        disabled={isSubmitting}
+        className="mx-auto mt-2 flex h-12 w-[70%] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover disabled:opacity-60"
       >
         검색
       </button>

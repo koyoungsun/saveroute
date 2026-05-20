@@ -1,8 +1,16 @@
 import Link from "next/link";
 
+import { BrandDiscountCountBadge } from "@/components/admin/BrandDiscountCountBadge";
 import { BrandFavicon } from "@/components/brand/BrandFavicon";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import {
+  BRAND_LIST_SORT_OPTIONS,
+  buildDiscountCountByBrandId,
+  getBrandDiscountCount,
+  parseBrandListSort,
+  sortBrandRows,
+} from "@/lib/admin/brand-discount-counts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { BRAND_STATUS_FILTER_OPTIONS } from "@/lib/ui/format-status-label";
 
@@ -24,6 +32,12 @@ type BrandCategoryRow = {
   name: string;
 };
 
+type AdminBrandsPageProps = {
+  searchParams: Promise<{
+    sort?: string;
+  }>;
+};
+
 function getCategoryName(category: BrandRow["brand_categories"]) {
   if (Array.isArray(category)) {
     return category[0]?.name ?? "-";
@@ -32,27 +46,39 @@ function getCategoryName(category: BrandRow["brand_categories"]) {
   return category?.name ?? "-";
 }
 
-export default async function AdminBrandsPage() {
+export default async function AdminBrandsPage({ searchParams }: AdminBrandsPageProps) {
+  const params = await searchParams;
+  const sort = parseBrandListSort(params.sort);
+
   const supabase = createSupabaseAdminClient();
-  const [{ data: brandsData, error: brandsError }, { data: categoriesData }] =
-    await Promise.all([
-      supabase
-        .from("brands")
-        .select(
-          "id,name,slug,aliases,is_active,admin_memo,official_url,brand_categories(name)",
-        )
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("brand_categories")
-        .select("id,name")
-        .order("sort_order", { ascending: true }),
-    ]);
+  const [
+    { data: brandsData, error: brandsError },
+    { data: categoriesData },
+    { data: discountBrandRows, error: discountCountError },
+  ] = await Promise.all([
+    supabase
+      .from("brands")
+      .select(
+        "id,name,slug,aliases,is_active,admin_memo,official_url,brand_categories(name)",
+      )
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("brand_categories")
+      .select("id,name")
+      .order("sort_order", { ascending: true }),
+    supabase.from("discounts").select("brand_id,status"),
+  ]);
 
   if (brandsError) {
     throw new Error(`Failed to load brands: ${brandsError.message}`);
   }
 
-  const brands = (brandsData ?? []) as BrandRow[];
+  if (discountCountError) {
+    throw new Error(`Failed to load discount counts: ${discountCountError.message}`);
+  }
+
+  const countByBrandId = buildDiscountCountByBrandId(discountBrandRows ?? []);
+  const brands = sortBrandRows((brandsData ?? []) as BrandRow[], sort, countByBrandId);
   const categories = (categoriesData ?? []) as BrandCategoryRow[];
 
   return (
@@ -66,7 +92,7 @@ export default async function AdminBrandsPage() {
 
       <div className="sr-block card">
         <div className="card-body">
-          <div className="row g-3">
+          <form method="get" className="row g-3 align-items-end">
             <div className="col-md-6">
               <input className="form-control" placeholder="브랜드명/slug/별칭" />
             </div>
@@ -88,7 +114,29 @@ export default async function AdminBrandsPage() {
                 ))}
               </select>
             </div>
-          </div>
+            <div className="col-md-4">
+              <label htmlFor="brand-sort" className="form-label small text-muted mb-1">
+                정렬
+              </label>
+              <select
+                id="brand-sort"
+                name="sort"
+                className="form-select"
+                defaultValue={sort}
+              >
+                {BRAND_LIST_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-auto">
+              <button type="submit" className="btn btn-outline-primary">
+                적용
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -102,6 +150,7 @@ export default async function AdminBrandsPage() {
           { header: "브랜드명" },
           { header: "slug" },
           { header: "카테고리" },
+          { header: "연결 할인 수", className: "text-center" },
           { header: "별칭" },
           { header: "설명" },
           { header: "웹사이트" },
@@ -123,6 +172,10 @@ export default async function AdminBrandsPage() {
           </div>,
           brand.slug,
           getCategoryName(brand.brand_categories),
+          <BrandDiscountCountBadge
+            key={`${brand.id}-discount-count`}
+            count={getBrandDiscountCount(brand.id, countByBrandId)}
+          />,
           brand.aliases?.length ? brand.aliases.join(", ") : "-",
           brand.admin_memo ?? "-",
           brand.official_url ? (

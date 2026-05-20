@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export async function hideDiscountAction(formData: FormData) {
   const discountId = Number(formData.get("discount_id"));
@@ -24,6 +25,14 @@ export async function hideDiscountAction(formData: FormData) {
     });
     return;
   }
+
+  await writeAdminAuditLog({
+    action: "deactivate",
+    targetTable: "discounts",
+    targetId: discountId,
+    summary: "할인 비활성(숨김)",
+    afterData: { status: "hidden" },
+  });
 
   revalidatePath("/admin/discounts");
 }

@@ -6,111 +6,228 @@ import {
   DailySearchLineChart,
 } from "@/components/admin/AdminCharts";
 import { ChartCard } from "@/components/admin/ChartCard";
+import { KpiCard } from "@/components/admin/KpiCard";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
+import {
+  ADMIN_STATS_PERIOD_OPTIONS,
+  formatAdminStatsNumber,
+  loadAdminStatsSnapshot,
+  toChartSeries,
+  toDailyChartSeries,
+} from "@/lib/admin/admin-stats";
 import { formatRank, getRankedItems } from "@/lib/admin/rank-items";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const rankingRowsData = [
-  { brand: "롯데월드", searches: 1240, detailViews: 320, clicks: 188 },
-  { brand: "CGV", searches: 1120, detailViews: 284, clicks: 160 },
-  { brand: "쿠팡", searches: 1120, detailViews: 260, clicks: 120 },
-  { brand: "스타벅스", searches: 890, detailViews: 210, clicks: 92 },
-  { brand: "에버랜드", searches: 890, detailViews: 240, clicks: 88 },
-  { brand: "올리브영", searches: 740, detailViews: 180, clicks: 55 },
-  { brand: "다이소", searches: 690, detailViews: 120, clicks: 21 },
-  { brand: "노브랜드", searches: 540, detailViews: 98, clicks: 10 },
-  { brand: "롯데시네마", searches: 410, detailViews: 70, clicks: 17 },
-  { brand: "이케아", searches: 420, detailViews: 80, clicks: 6 },
-  { brand: "메가박스", searches: 390, detailViews: 64, clicks: 14 },
-  { brand: "버거킹", searches: 380, detailViews: 58, clicks: 11 },
-] as const;
+type StatsPageProps = {
+  searchParams: Promise<{
+    period?: string;
+  }>;
+};
 
-function formatCount(value: number) {
-  return value.toLocaleString("ko-KR");
+function getSearchParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-export default function StatsPage() {
-  const rankedRows = getRankedItems(
-    rankingRowsData.map((row) => ({ ...row })),
-    "searches",
-  );
+export default async function StatsPage({ searchParams }: StatsPageProps) {
+  const params = await searchParams;
+  const supabase = createSupabaseAdminClient();
+  const stats = await loadAdminStatsSnapshot(supabase, getSearchParam(params.period), "30d");
+
+  const rankedRows = getRankedItems(stats.brandRankingRows, "searches");
+  const dailySearchSeries = toDailyChartSeries(stats.dailySearchTrend);
+  const brandSearchSeries = toChartSeries(stats.brandSearchChart);
+  const brandRequestSeries = toChartSeries(stats.brandRequestChart);
+  const categorySearchSeries = toChartSeries(stats.categorySearchChart);
+  const ageGroupSeries = toChartSeries(stats.ageGroupChart);
+
+  const summaryKpis = [
+    ["총 브랜드", stats.totals.totalBrands, "secondary", "bi-shop"],
+    ["활성 브랜드", stats.totals.activeBrands, "success", "bi-check-circle"],
+    ["총 할인", stats.totals.totalDiscounts, "info", "bi-tags"],
+    ["활성 할인", stats.totals.activeDiscounts, "primary", "bi-tag"],
+    ["총 가입자", stats.totals.totalProfiles, "secondary", "bi-people"],
+    ["등록 보유혜택", stats.totals.totalUserBenefits, "danger", "bi-wallet2"],
+    ["업데이트 요청", stats.totals.totalBrandRequests, "warning", "bi-megaphone"],
+    [`${stats.period.label} 검색 횟수`, stats.totals.periodSearches, "success", "bi-search"],
+  ] as const;
 
   return (
     <>
-      <h1 className="h3 mb-4">Statistics</h1>
+      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+          <h1 className="h3 mb-1">Statistics</h1>
+          <p className="text-muted mb-0">
+            search_logs, result_click_logs, brand_requests, user_benefits 및 카탈로그 테이블 기준
+            실제 집계입니다.
+          </p>
+        </div>
+      </div>
 
-      <div className="sr-block card">
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-md-3">
-              <label className="form-label">시작일</label>
-              <input type="date" className="form-control" defaultValue="2025-01-01" />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label">종료일</label>
-              <input type="date" className="form-control" defaultValue="2025-01-31" />
-            </div>
-            <div className="col-md-2">
-              <button type="button" className="btn btn-primary w-100">
-                조회
-              </button>
-            </div>
+      {stats.warnings.length > 0 ? (
+        <div className="alert alert-warning shadow-sm border-0 mb-4" role="alert">
+          <div className="fw-bold">데이터베이스 조회 오류 {stats.warnings.length}건</div>
+          <div className="small text-muted mt-1 mb-2">
+            일부 통계가 비어 있거나 부정확할 수 있습니다.
+          </div>
+          {stats.warnings.map((detail, idx) => (
+            <pre
+              key={idx}
+              className="mb-2 small p-3 bg-white border rounded shadow-sm text-break"
+              style={{ whiteSpace: "pre-wrap" }}
+            >
+              {detail}
+            </pre>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="sr-block card mb-4">
+        <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div>
+            <div className="fw-bold">기간 필터</div>
+            <div className="small text-muted">현재 분석 구간: {stats.period.label}</div>
+            {stats.logSampleCapped ? (
+              <div className="small text-warning mt-1">
+                로그 집계는 최대 15,000건 샘플 기준입니다.
+              </div>
+            ) : null}
+          </div>
+          <div className="btn-group" role="group" aria-label="Statistics 기간 필터">
+            {ADMIN_STATS_PERIOD_OPTIONS.map(([periodKey, label]) => (
+              <a
+                key={periodKey}
+                href={`/admin/stats?period=${periodKey}`}
+                className={`btn btn-sm ${
+                  stats.period.key === periodKey ? "btn-success" : "btn-outline-secondary"
+                }`}
+              >
+                {label}
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
+      <div className="row g-4 mb-4">
+        {summaryKpis.map(([title, value, variant, icon]) => (
+          <div key={title} className="col-6 col-md-4 col-xl-3">
+            <KpiCard
+              title={title}
+              value={formatAdminStatsNumber(value)}
+              variant={variant}
+              icon={icon}
+            />
+          </div>
+        ))}
+      </div>
+
       <div className="row g-4">
         <div className="col-lg-12">
-          <ChartCard title="전체 검색 추이">
-            <DailySearchLineChart />
+          <ChartCard title="전체 검색 추이" description={`search_logs 행 수 (${stats.period.label})`}>
+            <DailySearchLineChart data={dailySearchSeries} />
           </ChartCard>
         </div>
         <div className="col-lg-6">
-          <ChartCard title="브랜드별 검색 순위">
-            <BrandTopBarChart />
+          <ChartCard
+            title="브랜드별 검색 순위"
+            description={`matched_brand_id TOP 5 (${stats.period.label})`}
+          >
+            <BrandTopBarChart data={brandSearchSeries} />
           </ChartCard>
         </div>
         <div className="col-lg-6">
-          <ChartCard title="성별/연령 검색 분포">
-            <AgeGroupBarChart />
+          <ChartCard
+            title="연령대 검색 분포"
+            description={`search_logs.age_group (${stats.period.label})`}
+          >
+            <AgeGroupBarChart data={ageGroupSeries} />
           </ChartCard>
         </div>
         <div className="col-lg-6">
-          <ChartCard title="카테고리별 검색 비율">
-            <CategoryPieChart />
+          <ChartCard
+            title="카테고리별 검색 비율"
+            description={`브랜드 카테고리 기준 (${stats.period.label})`}
+          >
+            <CategoryPieChart data={categorySearchSeries} />
           </ChartCard>
         </div>
         <div className="col-lg-6">
-          <ChartCard title="미지원 요청 추이">
-            <BrandRequestTopBarChart />
+          <ChartCard
+            title="업데이트 요청 TOP"
+            description="brand_requests.request_count 기준"
+          >
+            <BrandRequestTopBarChart data={brandRequestSeries} />
           </ChartCard>
         </div>
       </div>
 
+      {rankedRows.length > 0 ? (
+        <PaginatedTable
+          title={`기간 내 브랜드별 검색 순위 (${stats.period.label})`}
+          pageSize={10}
+          fixedRows={10}
+          className="sr-block mt-4"
+          columns={[
+            { header: "순위" },
+            { header: "브랜드명" },
+            { header: "검색 수" },
+            { header: "상세 조회" },
+            { header: "할인 클릭" },
+          ]}
+          rowKeys={rankedRows.map((row) => row.brandName)}
+          rows={rankedRows.map((row) => [
+            <span
+              key={`${row.brandName}-rank`}
+              className="badge text-bg-light text-dark border fw-semibold"
+              style={{ minWidth: "52px" }}
+            >
+              {formatRank(row.rank)}
+            </span>,
+            row.brandName,
+            formatAdminStatsNumber(row.searches),
+            formatAdminStatsNumber(row.detailViews),
+            formatAdminStatsNumber(row.clicks),
+          ])}
+        />
+      ) : (
+        <div className="sr-block card mt-4">
+          <div className="card-header bg-white fw-semibold">
+            기간 내 브랜드별 검색 순위 ({stats.period.label})
+          </div>
+          <div className="card-body py-4 text-center text-muted">
+            데이터 없음 — 아직 수집된 검색·클릭 기록이 없습니다.
+          </div>
+        </div>
+      )}
+
       <PaginatedTable
-        title="기간 내 브랜드별 검색 순위"
+        title="혜택 카테고리별 등록 수 (활성 user_benefits)"
         pageSize={10}
-        fixedRows={10}
-        className="sr-block"
+        fixedRows={5}
+        className="sr-block mt-4"
         columns={[
-          { header: "순위" },
-          { header: "브랜드명" },
-          { header: "검색 수" },
-          { header: "상세 조회" },
-          { header: "할인 클릭" },
+          { header: "카테고리" },
+          { header: "code" },
+          { header: "등록 수" },
         ]}
-        rows={rankedRows.map((row) => [
-          <span
-            key={`${row.brand}-rank`}
-            className="badge text-bg-light text-dark border fw-semibold"
-            style={{ minWidth: "52px" }}
-          >
-            {formatRank(row.rank)}
-          </span>,
-          row.brand,
-          formatCount(row.searches),
-          formatCount(row.detailViews),
-          formatCount(row.clicks),
-        ])}
+        rowKeys={stats.benefitCategoryRegistrations.map((row) => row.categoryCode)}
+        rows={
+          stats.benefitCategoryRegistrations.length > 0
+            ? stats.benefitCategoryRegistrations.map((row) => [
+                row.categoryName,
+                row.categoryCode,
+                formatAdminStatsNumber(row.count),
+              ])
+            : [
+                [
+                  <span key="empty-benefits" className="text-muted">
+                    등록된 보유혜택이 없습니다.
+                  </span>,
+                  "-",
+                  "0",
+                ],
+              ]
+        }
       />
     </>
   );

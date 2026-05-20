@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isCardCatalogPlaceholderForPicker } from "@/lib/benefits/card-benefit-kinds";
+import { isUserBenefitEligibleForMatching } from "@/lib/benefits/benefit-product-request-status";
 import { countMatchingCardDiscounts } from "@/lib/search/discount-matching";
 
 export type BenefitProductRelation = { name: string; code?: string } | null;
@@ -10,12 +11,26 @@ export type LoadedUserBenefitRow = {
   benefit_category_id: number;
   provider_id: number;
   benefit_product_id: number | null;
+  benefit_product_request_id: number | null;
+  approval_status: "pending" | "approved" | "rejected" | null;
   benefit_type: "credit" | "debit" | "prepaid" | "all" | null;
+  custom_name: string | null;
   connectedDiscountCount: number;
   created_at: string;
   benefit_category: { name: string } | { name: string }[] | null;
   provider: { name: string } | { name: string }[] | null;
   benefit_product: BenefitProductRelation | { name: string; code?: string }[] | null;
+  benefit_product_request: {
+    requested_name: string;
+    requested_benefit_type: string;
+    status: string;
+    admin_memo: string | null;
+  } | {
+    requested_name: string;
+    requested_benefit_type: string;
+    status: string;
+    admin_memo: string | null;
+  }[] | null;
 };
 
 export type CardProductOption = {
@@ -305,11 +320,15 @@ export async function loadBenefitsRegistrationData(
         benefit_category_id,
         provider_id,
         benefit_product_id,
+        benefit_product_request_id,
+        approval_status,
         benefit_type,
+        custom_name,
         created_at,
         benefit_category:benefit_categories(name),
         provider:providers(name),
-        benefit_product:benefit_products(name, code)
+        benefit_product:benefit_products(name, code),
+        benefit_product_request:benefit_product_requests(requested_name,requested_benefit_type,status,admin_memo)
       `,
       )
       .eq("user_id", userId)
@@ -540,8 +559,12 @@ export async function loadBenefitsRegistrationData(
     LoadedUserBenefitRow,
     "connectedDiscountCount"
   >[]).map((benefit) => {
+    const eligibleForMatching = isUserBenefitEligibleForMatching({
+      benefit_product_id: benefit.benefit_product_id,
+      approval_status: benefit.approval_status,
+    });
     const connectedDiscountCount =
-      benefit.benefit_category_id === cardCategoryId
+      benefit.benefit_category_id === cardCategoryId && eligibleForMatching
         ? countMatchingCardDiscounts(
             {
               benefit_category_id: benefit.benefit_category_id,

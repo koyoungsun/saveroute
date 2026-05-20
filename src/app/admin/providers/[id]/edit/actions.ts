@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 import { syncMembershipCatalogForProvider } from "@/lib/benefits/membership-catalog";
 
 import {
@@ -125,6 +126,14 @@ export async function updateProviderAction(
           : "멤버십 전체 상품 동기화에 실패했습니다.",
     };
   }
+
+  await writeAdminAuditLog({
+    action: "update",
+    targetTable: "providers",
+    targetId: providerId,
+    summary: `제공사 수정: ${input.name}`,
+    afterData: { name: input.name, code: input.code, is_active: input.isActive },
+  });
 
   revalidatePath("/admin/providers");
   revalidatePath("/admin/benefit-products");

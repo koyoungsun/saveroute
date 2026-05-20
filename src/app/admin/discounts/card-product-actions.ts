@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin/create-card-benefit-product";
 import type { DiscountBenefitProductOption } from "@/lib/benefits/discount-product-options";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export type CreateCardBenefitProductInlineInput = {
   benefitCategoryId: number;
@@ -109,6 +110,20 @@ export async function createCardBenefitProductInlineAction(
     }
 
     return { ok: false, message: result.message };
+  }
+
+  if (result.created) {
+    await writeAdminAuditLog({
+      action: "create",
+      targetTable: "benefit_products",
+      targetId: result.product.id,
+      summary: `신규 카드 추가: ${result.product.name}`,
+      afterData: {
+        name: result.product.name,
+        provider_id: providerId,
+        benefit_type: benefitType,
+      },
+    });
   }
 
   revalidatePath("/admin/discounts/new");

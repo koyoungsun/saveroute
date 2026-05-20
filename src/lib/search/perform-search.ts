@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
+import { isUserBenefitEligibleForMatching } from "@/lib/benefits/benefit-product-request-status";
 import {
   attachBenefitProductIdsToDiscounts,
   collectUniqueBenefitProductIds,
@@ -44,7 +45,7 @@ const BRAND_SELECT =
 export async function performSearch(
   supabase: SupabaseClient,
   keywordRaw: string,
-  options?: { sessionId?: string | null },
+  _options?: { sessionId?: string | null },
 ): Promise<SearchApiPayload> {
   const keyword = keywordRaw.trim();
   const normalized = normalizeKeyword(keyword);
@@ -71,7 +72,6 @@ export async function performSearch(
   } = await supabase.auth.getUser();
   const userId = user?.id ?? null;
   const authenticated = Boolean(userId);
-  const sessionId = options?.sessionId ?? null;
 
   if (!keyword) {
     return empty(authenticated);
@@ -290,6 +290,7 @@ export async function performSearch(
         provider_id,
         benefit_product_id,
         benefit_type,
+        approval_status,
         product:benefit_products(id,benefit_type,is_all_product)
       `,
       )
@@ -301,8 +302,16 @@ export async function performSearch(
       provider_id: number;
       benefit_product_id: number | null;
       benefit_type: string | null;
+      approval_status: string | null;
       product: { id: number; benefit_type: string | null; is_all_product: boolean } | { id: number; benefit_type: string | null; is_all_product: boolean }[] | null;
-    }>).map((row) => {
+    }>)
+      .filter((row) =>
+        isUserBenefitEligibleForMatching({
+          benefit_product_id: row.benefit_product_id,
+          approval_status: row.approval_status,
+        }),
+      )
+      .map((row) => {
       const prod = Array.isArray(row.product) ? row.product[0] : row.product;
       return {
         benefit_category_id: row.benefit_category_id,
@@ -332,86 +341,6 @@ export async function performSearch(
 
   /** 할인율·금액 기준 내림차순 (동점 처리 포함) */
   const byRate = sortDiscountsByRate(personalizedDiscounts);
-
-  const resultStatus = matchedBrand ? "matched" : "unmatched";
-  const resultCount = byRate.length;
-
-  try {
-    await supabase.from("search_logs").insert({
-      keyword,
-      normalized_keyword: normalized,
-      matched_brand_id: matchedBrand?.id ?? null,
-      gender_group: null,
-      age_group: null,
-      result_status: resultStatus,
-      result_count: resultCount,
-      user_id: userId,
-    });
-
-    if (userId || sessionId) {
-      await supabase.from("activity_logs").insert({
-        user_id: userId,
-        session_id: userId ? null : sessionId,
-        event_type: "search",
-        keyword,
-        path: "/search",
-      });
-    }
-
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: dailyExisting } = await supabase
-      .from("daily_search_stats")
-      .select("total_search_count,matched_search_count,unmatched_search_count")
-      .eq("date", today)
-      .maybeSingle();
-
-    if (dailyExisting) {
-      await supabase
-        .from("daily_search_stats")
-        .update({
-          total_search_count: dailyExisting.total_search_count + 1,
-          matched_search_count:
-            dailyExisting.matched_search_count + (matchedBrand ? 1 : 0),
-          unmatched_search_count:
-            dailyExisting.unmatched_search_count + (matchedBrand ? 0 : 1),
-        })
-        .eq("date", today);
-    } else {
-      await supabase.from("daily_search_stats").insert({
-        date: today,
-        total_search_count: 1,
-        matched_search_count: matchedBrand ? 1 : 0,
-        unmatched_search_count: matchedBrand ? 0 : 1,
-      });
-    }
-
-    if (matchedBrand) {
-      const { data: brandDailyExisting } = await supabase
-        .from("brand_daily_stats")
-        .select("search_count")
-        .eq("date", today)
-        .eq("brand_id", matchedBrand.id)
-        .maybeSingle();
-
-      if (brandDailyExisting) {
-        await supabase
-          .from("brand_daily_stats")
-          .update({ search_count: brandDailyExisting.search_count + 1 })
-          .eq("date", today)
-          .eq("brand_id", matchedBrand.id);
-      } else {
-        await supabase.from("brand_daily_stats").insert({
-          date: today,
-          brand_id: matchedBrand.id,
-          search_count: 1,
-          detail_view_count: 0,
-          discount_click_count: 0,
-        });
-      }
-    }
-  } catch {
-    // Logging/stat failures should not block search results.
-  }
 
   const ownedDiscountIds =
     authenticated && hasRegisteredBenefits ? byRate.map((d) => d.id) : [];

@@ -32,10 +32,7 @@ export default async function NewProviderPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 mb-1">New Provider</h1>
-          <p className="text-muted mb-0">
-            혜택 카테고리에 연결할 제공사 정보를 입력합니다.
-          </p>
-        </div>
+          <p className="text-muted mb-0">혜택 카테고리에 연결할 제공사 정보를 입력합니다.</p>        </div>
         <Link href="/admin/providers" className="btn btn-outline-secondary">
           목록으로
         </Link>

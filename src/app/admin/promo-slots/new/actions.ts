@@ -7,6 +7,7 @@ import { resolveAdminGate } from "@/lib/admin/auth";
 import { recordPromoSlotHistory, type PromoSlotSnapshot } from "@/lib/admin/promo-slot-history";
 import { parsePromoSlotForm, type PromoSlotFormState } from "@/lib/promoSlotForm";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export async function createPromoSlotAction(
   _prevState: PromoSlotFormState,
@@ -48,6 +49,14 @@ export async function createPromoSlotAction(
   } catch (historyError) {
     console.error(historyError);
   }
+
+  await writeAdminAuditLog({
+    action: "create",
+    targetTable: "promo_slots",
+    targetId: inserted.id as string,
+    summary: `프로모션 슬롯 생성: ${String(inserted.title ?? inserted.id)}`,
+    afterData: { title: inserted.title, is_active: inserted.is_active },
+  });
 
   revalidatePath("/admin/promo-slots");
   revalidatePath("/admin/promo-slots/history");

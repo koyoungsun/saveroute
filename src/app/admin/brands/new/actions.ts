@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export type BrandFormState = {
   message?: string;
@@ -72,16 +73,16 @@ export async function createBrandAction(
   }
 
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("brands").insert({
+  const { data: createdBrand, error } = await supabase.from("brands").insert({
     name,
     slug,
     category_id: categoryId,
     admin_memo: description || null,
     official_url: websiteUrl,
     is_active: isActive,
-  });
+  }).select("id").single();
 
-  if (error) {
+  if (error || !createdBrand) {
     if (error.code === "23505") {
       return {
         fieldErrors: {
@@ -94,6 +95,14 @@ export async function createBrandAction(
       message: `브랜드 등록에 실패했습니다: ${error.message}`,
     };
   }
+
+  await writeAdminAuditLog({
+    action: "create",
+    targetTable: "brands",
+    targetId: createdBrand.id,
+    summary: `브랜드 생성: ${name}`,
+    afterData: { name, slug, is_active: isActive },
+  });
 
   revalidatePath("/admin/brands");
   redirect("/admin/brands");

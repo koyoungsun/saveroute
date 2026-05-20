@@ -13,6 +13,7 @@ import {
 import { parsePromoSlotForm, type PromoSlotFormState } from "@/lib/promoSlotForm";
 import { parsePromoSlotId } from "@/lib/promoSlotId";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export async function updatePromoSlotAction(
   slotId: string,
@@ -86,6 +87,17 @@ export async function updatePromoSlotAction(
       console.error(historyError);
     }
   }
+
+  await writeAdminAuditLog({
+    action: "update",
+    targetTable: "promo_slots",
+    targetId: slotId,
+    summary: `프로모션 슬롯 수정: ${String(result.payload.title ?? before.title ?? slotId)}`,
+    afterData: {
+      title: result.payload.title,
+      is_active: result.payload.is_active,
+    },
+  });
 
   revalidatePath("/admin/promo-slots");
   revalidatePath("/admin/promo-slots/history");

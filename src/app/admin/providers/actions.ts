@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 import { syncMembershipCatalogForProvider } from "@/lib/benefits/membership-catalog";
 
 import {
@@ -24,6 +25,7 @@ export async function createProviderAction(
   }
 
   const input = validated.data;
+
   const supabase = createSupabaseAdminClient();
 
   const { data: category, error: categoryError } = await supabase
@@ -92,6 +94,14 @@ export async function createProviderAction(
           : "멤버십 전체 상품 생성에 실패했습니다.",
     };
   }
+
+  await writeAdminAuditLog({
+    action: "create",
+    targetTable: "providers",
+    targetId: created.id as number,
+    summary: `제공사 생성: ${input.name}`,
+    afterData: { name: input.name, code: input.code },
+  });
 
   revalidatePath("/admin/providers");
   revalidatePath("/admin/benefit-products");

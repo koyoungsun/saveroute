@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { getRecentSearches, saveRecentSearch } from "./recentSearchesStorage";
+import { submitExplicitSearch } from "@/lib/search/submit-explicit-search";
+
+import { getRecentSearches } from "./recentSearchesStorage";
 
 export function RecentSearches() {
   const router = useRouter();
@@ -32,8 +34,7 @@ export function RecentSearches() {
   }
 
   const handleClick = (keyword: string) => {
-    saveRecentSearch(keyword);
-    router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
+    void submitExplicitSearch(router, keyword);
   };
 
   return (

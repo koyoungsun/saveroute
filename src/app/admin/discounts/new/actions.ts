@@ -17,6 +17,7 @@ import {
 import { isDiscountOptionGroupEnabled } from "@/lib/admin/discount-form-option-groups";
 import { parseDiscountValueFields } from "@/lib/admin/parse-discount-value-fields";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 import { parseNumericInput } from "@/lib/ui/format-money";
 
 type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
@@ -279,6 +280,14 @@ export async function createDiscountAction(
           : "혜택상품 연결 저장에 실패했습니다.",
     };
   }
+
+  await writeAdminAuditLog({
+    action: "create",
+    targetTable: "discounts",
+    targetId: createdDiscount.id as number,
+    summary: `할인 생성: ${title}`,
+    afterData: { title, brand_id: brandId, status: visibilityFields.status },
+  });
 
   revalidatePath("/admin/discounts");
   redirect("/admin/discounts");

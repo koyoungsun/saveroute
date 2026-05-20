@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BrandDiscountCountBadge } from "@/components/admin/BrandDiscountCountBadge";
+import { buildDiscountCountByBrandId, getBrandDiscountCount } from "@/lib/admin/brand-discount-counts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import { EditBrandForm, type BrandEditValues } from "./EditBrandForm";
@@ -28,6 +30,7 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
   const [
     { data: brandData, error: brandError },
     { data: categoryData, error: categoryError },
+    { data: discountBrandRows, error: discountCountError },
   ] = await Promise.all([
     supabase
       .from("brands")
@@ -49,6 +52,7 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
       .from("brand_categories")
       .select("id,name")
       .order("sort_order", { ascending: true }),
+    supabase.from("discounts").select("brand_id,status").eq("brand_id", brandId),
   ]);
 
   if (brandError) {
@@ -63,14 +67,27 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
     throw new Error(`Failed to load brand categories: ${categoryError.message}`);
   }
 
+  if (discountCountError) {
+    throw new Error(`Failed to load discount counts: ${discountCountError.message}`);
+  }
+
   const brand = brandData as BrandEditValues;
   const categories = (categoryData ?? []) as BrandCategoryOption[];
+  const activeDiscountCount = getBrandDiscountCount(
+    brandId,
+    buildDiscountCountByBrandId(discountBrandRows ?? []),
+  );
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="h3 mb-1">Edit Brand</h1>
+          <h1 className="h3 mb-1 d-flex flex-wrap align-items-center gap-2">
+            <span>{brand.name}</span>
+            <span className="text-muted fw-normal fs-5 d-inline-flex align-items-center gap-1">
+              (연결 할인 <BrandDiscountCountBadge count={activeDiscountCount} />)
+            </span>
+          </h1>
           <p className="text-muted mb-0">
             실제 brands 테이블 컬럼 기준으로 브랜드 정보를 수정합니다.
           </p>

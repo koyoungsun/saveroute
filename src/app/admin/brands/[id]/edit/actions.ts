@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
 export type BrandEditFormState = {
   message?: string;
@@ -119,6 +120,14 @@ export async function updateBrandAction(
       message: `브랜드 수정에 실패했습니다: ${error.message}`,
     };
   }
+
+  await writeAdminAuditLog({
+    action: "update",
+    targetTable: "brands",
+    targetId: brandId,
+    summary: `브랜드 수정: ${name}`,
+    afterData: { name, slug, is_active: isActive },
+  });
 
   revalidatePath("/admin/brands");
   revalidatePath(`/admin/brands/${brandId}/edit`);

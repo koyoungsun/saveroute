@@ -35,6 +35,12 @@ const topNavItems = [
 
 const midNavItems = [
   { id: "brand-requests", label: "브랜드 요청", href: "/admin/brand-requests", icon: "bi-chat-dots" },
+  {
+    id: "benefit-product-requests",
+    label: "카드 요청",
+    href: "/admin/benefit-product-requests",
+    icon: "bi-credit-card",
+  },
   { id: "promo-slots", label: "추천 구좌 관리", href: "/admin/promo-slots", icon: "bi-megaphone" },
   { id: "search-logs", label: "검색 로그", href: "/admin/search-logs", icon: "bi-search" },
   { id: "stats", label: "통계", href: "/admin/stats", icon: "bi-bar-chart" },

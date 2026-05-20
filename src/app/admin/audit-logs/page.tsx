@@ -1,88 +1,197 @@
+import {
+  formatAuditActionLabel,
+  formatAuditTargetLabel,
+  readAuditSummary,
+  summarizeAuditMetadata,
+} from "@/lib/admin/audit-log-display";
+import {
+  loadAdminAuditLogFilterOptions,
+  loadAdminAuditLogs,
+} from "@/lib/admin/load-admin-audit-logs";
 import { PaginatedTable } from "@/components/admin/PaginatedTable";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const auditLogs = [
-  ["01-15 14:32", "op1@coreroute.dev", "create", "discounts", "124"],
-  ["01-15 13:20", "op1@coreroute.dev", "update", "brands", "12"],
-  ["01-15 11:05", "admin@coreroute.dev", "status_change", "brand_requests", "8"],
-  ["01-15 10:55", "op2@coreroute.dev", "update", "providers", "4"],
-  ["01-15 10:40", "op1@coreroute.dev", "update", "benefit_products", "22"],
-  ["01-15 10:12", "op2@coreroute.dev", "create", "brands", "44"],
-  ["01-15 09:59", "admin@coreroute.dev", "update", "discounts", "210"],
-  ["01-15 09:40", "op1@coreroute.dev", "status_change", "accounts", "op2"],
-  ["01-15 09:10", "op2@coreroute.dev", "update", "brand_requests", "12"],
-  ["01-15 08:50", "admin@coreroute.dev", "create", "discounts", "211"],
-  ["01-15 08:20", "op1@coreroute.dev", "update", "brands", "45"],
-  ["01-15 08:00", "op2@coreroute.dev", "update", "discounts", "212"],
-  ["01-14 19:30", "op1@coreroute.dev", "create", "discounts", "213"],
-  ["01-14 19:10", "admin@coreroute.dev", "update", "providers", "6"],
-  ["01-14 18:40", "op2@coreroute.dev", "update", "benefit_categories", "2"],
-] as const;
+type AuditLogsPageProps = {
+  searchParams: Promise<{
+    action?: string;
+    target?: string;
+    admin?: string;
+    start?: string;
+    end?: string;
+  }>;
+};
 
-export default function AuditLogsPage() {
+function getSearchParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+export default async function AuditLogsPage({ searchParams }: AuditLogsPageProps) {
+  const params = await searchParams;
+  const action = getSearchParam(params.action) ?? "";
+  const targetTable = getSearchParam(params.target) ?? "";
+  const adminUserId = getSearchParam(params.admin) ?? "";
+  const startDate = getSearchParam(params.start) ?? "";
+  const endDate = getSearchParam(params.end) ?? "";
+
+  const supabase = createSupabaseAdminClient();
+  const [rows, filterOptions] = await Promise.all([
+    loadAdminAuditLogs(supabase, {
+      action,
+      targetTable,
+      adminUserId,
+      startDate,
+      endDate,
+      limit: 50,
+    }),
+    loadAdminAuditLogFilterOptions(supabase),
+  ]);
+
   return (
     <>
       <h1 className="h3 mb-4">Audit Logs</h1>
 
-      <div className="sr-block card">
+      <div className="sr-block card mb-4">
         <div className="card-body">
-          <div className="row g-3">
+          <form method="get" className="row g-3 align-items-end">
             <div className="col-md-3">
-              <select className="form-select" defaultValue="">
+              <label htmlFor="audit-admin" className="form-label small text-muted mb-1">
+                관리자
+              </label>
+              <select
+                id="audit-admin"
+                name="admin"
+                className="form-select"
+                defaultValue={adminUserId}
+              >
                 <option value="">관리자 전체</option>
-                <option>admin@coreroute.dev</option>
-                <option>op1@coreroute.dev</option>
+                {filterOptions.admins.map((admin) => (
+                  <option key={admin.userId} value={admin.userId}>
+                    {admin.email}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="col-md-3">
-              <select className="form-select" defaultValue="">
-                <option value="">대상 테이블 전체</option>
-                <option>discounts</option>
-                <option>brands</option>
+            <div className="col-md-2">
+              <label htmlFor="audit-action" className="form-label small text-muted mb-1">
+                action
+              </label>
+              <select
+                id="audit-action"
+                name="action"
+                className="form-select"
+                defaultValue={action}
+              >
+                <option value="">action 전체</option>
+                {filterOptions.actions.map((value) => (
+                  <option key={value} value={value}>
+                    {formatAuditActionLabel(value)} ({value})
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="col-md-3">
-              <input type="date" className="form-control" defaultValue="2025-01-01" />
+            <div className="col-md-2">
+              <label htmlFor="audit-target" className="form-label small text-muted mb-1">
+                target_type
+              </label>
+              <select
+                id="audit-target"
+                name="target"
+                className="form-select"
+                defaultValue={targetTable}
+              >
+                <option value="">target 전체</option>
+                {filterOptions.targetTables.map((value) => (
+                  <option key={value} value={value}>
+                    {formatAuditTargetLabel(value)} ({value})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="col-md-3">
-              <input type="date" className="form-control" defaultValue="2025-01-31" />
+            <div className="col-md-2">
+              <label htmlFor="audit-start" className="form-label small text-muted mb-1">
+                시작일
+              </label>
+              <input
+                id="audit-start"
+                name="start"
+                type="date"
+                className="form-control"
+                defaultValue={startDate}
+              />
             </div>
-          </div>
+            <div className="col-md-2">
+              <label htmlFor="audit-end" className="form-label small text-muted mb-1">
+                종료일
+              </label>
+              <input
+                id="audit-end"
+                name="end"
+                type="date"
+                className="form-control"
+                defaultValue={endDate}
+              />
+            </div>
+            <div className="col-md-1 d-flex gap-2">
+              <button type="submit" className="btn btn-dark w-100">
+                조회
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <PaginatedTable
-        title="Audit Logs (Read-only)"
-        legendType="generic"
-        pageSize={10}
-        fixedRows={10}
-        className="sr-block"
-        columns={[
-          { header: "시각" },
-          { header: "관리자" },
-          { header: "액션" },
-          { header: "대상 테이블" },
-          { header: "대상 ID" },
-          { header: "상세" },
-        ]}
-        rows={auditLogs.map(([time, admin, action, table, targetId]) => {
-          const key = `${time}-${table}-${targetId}`;
-          return [
-            time,
-            admin,
+      {rows.length === 0 ? (
+        <div className="sr-block card">
+          <div className="card-body py-5 text-center text-muted">
+            아직 감사로그가 없습니다.
+          </div>
+        </div>
+      ) : (
+        <PaginatedTable
+          title="Audit Logs (Read-only, 최근 50건)"
+          legendType="generic"
+          pageSize={10}
+          fixedRows={10}
+          className="sr-block"
+          columns={[
+            { header: "작업일시" },
+            { header: "관리자" },
+            { header: "action" },
+            { header: "target_type" },
+            { header: "target_id" },
+            { header: "summary" },
+            { header: "metadata" },
+          ]}
+          rowKeys={rows.map((row) => row.id)}
+          rows={rows.map((row) => [
+            formatDateTime(row.created_at),
+            row.adminEmail ?? row.admin_user_id,
             <span
-              key={`${key}-action`}
+              key={`${row.id}-action`}
               className="badge text-bg-light text-dark border px-2 py-1 fw-semibold"
             >
-              {action}
+              {row.action}
             </span>,
-            table,
-            targetId,
-            <button key={`${key}-detail`} type="button" className="btn btn-outline-secondary btn-sm">
-              보기
-            </button>,
-          ];
-        })}
-      />
+            formatAuditTargetLabel(row.target_table),
+            row.target_id,
+            readAuditSummary(row),
+            <span
+              key={`${row.id}-meta`}
+              className="small text-muted"
+              title={summarizeAuditMetadata(row)}
+            >
+              {summarizeAuditMetadata(row)}
+            </span>,
+          ])}
+        />
+      )}
     </>
   );
 }

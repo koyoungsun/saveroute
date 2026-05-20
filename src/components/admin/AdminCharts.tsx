@@ -38,6 +38,11 @@ const palette = {
   tooltipBg: "rgba(33, 37, 41, 0.92)",
 };
 
+export type ChartSeries = {
+  labels: string[];
+  values: number[];
+};
+
 const baseOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -66,9 +71,29 @@ const baseOptions = {
   },
 };
 
-const labels = ["1일", "5일", "10일", "15일", "20일", "25일", "30일"];
+function hasChartData(data: ChartSeries | null | undefined) {
+  return !!data && data.labels.length > 0 && data.values.some((value) => value > 0);
+}
 
-export function DailySearchLineChart() {
+export function ChartEmptyState({ message }: { message: string }) {
+  return (
+    <div className="h-100 d-flex flex-column align-items-center justify-content-center text-muted text-center px-3">
+      <div className="small">{message}</div>
+    </div>
+  );
+}
+
+export function DailySearchLineChart({
+  data,
+  emptyMessage = "아직 수집된 검색 기록이 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
+
   return (
     <Line
       options={{
@@ -76,11 +101,11 @@ export function DailySearchLineChart() {
         plugins: { ...baseOptions.plugins, legend: { display: false } },
       }}
       data={{
-        labels,
+        labels: data!.labels,
         datasets: [
           {
             label: "검색 수",
-            data: [420, 620, 580, 740, 880, 960, 1234],
+            data: data!.values,
             borderColor: palette.primary,
             backgroundColor: "rgba(249, 115, 22, 0.14)",
             pointRadius: 0,
@@ -94,33 +119,17 @@ export function DailySearchLineChart() {
   );
 }
 
-export function DailySignupLineChart() {
-  return (
-    <Line
-      options={{
-        ...baseOptions,
-        plugins: { ...baseOptions.plugins, legend: { display: false } },
-      }}
-      data={{
-        labels,
-        datasets: [
-          {
-            label: "신규회원",
-            data: [4, 7, 6, 9, 8, 11, 12],
-            borderColor: palette.green,
-            backgroundColor: "rgba(34, 197, 94, 0.12)",
-            pointRadius: 0,
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-          },
-        ],
-      }}
-    />
-  );
-}
+export function BrandTopBarChart({
+  data,
+  emptyMessage = "브랜드 검색 데이터가 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
 
-export function BrandTopBarChart() {
   return (
     <Bar
       options={{
@@ -128,11 +137,11 @@ export function BrandTopBarChart() {
         plugins: { ...baseOptions.plugins, legend: { display: false } },
       }}
       data={{
-        labels: ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"],
+        labels: data!.labels,
         datasets: [
           {
             label: "검색 수",
-            data: [980, 760, 690, 540, 420],
+            data: data!.values,
             backgroundColor: "rgba(249, 115, 22, 0.85)",
             borderRadius: 8,
           },
@@ -142,7 +151,17 @@ export function BrandTopBarChart() {
   );
 }
 
-export function BrandRequestTopBarChart() {
+export function BrandRequestTopBarChart({
+  data,
+  emptyMessage = "등록된 업데이트 요청이 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
+
   return (
     <Bar
       options={{
@@ -150,11 +169,11 @@ export function BrandRequestTopBarChart() {
         plugins: { ...baseOptions.plugins, legend: { display: false } },
       }}
       data={{
-        labels: ["올리브영", "다이소", "노브랜드", "이케아", "쿠팡"],
+        labels: data!.labels,
         datasets: [
           {
             label: "요청 수",
-            data: [28, 21, 15, 10, 8],
+            data: data!.values,
             backgroundColor: "rgba(253, 186, 116, 0.95)",
             borderRadius: 8,
           },
@@ -164,7 +183,17 @@ export function BrandRequestTopBarChart() {
   );
 }
 
-export function GenderDoughnutChart() {
+export function GenderDoughnutChart({
+  data,
+  emptyMessage = "성별 세그먼트 검색 데이터가 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
+
   return (
     <Doughnut
       options={{
@@ -172,11 +201,16 @@ export function GenderDoughnutChart() {
         plugins: { ...baseOptions.plugins, legend: { position: "bottom" as const } },
       }}
       data={{
-        labels: ["남성", "여성", "기타", "응답 안 함"],
+        labels: data!.labels,
         datasets: [
           {
-            data: [38, 44, 3, 15],
-            backgroundColor: [palette.primary, palette.darkSlate, palette.green, palette.mutedGray],
+            data: data!.values,
+            backgroundColor: [
+              palette.primary,
+              palette.darkSlate,
+              palette.green,
+              palette.mutedGray,
+            ],
             borderWidth: 0,
           },
         ],
@@ -185,7 +219,17 @@ export function GenderDoughnutChart() {
   );
 }
 
-export function AgeGroupBarChart() {
+export function AgeGroupBarChart({
+  data,
+  emptyMessage = "연령대 세그먼트 검색 데이터가 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
+
   return (
     <Bar
       options={{
@@ -193,11 +237,11 @@ export function AgeGroupBarChart() {
         plugins: { ...baseOptions.plugins, legend: { display: false } },
       }}
       data={{
-        labels: ["10대", "20대", "30대", "40대", "50대", "60대+"],
+        labels: data!.labels,
         datasets: [
           {
             label: "검색 수",
-            data: [90, 420, 360, 240, 160, 80],
+            data: data!.values,
             backgroundColor: "rgba(30, 41, 59, 0.85)",
             borderRadius: 8,
           },
@@ -207,7 +251,17 @@ export function AgeGroupBarChart() {
   );
 }
 
-export function CategoryPieChart() {
+export function CategoryPieChart({
+  data,
+  emptyMessage = "카테고리별 검색 데이터가 없습니다.",
+}: {
+  data: ChartSeries | null;
+  emptyMessage?: string;
+}) {
+  if (!hasChartData(data)) {
+    return <ChartEmptyState message={emptyMessage} />;
+  }
+
   return (
     <Pie
       options={{
@@ -215,11 +269,17 @@ export function CategoryPieChart() {
         plugins: { ...baseOptions.plugins, legend: { position: "bottom" as const } },
       }}
       data={{
-        labels: ["여가", "식음료", "쇼핑", "교통"],
+        labels: data!.labels,
         datasets: [
           {
-            data: [42, 28, 22, 8],
-            backgroundColor: [palette.primary, palette.darkSlate, palette.softOrange, palette.mutedGray],
+            data: data!.values,
+            backgroundColor: [
+              palette.primary,
+              palette.darkSlate,
+              palette.softOrange,
+              palette.mutedGray,
+              palette.green,
+            ],
             borderWidth: 0,
           },
         ],
