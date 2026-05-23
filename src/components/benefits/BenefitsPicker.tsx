@@ -572,8 +572,8 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         expanded={expandedSection === "telecom"}
         onToggle={() => toggleBenefitSection("telecom")}
       >
-        <BenefitFormStep step={1} label="보유 통신사 선택">
-          <div className="grid grid-cols-2 gap-2">
+        <BenefitFormStep step={1} label="보유 통신사 선택" titleVariant="inline">
+          <div className="sr-user-benefit-telecom-choice-grid">
             {TELECOM_FIRST_CHOICES.map((choice) => {
               const active = telecomFirst === choice.id;
               return (
@@ -581,12 +581,12 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   key={choice.id}
                   type="button"
                   onClick={() => selectTelecomFirst(choice.id)}
-                  className={`sr-user-choice ${active ? "sr-user-choice--active" : ""}`}
+                  className={`sr-user-choice sr-user-benefit-telecom-choice ${active ? "sr-user-choice--active" : ""}`}
                 >
                   {active ? (
-                    <Check className="sr-user-accent-text absolute right-2 top-2 size-5" aria-hidden />
+                    <Check className="sr-user-benefit-telecom-choice__check sr-user-accent-text" aria-hidden />
                   ) : null}
-                  <span className="text-sm font-bold text-gray-900">{choice.label}</span>
+                  <span className="sr-user-benefit-telecom-choice__label">{choice.label}</span>
                 </button>
               );
             })}

@@ -3724,6 +3724,10 @@
   .sr-user-app .sr-user-benefit-list-item__content {
     font-size: 0.78125rem;
   }
+
+  .sr-user-app .sr-user-benefit-form-step__title--inline {
+    font-size: 0.8125rem;
+  }
 }
 
 .sr-user-app .sr-user-benefit-accordion-card__panel {
@@ -3787,6 +3791,24 @@
   font-weight: 700;
   line-height: 1.4;
   color: #1f2937;
+}
+
+.sr-user-app .sr-user-benefit-form-step__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-benefit-form-step__title--inline {
+  display: block;
+}
+
+.sr-user-app .sr-user-benefit-form-step__title-step {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #6366f1;
 }
 
 .sr-user-app .sr-user-benefit-form-step__body {
@@ -4032,6 +4054,69 @@
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Telecom carrier picker — always 4 columns in one row */
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice-grid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-choice.sr-user-benefit-telecom-choice {
+  min-height: 2.625rem;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4375rem 0.25rem;
+  text-align: center;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice__label {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
+  text-align: center;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice__check {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+@media (max-width: 430px) {
+  .sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice-grid {
+    gap: 0.375rem;
+  }
+
+  .sr-user-app .sr-user-benefit-accordion-card .sr-user-choice.sr-user-benefit-telecom-choice {
+    min-height: 2.5rem;
+    padding: 0.375rem 0.1875rem;
+  }
+
+  .sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice__label {
+    font-size: 0.6875rem;
+    letter-spacing: -0.01em;
+  }
+
+  .sr-user-app .sr-user-benefit-accordion-card .sr-user-benefit-telecom-choice__check {
+    top: 0.1875rem;
+    right: 0.1875rem;
+    width: 0.6875rem;
+    height: 0.6875rem;
+  }
 }
 
 .sr-user-app .sr-user-benefit-accordion-card .sr-user-callout {

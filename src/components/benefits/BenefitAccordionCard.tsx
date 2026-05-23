@@ -134,6 +134,8 @@ type BenefitFormStepProps = {
   step?: number;
   children: ReactNode;
   withDivider?: boolean;
+  /** `inline`: "Step1 보유 통신사 선택" 한 줄 타이틀 (통신사 step1 등) */
+  titleVariant?: "split" | "inline";
 };
 
 export function BenefitFormStep({
@@ -141,6 +143,7 @@ export function BenefitFormStep({
   step,
   children,
   withDivider = true,
+  titleVariant = "split",
 }: BenefitFormStepProps) {
   return (
     <div
@@ -149,10 +152,18 @@ export function BenefitFormStep({
         withDivider && "sr-user-benefit-form-step--with-divider",
       )}
     >
-      {step != null ? (
-        <span className="sr-user-benefit-form-step__step">[{step}단계]</span>
-      ) : null}
-      <p className="sr-user-benefit-form-step__label">{label}</p>
+      {step != null && titleVariant === "inline" ? (
+        <p className="sr-user-benefit-form-step__title sr-user-benefit-form-step__title--inline">
+          <span className="sr-user-benefit-form-step__title-step">Step{step}</span> {label}
+        </p>
+      ) : (
+        <>
+          {step != null ? (
+            <span className="sr-user-benefit-form-step__step">[{step}단계]</span>
+          ) : null}
+          <p className="sr-user-benefit-form-step__label">{label}</p>
+        </>
+      )}
       <div className="sr-user-benefit-form-step__body">{children}</div>
     </div>
   );
