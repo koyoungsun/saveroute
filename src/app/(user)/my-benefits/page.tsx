@@ -28,7 +28,7 @@ export default async function MyBenefitsPage() {
           <p className="sr-user-account-page__eyebrow">내 혜택</p>
           <h1 className="sr-user-account-page__title">혜택 관리</h1>
           <p className="sr-user-account-page__description">
-            카테고리별로 혜택을 등록하고 관리하세요. 등록한 혜택은 검색 결과 할인 매칭에 바로 반영됩니다.
+            등록한 혜택으로 맞춤 할인 결과를 확인하세요.
           </p>
         </header>
 

@@ -5,8 +5,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+export type BenefitIconVariant = "telecom" | "card" | "membership" | "coupon";
+
 type BenefitAccordionCardProps = {
   icon: LucideIcon;
+  iconVariant: BenefitIconVariant;
   title: string;
   description: string;
   count: number;
@@ -18,6 +21,7 @@ type BenefitAccordionCardProps = {
 
 export function BenefitAccordionCard({
   icon: Icon,
+  iconVariant,
   title,
   description,
   count,
@@ -33,6 +37,7 @@ export function BenefitAccordionCard({
     <section
       className={cn(
         "sr-user-benefit-accordion-card",
+        `sr-user-benefit-accordion-card--${iconVariant}`,
         expanded && "sr-user-benefit-accordion-card--expanded",
       )}
     >
@@ -42,7 +47,13 @@ export function BenefitAccordionCard({
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <span className="sr-user-benefit-accordion-card__icon" aria-hidden="true">
+        <span
+          className={cn(
+            "sr-user-benefit-accordion-card__icon",
+            `sr-user-benefit-accordion-card__icon--${iconVariant}`,
+          )}
+          aria-hidden="true"
+        >
           <Icon strokeWidth={1.75} />
         </span>
         <span className="sr-user-benefit-accordion-card__copy">
@@ -73,6 +84,30 @@ export function BenefitAccordionCard({
         </div>
       </div>
     </section>
+  );
+}
+
+type RegisteredBenefitItemProps = {
+  variant: BenefitIconVariant;
+  tone?: "default" | "pending" | "rejected";
+  children: ReactNode;
+};
+
+export function RegisteredBenefitItem({
+  variant,
+  tone = "default",
+  children,
+}: RegisteredBenefitItemProps) {
+  return (
+    <div
+      className={cn(
+        "sr-user-benefit-list-item",
+        `sr-user-benefit-list-item--${variant}`,
+        tone !== "default" && `sr-user-benefit-list-item--${tone}`,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 

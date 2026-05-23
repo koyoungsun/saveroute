@@ -9,6 +9,7 @@ import { UserBottomDock } from "@/components/layout/UserBottomDock";
 import {
   BenefitAccordionCard,
   BenefitFormStep,
+  RegisteredBenefitItem,
   RegisteredBenefitsBlock,
 } from "@/components/benefits/BenefitAccordionCard";
 import {
@@ -564,6 +565,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       <BenefitAccordionCard
         icon={Smartphone}
+        iconVariant="telecom"
         title="통신사 혜택"
         description="통신사 할인 및 제휴 혜택"
         count={telecomAndMvnoBenefits.length}
@@ -737,8 +739,8 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               const productName = relationOne(b.benefit_product)?.name ?? "회선";
               const providerName = relationOne(b.provider)?.name ?? "";
               return (
-                <div key={b.id} className="sr-user-chip">
-                  <span className="min-w-0 truncate">
+                <RegisteredBenefitItem key={b.id} variant="telecom">
+                  <span className="sr-user-benefit-list-item__label min-w-0 truncate">
                     {providerName ? `${providerName} · ` : ""}
                     {productName}
                   </span>
@@ -747,12 +749,12 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                     <button
                       type="submit"
                       aria-label={`${productName} 삭제`}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                      className="sr-user-benefit-list-item__remove"
                     >
                       <X className="size-3.5" aria-hidden />
                     </button>
                   </form>
-                </div>
+                </RegisteredBenefitItem>
               );
             })}
           </RegisteredBenefitsBlock>
@@ -761,6 +763,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       <BenefitAccordionCard
         icon={CreditCard}
+        iconVariant="card"
         title="카드 혜택"
         description="보유 카드 할인 및 제휴 혜택"
         count={cardBenefits.length}
@@ -997,18 +1000,13 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               }
 
               return (
-                <div
+                <RegisteredBenefitItem
                   key={b.id}
-                  className={`inline-flex max-w-full items-center gap-1 rounded-2xl border py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900 ${
-                    isRejected
-                      ? "border-red-200 bg-red-50/60"
-                      : isPending
-                        ? "border-amber-200 bg-amber-50/60"
-                        : "sr-user-chip border-[color:var(--sr-border-card)]"
-                  }`}
+                  variant="card"
+                  tone={isRejected ? "rejected" : isPending ? "pending" : "default"}
                 >
-                  <span className="min-w-0">
-                    <span className="block truncate">
+                  <span className="sr-user-benefit-list-item__content min-w-0">
+                    <span className="sr-user-benefit-list-item__label block truncate">
                       {providerName ? `${providerName} · ` : ""}
                       {productName}
                       {benefitTypeLabel ? ` · ${benefitTypeLabel}` : ""}
@@ -1034,12 +1032,12 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                     <button
                       type="submit"
                       aria-label={`${productName} 삭제`}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                      className="sr-user-benefit-list-item__remove"
                     >
                       <X className="size-3.5" aria-hidden />
                     </button>
                   </form>
-                </div>
+                </RegisteredBenefitItem>
               );
             })}
           </RegisteredBenefitsBlock>
@@ -1049,6 +1047,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       {payload.externalMembershipProducts.length > 0 ? (
         <BenefitAccordionCard
           icon={Star}
+          iconVariant="membership"
           title="멤버십/포인트 혜택"
           description="제휴 멤버십 및 포인트 할인"
           count={externalMembershipBenefits.length}
@@ -1100,19 +1099,21 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   name: productName,
                 });
                 return (
-                  <div key={benefit.id} className="sr-user-chip">
-                    <span className="min-w-0 truncate">{displayLabel}</span>
+                  <RegisteredBenefitItem key={benefit.id} variant="membership">
+                    <span className="sr-user-benefit-list-item__label min-w-0 truncate">
+                      {displayLabel}
+                    </span>
                     <form action={deactivateUserBenefitAction}>
                       <input type="hidden" name="user_benefit_id" value={benefit.id} />
                       <button
                         type="submit"
                         aria-label={`${displayLabel} 삭제`}
-                        className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                        className="sr-user-benefit-list-item__remove"
                       >
                         <X className="size-3.5" aria-hidden />
                       </button>
                     </form>
-                  </div>
+                  </RegisteredBenefitItem>
                 );
               })}
             </RegisteredBenefitsBlock>
@@ -1122,6 +1123,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       <BenefitAccordionCard
         icon={TicketPercent}
+        iconVariant="coupon"
         title="쿠폰/기타 혜택"
         description="쿠폰 및 기타 할인 혜택"
         count={0}

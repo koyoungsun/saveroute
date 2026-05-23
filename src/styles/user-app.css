@@ -715,10 +715,10 @@
 .sr-user-app .sr-user-brand-hub__slogan,
 .sr-user-app .sr-user-auth-hub__slogan {
   margin: 8px 0 24px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(201, 168, 106, 0.92);
   font-size: 0.9375rem;
   font-weight: 500;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.02em;
   line-height: 1.4;
   text-align: center;
 }
@@ -828,9 +828,10 @@
 
 .sr-user-app .sr-user-account-page__description {
   margin: 0.5rem 0 0;
+  max-width: 28rem;
   color: rgba(255, 255, 255, 0.65);
   font-size: 0.875rem;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .sr-user-app .sr-user-search-results-page {
