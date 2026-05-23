@@ -43,13 +43,20 @@ export function DiscountValueFields({
       <DiscountAmountInput
         unit={unit}
         defaultValue={defaultValue}
-        placeholder={unit === "percent" ? "예: 20" : "예: 10,000"}
+        placeholder={
+          unit === "point_percent"
+            ? "예: 5"
+            : unit === "percent"
+              ? "예: 20"
+              : "예: 10,000"
+        }
         required={required && unit !== "free"}
       />
     );
   }
 
   const percentPlaceholder = "예: 20";
+  const pointPercentPlaceholder = "예: 5";
   const amountPlaceholder = "예: 10,000";
 
   return (
@@ -88,7 +95,13 @@ export function DiscountValueFields({
           <DiscountAmountInput
             unit={unit}
             defaultValue={defaultValue}
-            placeholder={unit === "percent" ? percentPlaceholder : amountPlaceholder}
+            placeholder={
+              unit === "point_percent"
+                ? pointPercentPlaceholder
+                : unit === "percent"
+                  ? percentPlaceholder
+                  : amountPlaceholder
+            }
             required={required}
           />
           {valueError ? (
@@ -104,7 +117,13 @@ export function DiscountValueFields({
             <DiscountAmountInput
               unit={unit}
               defaultValue={defaultValue}
-              placeholder={unit === "percent" ? percentPlaceholder : amountPlaceholder}
+              placeholder={
+              unit === "point_percent"
+                ? pointPercentPlaceholder
+                : unit === "percent"
+                  ? percentPlaceholder
+                  : amountPlaceholder
+            }
               required={required}
             />
             {valueError ? (
@@ -120,7 +139,7 @@ export function DiscountValueFields({
               name="discount_value_max"
               unit={unit}
               defaultValue={defaultValueMax}
-              placeholder={unit === "percent" ? "예: 30" : "예: 10,000"}
+              placeholder={unit === "percent" ? "예: 30" : unit === "point_percent" ? "예: 10" : "예: 10,000"}
               required={required}
             />
             {valueMaxError ? (

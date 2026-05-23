@@ -30,6 +30,7 @@ assert.equal(shouldFormatDiscountValueWithComma("won"), true);
 assert.equal(shouldFormatDiscountValueWithComma("percent"), false);
 
 assert.equal(formatAdminDiscountListValue(20, "percent"), "20%");
+assert.equal(formatAdminDiscountListValue(5, "point_percent"), "5% 포인트");
 assert.equal(formatAdminDiscountListValue(20, "percent", 30), "20% ~ 30%");
 assert.equal(formatAdminDiscountListValue(5000, "won", 10000), "5,000원 ~ 10,000원");
 assert.equal(formatAdminDiscountListValue(12000, "won"), "12,000원");

@@ -29,13 +29,13 @@ ChartJS.register(
 );
 
 const palette = {
-  primary: "#F97316",
-  darkSlate: "#1E293B",
-  softOrange: "#FDBA74",
-  mutedGray: "#94A3B8",
-  green: "#22C55E",
-  grid: "rgba(15, 23, 42, 0.10)",
-  tooltipBg: "rgba(33, 37, 41, 0.92)",
+  primary: "#409A53",
+  darkSlate: "#200624",
+  softGreen: "#5CBF71",
+  mutedGray: "#8B8B97",
+  green: "#409A53",
+  grid: "rgba(255, 255, 255, 0.08)",
+  tooltipBg: "rgba(21, 21, 28, 0.96)",
 };
 
 export type ChartSeries = {
@@ -49,6 +49,9 @@ const baseOptions = {
   plugins: {
     legend: {
       position: "bottom" as const,
+      labels: {
+        color: "#B8B8C2",
+      },
     },
     tooltip: {
       backgroundColor: palette.tooltipBg,
@@ -107,7 +110,7 @@ export function DailySearchLineChart({
             label: "검색 수",
             data: data!.values,
             borderColor: palette.primary,
-            backgroundColor: "rgba(249, 115, 22, 0.14)",
+            backgroundColor: "rgba(64, 154, 83, 0.18)",
             pointRadius: 0,
             borderWidth: 2,
             tension: 0.4,
@@ -142,7 +145,7 @@ export function BrandTopBarChart({
           {
             label: "검색 수",
             data: data!.values,
-            backgroundColor: "rgba(249, 115, 22, 0.85)",
+            backgroundColor: "rgba(64, 154, 83, 0.85)",
             borderRadius: 8,
           },
         ],
@@ -174,7 +177,7 @@ export function BrandRequestTopBarChart({
           {
             label: "요청 수",
             data: data!.values,
-            backgroundColor: "rgba(253, 186, 116, 0.95)",
+            backgroundColor: "rgba(92, 191, 113, 0.95)",
             borderRadius: 8,
           },
         ],
@@ -242,7 +245,7 @@ export function AgeGroupBarChart({
           {
             label: "검색 수",
             data: data!.values,
-            backgroundColor: "rgba(30, 41, 59, 0.85)",
+            backgroundColor: "rgba(32, 6, 36, 0.85)",
             borderRadius: 8,
           },
         ],
@@ -276,7 +279,7 @@ export function CategoryPieChart({
             backgroundColor: [
               palette.primary,
               palette.darkSlate,
-              palette.softOrange,
+              palette.softGreen,
               palette.mutedGray,
               palette.green,
             ],

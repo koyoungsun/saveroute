@@ -1,127 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import {
-  PersonalizedBestSections,
-  type PersonalizedDiscount,
-} from "@/components/search/PersonalizedBestSections";
+import { HomeOrbitHero } from "@/components/home/HomeOrbitHero";
 import { HomePromoSlotSection } from "@/components/home/HomePromoSlotSection";
-import { NoticeSection } from "@/components/home/NoticeSection";
-import { PopularBrandChips } from "@/components/search/PopularBrandChips";
+import { UserPage } from "@/components/layout/UserPage";
 import { RecentSearches } from "@/components/search/RecentSearches";
-import { SearchBar } from "@/components/search/SearchBar";
-import {
-  toHomePromoSlot,
-  type HomePromoSlotRow,
-} from "@/lib/homePromoSlots";
+import { SearchHubChrome } from "@/components/search/SearchHubChrome";
+import { toHomePromoSlot, type HomePromoSlotRow } from "@/lib/homePromoSlots";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { SAVEROUTE_HOME_CATEGORIES } from "@/lib/user/brand-slogan";
+import { SHOW_LEGACY_HOME_SECTIONS } from "@/lib/user/home-layout-flags";
+import { resolveUserGreetingName } from "@/lib/user/greeting-name";
 
-import {
-  matchDiscountToUserBenefit,
-  type BenefitProductMatchMeta,
-  type UserBenefitMatchRow,
-} from "@/lib/search/discount-matching";
-import {
-  attachBenefitProductIdsToDiscounts,
-  collectUniqueBenefitProductIds,
-  resolveDiscountBenefitProductIds,
-} from "@/lib/benefits/discount-benefit-products";
-import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
-import { isUserBenefitEligibleForMatching } from "@/lib/benefits/benefit-product-request-status";
-
-const popularBrands = ["롯데월드", "CGV", "스타벅스", "에버랜드", "서울랜드"];
-const telecomCategoryCodes = new Set(["telecom", "membership", "mvno"]);
-const cardCategoryCodes = new Set(["card"]);
-
-type Relation<T> = T | T[] | null;
-
-type UserBenefitRow = UserBenefitMatchRow & {
-  benefit_category: Relation<{ code: string; name: string }>;
-};
-
-type DiscountRow = {
-  id: number;
-  benefit_category_id: number;
-  provider_id: number;
-  benefit_product_id: number | null;
-  benefit_product_ids?: number[] | null;
-  title: string;
-  discount_value: number | string;
-  discount_unit: string;
-  brand: Relation<{ name: string }>;
-  provider: Relation<{ name: string }>;
-};
-
-function getUserDisplayName(email?: string | null) {
-  if (!email) {
-    return "";
-  }
-
-  return email.split("@")[0] ?? "";
-}
-
-function getRelation<T>(relation: Relation<T>) {
-  if (Array.isArray(relation)) {
-    return relation[0] ?? null;
-  }
-
-  return relation;
-}
-
-function matchesBenefit(
-  discount: DiscountRow,
-  benefit: UserBenefitRow,
-  productById: Map<number, BenefitProductMatchMeta>,
-) {
-  const linkedProductIds = resolveDiscountBenefitProductIds(discount);
-  const discountProduct =
-    linkedProductIds?.length === 1
-      ? productById.get(linkedProductIds[0]!) ?? null
-      : null;
-
-  return matchDiscountToUserBenefit(
-    discount,
-    benefit,
-    discountProduct,
-    linkedProductIds,
-    productById,
-  );
-}
-
-function toPersonalizedDiscount(discount: DiscountRow): PersonalizedDiscount {
-  return {
-    id: discount.id,
-    brandName: getRelation(discount.brand)?.name ?? "브랜드",
-    title: discount.title,
-    discountValue: Number(discount.discount_value) || 0,
-    discountUnit: discount.discount_unit,
-    providerName: getRelation(discount.provider)?.name ?? "제공사",
-  };
-}
-
-function getBestDiscounts(
-  discounts: DiscountRow[],
-  benefits: UserBenefitRow[],
-  categoryCodes: Set<string>,
-  productById: Map<number, BenefitProductMatchMeta>,
-) {
-  const scopedBenefits = benefits.filter((benefit) => {
-    const code = getRelation(benefit.benefit_category)?.code;
-    return code ? categoryCodes.has(code) : false;
-  });
-
-  if (scopedBenefits.length === 0) {
-    return [];
-  }
-
-  return discounts
-    .filter((discount) =>
-      scopedBenefits.some((benefit) => matchesBenefit(discount, benefit, productById)),
-    )
-    .sort((a, b) => (Number(b.discount_value) || 0) - (Number(a.discount_value) || 0))
-    .slice(0, 3)
-    .map(toPersonalizedDiscount);
-}
+const SHOW_HOME_HERO_IMAGE = false;
 
 export default async function HomePage() {
   const supabase = await createServerSupabaseClient();
@@ -129,11 +20,13 @@ export default async function HomePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [{ data: promoSlotData, error: promoSlotError }] = await Promise.all([
-    supabase
-      .from("promo_slots")
-      .select(
-        `
+
+  const [{ data: promoSlotData, error: promoSlotError }, profileResult] =
+    await Promise.all([
+      supabase
+        .from("promo_slots")
+        .select(
+          `
           id,
           title,
           description,
@@ -148,203 +41,108 @@ export default async function HomePage() {
           is_sponsored,
           sponsor_name
         `,
-      )
-      .eq("is_active", true)
-      .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
-      .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
-      .order("priority", { ascending: false }),
-  ]);
-  const displayName = getUserDisplayName(user?.email);
+        )
+        .eq("is_active", true)
+        .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+        .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+        .order("priority", { ascending: false }),
+      user
+        ? supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
   const promoSlots = promoSlotError
     ? []
     : ((promoSlotData ?? []) as HomePromoSlotRow[]).map(toHomePromoSlot);
-  let userBenefits: UserBenefitRow[] = [];
-  let activeDiscounts: DiscountRow[] = [];
-  let productMatchById = new Map<number, BenefitProductMatchMeta>();
 
+  let displayName = "";
   if (user) {
-    const [{ data: benefitData }, { data: discountData }] = await Promise.all([
-      supabase
-        .from("user_benefits")
-        .select(
-          `
-          benefit_category_id,
-          provider_id,
-          benefit_product_id,
-          benefit_type,
-          approval_status,
-          benefit_category:benefit_categories(code,name),
-          product:benefit_products(id,benefit_type,is_all_product)
-        `,
-        )
-        .eq("user_id", user.id)
-        .eq("is_active", true),
-      supabase
-        .from("discounts")
-        .select(
-          `
-          id,
-          benefit_category_id,
-          provider_id,
-          benefit_product_id,
-          title,
-          discount_value,
-          discount_unit,
-          brand:brands(name),
-          provider:providers(name)
-        `,
-        )
-        .eq("status", "active")
-        .order("discount_value", { ascending: false })
-        .limit(100),
-    ]);
-
-    userBenefits = ((benefitData ?? []) as Array<Omit<UserBenefitRow, "product"> & {
-      approval_status: string | null;
-      product:
-        | { id: number; benefit_type: string | null; is_all_product: boolean }
-        | { id: number; benefit_type: string | null; is_all_product: boolean }[]
-        | null;
-    }>)
-      .filter((row) =>
-        isUserBenefitEligibleForMatching({
-          benefit_product_id: row.benefit_product_id,
-          approval_status: row.approval_status,
-        }),
-      )
-      .map((row) => {
-      const prod = getRelation(row.product);
-      return {
-        benefit_category_id: row.benefit_category_id,
-        provider_id: row.provider_id,
-        benefit_product_id: row.benefit_product_id,
-        benefit_type: row.benefit_type,
-        benefit_category: row.benefit_category,
-        product: prod
-          ? {
-              id: prod.id,
-              benefit_type: prod.benefit_type,
-              is_all_product: prod.is_all_product,
-            }
-          : null,
-      };
+    displayName = resolveUserGreetingName({
+      nickname: profileResult.data?.nickname,
+      email: user.email,
     });
-    activeDiscounts = attachBenefitProductIdsToDiscounts(
-      (discountData ?? []) as DiscountRow[],
-      await loadDiscountBenefitProductIdsByDiscountId(
-        supabase,
-        ((discountData ?? []) as DiscountRow[]).map((row) => row.id),
-      ),
-    );
-
-    const productIds = collectUniqueBenefitProductIds(activeDiscounts);
-    if (productIds.length > 0) {
-      const { data: products } = await supabase
-        .from("benefit_products")
-        .select("id,benefit_type,is_all_product")
-        .in("id", productIds);
-      productMatchById = new Map(
-        (products ?? []).map((p) => [
-          p.id as number,
-          {
-            id: p.id as number,
-            benefit_type: (p.benefit_type as string | null) ?? null,
-            is_all_product: Boolean(p.is_all_product),
-          },
-        ]),
-      );
-    }
   }
 
-  const telecomDiscounts = getBestDiscounts(
-    activeDiscounts,
-    userBenefits,
-    telecomCategoryCodes,
-    productMatchById,
-  );
-  const cardDiscounts = getBestDiscounts(
-    activeDiscounts,
-    userBenefits,
-    cardCategoryCodes,
-    productMatchById,
-  );
-
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10 md:py-16">
-      <section className="overflow-hidden rounded-[32px] border border-orange-100 bg-white shadow-xl shadow-orange-950/10">
-        <Image
-          src="/icons/main-top.png"
-          alt="SaveRoute. 식당, 영화관, 놀이동산 어디든 내가 가진 최고의 할인을 찾아드려요. 카드, 통신사, 멤버십 혜택을 등록하고 브랜드별 최적 할인을 한 번에 확인하세요. 카드 혜택 탐색, 통신사 혜택 탐색, 멤버십 혜택 탐색."
-          width={1024}
-          height={683}
-          priority
-          style={{ height: "auto", width: "100%" }}
-        />
-      </section>
+    <UserPage
+      tone="comfortable"
+      className="sr-user-stack sr-user-home-hub sr-user-home-hub--clip-x flex min-h-full flex-1 flex-col overflow-x-hidden"
+    >
+      {/* Legacy section: 히어로 이미지 — 추후 메인 상단 비주얼로 재배치 예정 */}
+      {SHOW_HOME_HERO_IMAGE ? (
+        <section className="sr-user-card--hero overflow-hidden">
+          <Image
+            src="/icons/main-top.png"
+            alt="SaveRoute. 식당, 영화관, 놀이동산 어디든 내가 가진 최고의 할인을 찾아드려요."
+            width={1024}
+            height={683}
+            priority
+            style={{ height: "auto", width: "100%" }}
+          />
+        </section>
+      ) : null}
 
-      <div className="mx-auto mt-10 w-full max-w-2xl">
-        {user ? (
+      <div className="sr-user-home-hub__content sr-user-stack flex w-full max-w-full flex-1 flex-col overflow-x-hidden">
+        {/* Search-first UX: 로고 + 짧은 카피 + 검색창 + 검색 버튼 */}
+        {!SHOW_LEGACY_HOME_SECTIONS ? (
+          <HomeOrbitHero />
+        ) : null}
+
+        {/* Legacy section: 로그인 사용자 인사말 — 추후 개인화 영역으로 재배치 예정 */}
+        {SHOW_LEGACY_HOME_SECTIONS && user ? (
+          <div className="sr-user-home-greeting mb-4 text-center">
+            <p className="sr-user-home-greeting">
+              <span className="sr-user-home-greeting__name">{displayName}</span>
+              님,
+            </p>
+            <p className="sr-user-home-greeting mt-1">
+              어느 곳의 할인정보가 필요하신가요?
+            </p>
+          </div>
+        ) : null}
+
+        {SHOW_LEGACY_HOME_SECTIONS && !user ? (
+          <div className="sr-user-home-intro mb-4 text-center">
+            <p className="sr-user-home-intro__categories">
+              {SAVEROUTE_HOME_CATEGORIES}
+            </p>
+            <p className="sr-user-home-intro__slogan mt-2">
+              나를 위한{" "}
+              <span className="sr-user-home-intro__slogan-accent sr-user-accent-text">
+                최적의 할인 루트
+              </span>
+            </p>
+          </div>
+        ) : null}
+
+        {SHOW_LEGACY_HOME_SECTIONS ? <SearchHubChrome variant="home" /> : null}
+
+        {/* Legacy section: 최근 검색 — 추후 검색 보조 영역으로 재배치 예정 */}
+        {SHOW_LEGACY_HOME_SECTIONS && user ? <RecentSearches /> : null}
+
+        {/* Legacy section: 비로그인 안내·CTA — 추후 온보딩 플로우로 재배치 예정 */}
+        {SHOW_LEGACY_HOME_SECTIONS && !user ? (
           <>
-            <div className="mb-4 space-y-1">
-              <p className="text-lg font-semibold text-gray-900">
-                {displayName}님,
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                어디에서 가장 싸게 쓸 수 있을까요?
-              </p>
-            </div>
-            <SearchBar />
-            <RecentSearches />
-            <div className="mt-8">
-              <PersonalizedBestSections
-                isAuthenticated
-                hasBenefits={userBenefits.length > 0}
-                telecomDiscounts={telecomDiscounts}
-                cardDiscounts={cardDiscounts}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <SearchBar />
-            <RecentSearches />
-            <p className="mt-6 text-center text-sm text-gray-500">
+            <p className="sr-user-t-muted sr-user-canvas-text-muted mt-6 text-center">
               로그인하면 내 혜택 기준 맞춤 할인을 볼 수 있어요.
             </p>
-            <div className="mt-3 space-y-2">
-              <Link
-                href="/auth/login"
-                className="mx-auto flex h-12 w-[70%] items-center justify-center rounded-3xl bg-sr-primary text-center font-semibold text-white hover:bg-sr-primary-hover"
-              >
+            <div className="mt-3 flex flex-col gap-2">
+              <Link href="/auth/login" className="sr-user-btn-primary sr-user-btn-primary--block">
                 로그인
               </Link>
-              <Link
-                href="/auth/signup"
-                className="mx-auto flex h-12 w-[70%] items-center justify-center rounded-3xl border border-gray-200 bg-white text-center font-semibold text-gray-900 hover:bg-gray-50"
-              >
+              <Link href="/auth/signup" className="sr-user-btn-secondary sr-user-btn-secondary--block">
                 회원가입
               </Link>
             </div>
-
-            <div className="mt-8">
-              <PersonalizedBestSections
-                isAuthenticated={false}
-                hasBenefits={false}
-                telecomDiscounts={[]}
-                cardDiscounts={[]}
-              />
-            </div>
           </>
-        )}
-        <HomePromoSlotSection slots={promoSlots} />
-        <NoticeSection />
+        ) : null}
       </div>
-
-      {user ? (
-        <div className="mt-8">
-          <PopularBrandChips brands={popularBrands} />
+      {/* Legacy section: 프로모 배너 — 추후 메인 하단 콘텐츠 영역으로 재배치 예정 */}
+      {SHOW_LEGACY_HOME_SECTIONS ? (
+        <div className="sr-user-home-promo-above-footer mt-auto w-full pt-6">
+          <HomePromoSlotSection slots={promoSlots} />
         </div>
       ) : null}
-    </div>
+    </UserPage>
   );
 }

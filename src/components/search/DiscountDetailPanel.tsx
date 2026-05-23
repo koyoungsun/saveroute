@@ -5,7 +5,7 @@ export interface DiscountDetail {
   title: string;
   providerName: string;
   discountValue: number;
-  discountUnit: "percent" | "won" | "special_price" | "free" | "unknown";
+  discountUnit: "percent" | "point_percent" | "won" | "special_price" | "free" | "unknown";
   usageType: string;
   isStackable: boolean;
   stackingNote?: string;
@@ -37,6 +37,10 @@ function formatDiscountValue({
 }: Pick<DiscountDetail, "discountValue" | "discountUnit">) {
   if (discountUnit === "percent") {
     return `최대 ${discountValue}%`;
+  }
+
+  if (discountUnit === "point_percent") {
+    return `${discountValue}% 포인트 적립`;
   }
 
   if (discountUnit === "won") {

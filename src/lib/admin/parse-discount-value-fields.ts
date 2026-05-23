@@ -4,7 +4,10 @@ import {
 } from "@/lib/discounts/format-discount-value";
 import { parseNumericInput } from "@/lib/ui/format-money";
 
-type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
+import {
+  isDiscountUnitValue,
+  type DiscountUnitValue,
+} from "@/lib/discounts/discount-units";
 
 export type ParsedDiscountValues = {
   discountValue: number;
@@ -27,7 +30,7 @@ function readPositiveNumber(value: string) {
 
 export function parseDiscountValueFields(
   formData: FormData,
-  unit: DiscountUnit,
+  unit: DiscountUnitValue,
 ): { ok: true; value: ParsedDiscountValues } | { ok: false; fieldErrors: DiscountValueFieldErrors } {
   if (unit === "free") {
     return {

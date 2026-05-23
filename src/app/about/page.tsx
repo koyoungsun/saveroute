@@ -2,17 +2,23 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { AboutHeroCarousel } from "@/components/about/AboutHeroCarousel";
+import { UserPage } from "@/components/layout/UserPage";
 import { UserShell } from "@/components/layout/UserShell";
+import { SAVEROUTE_SLOGAN } from "@/lib/user/brand-slogan";
 
 export default function AboutPage() {
   return (
     <UserShell>
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 md:py-16">
+      <UserPage tone="comfortable" className="sr-user-stack">
         <AboutHeroCarousel />
 
-        <section className="mt-8 space-y-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+        <p className="sr-user-brand-slogan mt-6 text-center text-base font-semibold leading-relaxed text-gray-500">
+          {SAVEROUTE_SLOGAN}
+        </p>
+
+        <section className="sr-user-card mt-8 space-y-8 rounded-3xl p-6">
           <div>
-            <h2 className="text-xl font-black text-[#3DB525]">
+            <h2 className="sr-user-accent-text text-xl font-black">
               [SaveRoute가 해결하려는 문제]
             </h2>
             <p className="mt-3 text-sm leading-7 text-gray-600">
@@ -24,7 +30,7 @@ export default function AboutPage() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-black text-[#3DB525]">
+            <h2 className="sr-user-accent-text text-xl font-black">
               [카드/통신사/멤버십 기반 탐색 구조]
             </h2>
             <p className="mt-3 text-sm leading-7 text-gray-600">
@@ -51,19 +57,19 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6">
+        <section className="sr-user-card sr-user-card--featured mt-8 rounded-3xl p-6">
           <h2 className="text-xl font-black text-gray-950">지금 시작하세요!!</h2>
           <p className="mt-3 text-sm leading-7 text-gray-600">
             나의 정보들을 등록하고 최적 할인을 확인해보세요!
           </p>
           <Link
             href="/my-benefits"
-            className="mt-5 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-4 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+            className="sr-user-btn-primary mt-5 inline-flex h-12 items-center justify-center rounded-3xl px-4 text-sm font-semibold text-white"
           >
             나의 혜택정보 등록하기
           </Link>
         </section>
-      </main>
+      </UserPage>
     </UserShell>
   );
 }

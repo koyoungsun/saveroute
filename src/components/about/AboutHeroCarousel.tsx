@@ -138,7 +138,7 @@ export function AboutHeroCarousel() {
       className="flex flex-col gap-3"
     >
       <div
-        className="cursor-grab select-none overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm shadow-orange-950/10 active:cursor-grabbing"
+        className="sr-user-card--hero cursor-grab select-none overflow-hidden rounded-3xl active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

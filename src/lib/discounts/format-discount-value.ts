@@ -1,7 +1,9 @@
+import { isPercentLikeDiscountUnit } from "@/lib/discounts/discount-units";
+
 export type DiscountValueDisplayStyle = "admin-list" | "compact" | "search";
 
 export function supportsDiscountValueRange(unit: string): boolean {
-  return unit === "percent" || unit === "won" || unit === "amount";
+  return isPercentLikeDiscountUnit(unit) || unit === "won" || unit === "amount";
 }
 
 export function hasDiscountValueRange(
@@ -45,6 +47,13 @@ function formatSingleValue(numberValue: number, unit: string, style: DiscountVal
     return style === "search" ? `${numberValue}% 할인` : `${numberValue}%`;
   }
 
+  if (unit === "point_percent") {
+    if (style === "search") {
+      return `${numberValue}% 포인트 적립`;
+    }
+    return `${numberValue}% 포인트`;
+  }
+
   if (unit === "won" || unit === "amount") {
     const amount = `${numberValue.toLocaleString("ko-KR")}원`;
     return style === "search" ? `${amount} 할인` : amount;
@@ -75,6 +84,14 @@ function formatRangeValue(
     }
 
     return `${minValue}% ~ ${maxValue}%`;
+  }
+
+  if (unit === "point_percent") {
+    if (style === "search") {
+      return `최소 ${minValue}% ~ 최대 ${maxValue}% 포인트 적립`;
+    }
+
+    return `${minValue}% ~ ${maxValue}% 포인트`;
   }
 
   if (unit === "won" || unit === "amount") {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { UserBottomDock } from "@/components/layout/UserBottomDock";
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
@@ -26,6 +27,11 @@ import {
   type TelecomFirstChoiceId,
 } from "@/lib/benefits/load-registration-data";
 import { formatUserBenefitTypeLabel } from "@/lib/benefits/format-product-label";
+import { formatExternalMembershipOptionLabel } from "@/lib/benefits/format-external-membership-label";
+import {
+  filterFeaturedMvnoBrandOptions,
+  getFeaturedMvnoDisplayName,
+} from "@/lib/benefits/mvno-display-policy";
 
 const CARD_KIND_LABEL: Record<CardBenefitKind, string> = {
   credit: "신용카드",
@@ -88,6 +94,16 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
   const [manualCatalogMsg, setManualCatalogMsg] = useState<string | null>(null);
   const manualCatalogNameEditedRef = useRef(false);
   const [pendingCatalogRequest, startCatalogRequestTransition] = useTransition();
+  const [showMvnoRequestForm, setShowMvnoRequestForm] = useState(false);
+  const [mvnoRequestBrand, setMvnoRequestBrand] = useState("");
+  const [mvnoRequestFeedback, setMvnoRequestFeedback] = useState<string | null>(null);
+  const [mvnoRequestError, setMvnoRequestError] = useState<string | null>(null);
+  const [mvnoRequestSubmitting, setMvnoRequestSubmitting] = useState(false);
+
+  const featuredMvnoOptions = useMemo(
+    () => filterFeaturedMvnoBrandOptions(payload.mvnoBrandOptions),
+    [payload.mvnoBrandOptions],
+  );
 
   const membershipOptionsForCarrier = useMemo(() => {
     if (!telecomFirst || telecomFirst === "mvno") {
@@ -106,7 +122,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       if (!Number.isInteger(id) || id <= 0) {
         return null;
       }
-      const opt = payload.mvnoBrandOptions.find((o) => o.providerId === id);
+      const opt = featuredMvnoOptions.find((o) => o.providerId === id);
       return opt?.defaultProductId ?? null;
     }
     if (!telecomFirst) {
@@ -117,7 +133,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       return null;
     }
     return pid;
-  }, [telecomFirst, telecomMembershipProductId, mvnoProviderId, payload.mvnoBrandOptions]);
+  }, [telecomFirst, telecomMembershipProductId, mvnoProviderId, featuredMvnoOptions]);
 
   const canRegisterTelecom =
     resolvedTelecomProductId !== null &&
@@ -196,6 +212,10 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     setMvnoProviderId("");
     setTelecomErr(null);
     setTelecomOk(null);
+    setShowMvnoRequestForm(false);
+    setMvnoRequestBrand("");
+    setMvnoRequestFeedback(null);
+    setMvnoRequestError(null);
   }
 
   function handleRegisterTelecom() {
@@ -224,10 +244,57 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     });
   }
 
+  async function handleSubmitMvnoBrandRequest() {
+    const brandName = mvnoRequestBrand.trim();
+    if (!brandName || mvnoRequestSubmitting) {
+      return;
+    }
+
+    setMvnoRequestSubmitting(true);
+    setMvnoRequestFeedback(null);
+    setMvnoRequestError(null);
+
+    try {
+      const res = await fetch("/api/brand-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          keyword: brandName,
+          requestType: "mvno_request",
+        }),
+      });
+
+      const data = (await res.json()) as {
+        ok?: boolean;
+        status?: string;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setMvnoRequestError(data.error ?? "요청 중 오류가 발생했습니다.");
+        return;
+      }
+
+      if (data.status === "max_reached") {
+        setMvnoRequestFeedback("이미 많은 요청이 접수된 브랜드입니다.");
+        return;
+      }
+
+      setMvnoRequestBrand("");
+      setShowMvnoRequestForm(false);
+      setMvnoRequestFeedback("요청이 접수되었습니다. 검토 후 추가될 수 있습니다.");
+    } catch {
+      setMvnoRequestError("요청 중 오류가 발생했습니다.");
+    } finally {
+      setMvnoRequestSubmitting(false);
+    }
+  }
+
   function handleRegisterExternalMembership() {
     const productId = Number(externalMembershipProductId);
     if (!Number.isInteger(productId) || productId <= 0 || !canRegisterExternalMembership) {
-      setMembershipErr("멤버십을 선택해 주세요.");
+      setMembershipErr("멤버십 또는 포인트를 선택해 주세요.");
       return;
     }
 
@@ -240,7 +307,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           setMembershipOk(null);
         } else {
           setMembershipErr(null);
-          setMembershipOk(r.message ?? "멤버십을 등록했습니다.");
+          setMembershipOk(r.message ?? "멤버십/포인트를 등록했습니다.");
           setExternalMembershipProductId("");
         }
         router.refresh();
@@ -357,8 +424,18 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     }
   }, [showManualCatalogRequest]);
 
+  useEffect(() => {
+    if (telecomFirst !== "mvno" || !mvnoProviderId) {
+      return;
+    }
+
+    const id = Number(mvnoProviderId);
+    if (!featuredMvnoOptions.some((option) => option.providerId === id)) {
+      setMvnoProviderId("");
+    }
+  }, [telecomFirst, mvnoProviderId, featuredMvnoOptions]);
+
   const registeredCount = payload.userBenefits.length;
-  const accent = "#409A53";
   const showBenefitsEmptyCta = mode === "my-benefits" && registeredCount === 0;
   const selectableKinds = selectedCardProduct
     ? [...allowedCardBenefitKinds({
@@ -430,17 +507,14 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     !pendingCatalogRequest;
 
   return (
-    <div className="space-y-8 pb-28 md:pb-10">
+    <div className="sr-user-stack sr-user-stack--tight">
       {telecomErr ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {telecomErr}
         </p>
       ) : null}
       {telecomOk ? (
-        <p
-          className="rounded-2xl border px-4 py-3 text-sm font-medium"
-          style={{ borderColor: `${accent}55`, backgroundColor: `${accent}14`, color: accent }}
-        >
+        <p className="sr-user-callout sr-user-callout--success">
           {telecomOk}
         </p>
       ) : null}
@@ -450,27 +524,24 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         </p>
       ) : null}
       {membershipOk ? (
-        <p
-          className="rounded-2xl border px-4 py-3 text-sm font-medium"
-          style={{ borderColor: `${accent}55`, backgroundColor: `${accent}14`, color: accent }}
-        >
+        <p className="sr-user-callout sr-user-callout--success">
           {membershipOk}
         </p>
       ) : null}
 
       {showBenefitsEmptyCta ? (
-        <div className="rounded-2xl border border-[#409A53]/25 bg-[#409A53]/08 px-4 py-6 text-center">
+        <div className="sr-user-callout sr-user-callout--empty px-4 py-6 text-center">
           <p className="text-sm font-semibold text-gray-900">아직 등록된 혜택이 없어요.</p>
-          <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:justify-center sm:gap-3">
+          <div className="mt-5 flex flex-col gap-2.5">
             <a
               href="#benefits-register"
-              className="inline-flex h-11 items-center justify-center rounded-2xl bg-sr-primary px-5 text-sm font-bold text-white hover:bg-sr-primary-hover"
+              className="sr-user-btn-primary inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-bold text-white"
             >
               내 혜택 등록하기
             </a>
             <Link
               href="/"
-              className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-bold text-gray-800 hover:bg-gray-50"
+              className="sr-user-btn-secondary inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-bold"
             >
               검색하러 가기
             </Link>
@@ -480,11 +551,11 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       <section
         id="benefits-register"
-        className="scroll-mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5"
+        className="scroll-mt-6 rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
+            <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
               통신사
             </p>
             <h2 className="mt-1 text-lg font-extrabold text-gray-950">통신 혜택 등록</h2>
@@ -499,7 +570,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         </div>
 
         <p className="mt-3 text-xs font-medium text-gray-700">1단계: 통신사 또는 알뜰폰</p>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-2 grid grid-cols-2 gap-2">
           {TELECOM_FIRST_CHOICES.map((choice) => {
             const active = telecomFirst === choice.id;
             return (
@@ -507,14 +578,10 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 key={choice.id}
                 type="button"
                 onClick={() => selectTelecomFirst(choice.id)}
-                className={`relative flex min-h-[72px] w-full flex-col items-start rounded-2xl border-2 px-3 py-3 text-left transition ${
-                  active
-                    ? "border-[#409A53] bg-[#409A53]/08 shadow-[0_1px_0_rgba(64,154,83,0.12)]"
-                    : "border-gray-100 bg-gray-50/80 hover:border-gray-200"
-                }`}
+                className={`sr-user-choice ${active ? "sr-user-choice--active" : ""}`}
               >
                 {active ? (
-                  <Check className="absolute right-2 top-2 size-5 text-[#409A53]" aria-hidden />
+                  <Check className="sr-user-accent-text absolute right-2 top-2 size-5" aria-hidden />
                 ) : null}
                 <span className="text-sm font-bold text-gray-900">{choice.label}</span>
               </button>
@@ -538,7 +605,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+              className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
             >
               <option value="">등급을 선택해 주세요</option>
               {membershipOptionsForCarrier.map((opt) => (
@@ -570,18 +637,86 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+              className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
             >
               <option value="">브랜드를 선택해 주세요</option>
-              {payload.mvnoBrandOptions.map((opt) => (
+              {featuredMvnoOptions.map((opt) => (
                 <option key={opt.providerId} value={String(opt.providerId)}>
-                  {opt.name}
+                  {getFeaturedMvnoDisplayName(opt)}
                 </option>
               ))}
             </select>
-            {payload.mvnoBrandOptions.length === 0 ? (
+            {featuredMvnoOptions.length === 0 ? (
               <p className="text-xs text-gray-500">등록 가능한 알뜰폰 브랜드가 없습니다.</p>
             ) : null}
+
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <p className="text-xs text-gray-600">찾는 알뜰폰 브랜드가 없나요?</p>
+              {showMvnoRequestForm ? (
+                <div className="mt-3 space-y-2">
+                  <label htmlFor="mvno-brand-request" className="text-xs font-bold text-gray-700">
+                    알뜰폰 브랜드명
+                  </label>
+                  <input
+                    id="mvno-brand-request"
+                    type="text"
+                    value={mvnoRequestBrand}
+                    onChange={(event) => {
+                      setMvnoRequestBrand(event.target.value);
+                      setMvnoRequestFeedback(null);
+                      setMvnoRequestError(null);
+                    }}
+                    maxLength={80}
+                    placeholder="예: 토스모바일"
+                    className="sr-user-input px-3 py-3 text-sm"
+                  />
+                  <div className="flex flex-col gap-2 min-[431px]:flex-row">
+                    <button
+                      type="button"
+                      disabled={mvnoRequestSubmitting || !mvnoRequestBrand.trim()}
+                      onClick={() => void handleSubmitMvnoBrandRequest()}
+                      className="sr-user-btn-primary flex h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold"
+                    >
+                      {mvnoRequestSubmitting ? "요청 중..." : "요청 보내기"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={mvnoRequestSubmitting}
+                      onClick={() => {
+                        setShowMvnoRequestForm(false);
+                        setMvnoRequestBrand("");
+                        setMvnoRequestError(null);
+                      }}
+                      className="sr-user-btn-secondary flex h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMvnoRequestForm(true);
+                    setMvnoRequestFeedback(null);
+                    setMvnoRequestError(null);
+                  }}
+                  className="sr-user-btn-secondary mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold"
+                >
+                  알뜰폰 브랜드 추가 요청
+                </button>
+              )}
+              {mvnoRequestFeedback ? (
+                <p className="mt-2 text-xs font-medium text-green-700" role="status" aria-live="polite">
+                  {mvnoRequestFeedback}
+                </p>
+              ) : null}
+              {mvnoRequestError ? (
+                <p className="mt-2 text-xs font-medium text-red-600" role="alert">
+                  {mvnoRequestError}
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
@@ -589,7 +724,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           type="button"
           disabled={!canRegisterTelecom}
           onClick={handleRegisterTelecom}
-          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+          className="sr-user-btn-primary mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
         >
           <Plus className="size-4" aria-hidden />
           {pendingTelecom ? "등록 중..." : "통신 혜택 등록"}
@@ -605,7 +740,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 return (
                   <div
                     key={b.id}
-                    className="inline-flex max-w-full items-center gap-1 rounded-2xl border border-[#409A53]/35 bg-[#409A53]/10 py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900"
+                    className="sr-user-chip"
                   >
                     <span className="min-w-0 truncate">
                       {providerName ? `${providerName} · ` : ""}
@@ -630,22 +765,22 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       </section>
 
       {payload.externalMembershipProducts.length > 0 ? (
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+        <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
-                멤버십
+              <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
+                멤버십/포인트
               </p>
-              <h2 className="mt-1 text-lg font-extrabold text-gray-950">제휴 멤버십 등록</h2>
+              <h2 className="mt-1 text-lg font-extrabold text-gray-950">제휴 멤버십/포인트 등록</h2>
               <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                보유 중인 제휴 멤버십을 선택해 등록해 주세요.
+                보유 중인 제휴 멤버십 또는 포인트를 선택해 등록해 주세요.
               </p>
             </div>
             <Star className="size-9 shrink-0 text-gray-300" aria-hidden />
           </div>
 
           <label htmlFor="external-membership-product" className="mt-4 text-xs font-bold text-gray-700">
-            멤버십 선택
+            멤버십/포인트 선택
           </label>
           <select
             id="external-membership-product"
@@ -655,12 +790,15 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               setMembershipErr(null);
               setMembershipOk(null);
             }}
-            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+            className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
           >
-            <option value="">멤버십을 선택해 주세요</option>
+            <option value="">멤버십 또는 포인트를 선택해 주세요.</option>
             {payload.externalMembershipProducts.map((product) => (
               <option key={product.id} value={String(product.id)}>
-                {product.providerName ? `${product.providerName} · ${product.name}` : product.name}
+                {formatExternalMembershipOptionLabel({
+                  providerName: product.providerName,
+                  name: product.name,
+                })}
               </option>
             ))}
           </select>
@@ -669,33 +807,36 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             type="button"
             disabled={!canRegisterExternalMembership}
             onClick={handleRegisterExternalMembership}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+            className="sr-user-btn-primary mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
           >
             <Plus className="size-4" aria-hidden />
-            {pendingMembership ? "등록 중..." : "멤버십 등록"}
+            {pendingMembership ? "등록 중..." : "멤버십/포인트 등록"}
           </button>
 
           {externalMembershipBenefits.length > 0 ? (
             <div className="mt-5">
-              <p className="text-xs font-bold text-gray-700">등록한 멤버십</p>
+              <p className="text-xs font-bold text-gray-700">등록한 멤버십/포인트</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {externalMembershipBenefits.map((benefit) => {
-                  const productName = relationOne(benefit.benefit_product)?.name ?? "멤버십";
+                  const productName = relationOne(benefit.benefit_product)?.name ?? "멤버십/포인트";
                   const providerName = relationOne(benefit.provider)?.name ?? "";
+                  const displayLabel = formatExternalMembershipOptionLabel({
+                    providerName,
+                    name: productName,
+                  });
                   return (
                     <div
                       key={benefit.id}
-                      className="inline-flex max-w-full items-center gap-1 rounded-2xl border border-[#409A53]/35 bg-[#409A53]/10 py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900"
+                      className="sr-user-chip"
                     >
                       <span className="min-w-0 truncate">
-                        {providerName ? `${providerName} · ` : ""}
-                        {productName}
+                        {displayLabel}
                       </span>
                       <form action={deactivateUserBenefitAction}>
                         <input type="hidden" name="user_benefit_id" value={benefit.id} />
                         <button
                           type="submit"
-                          aria-label={`${productName} 삭제`}
+                          aria-label={`${displayLabel} 삭제`}
                           className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
                         >
                           <X className="size-3.5" aria-hidden />
@@ -710,22 +851,22 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
-        <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
+      <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
+        <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
           카드
         </p>
         <h2 className="mt-1 text-lg font-extrabold text-gray-950">보유 카드</h2>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
           카드사와 카드를 차례로 선택해서 빠르게 등록할 수 있어요.
         </p>
-        <p className="mt-3 rounded-2xl bg-[#409A53]/[0.06] px-3 py-2.5 text-xs leading-relaxed text-gray-600">
+        <p className="sr-user-callout mt-3 text-xs leading-relaxed">
           아직 혜택 정보가 없는 카드도 보유카드로 등록할 수 있어요.
           세이브루트가 확인한 할인 혜택과 자동으로 연결됩니다.
         </p>
 
-        <div className="mt-4 rounded-2xl border border-[#409A53]/15 bg-[#409A53]/[0.03] p-3">
+        <div className="sr-user-callout mt-4 p-3">
           <div className="flex items-center gap-2">
-            <CreditCard className="size-5 text-[#409A53]" aria-hidden />
+            <CreditCard className="sr-user-accent-text size-5" aria-hidden />
             <p className="text-sm font-extrabold text-gray-950">
               빠르게 내 카드 등록
             </p>
@@ -745,7 +886,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   setCardSearchQuery("");
                   setCardMsg(null);
                 }}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+                className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold"
               >
                 <option value="">카드사를 선택해 주세요</option>
                 {payload.cardProviders.map((provider) => (
@@ -775,7 +916,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                     onChange={(event) => setCardSearchQuery(event.target.value)}
                     placeholder="예: 트래블, The Pink, 전체"
                     autoComplete="off"
-                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 placeholder:font-normal placeholder:text-gray-400 focus:border-[#409A53]/45 focus:ring-2"
+                    className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold placeholder:font-normal"
                   />
                 </div>
 
@@ -790,7 +931,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                       setSelectedCardProductId(event.target.value);
                       setCardMsg(null);
                     }}
-                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+                    className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold"
                   >
                     <option value="">목록에서 카드를 선택해 주세요</option>
                     {filteredCardProducts.map((product) => (
@@ -802,7 +943,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
                   {showManualCatalogRequest ? (
                     <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                      <p className="text-xs font-bold text-[#409A53]">직접 카드명 입력하기</p>
+                      <p className="sr-user-accent-text text-xs font-bold">직접 카드명 입력하기</p>
                       <p className="mt-1 text-xs font-medium text-gray-700">
                         {cardProductsForProvider.length === 0
                           ? "등록 가능한 카드가 없습니다. 카드명을 직접 입력해 요청할 수 있어요."
@@ -830,7 +971,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                             }}
                             maxLength={200}
                             autoComplete="off"
-                            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none ring-[#409A53]/25 focus:border-[#409A53]/45 focus:ring-2"
+                            className="sr-user-input mt-1 px-3 py-2.5 text-sm font-semibold"
                             placeholder="예: 나만의 체크카드"
                           />
                         </div>
@@ -845,9 +986,9 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                                   setManualCatalogKind(item.id);
                                   setManualCatalogMsg(null);
                                 }}
-                                className={`h-9 rounded-xl text-xs font-extrabold transition sm:text-sm ${
+                                className={`h-9 rounded-xl text-xs font-extrabold transition min-[431px]:text-sm ${
                                   manualCatalogKind === item.id
-                                    ? "bg-white text-[#409A53] shadow-sm"
+                                    ? "bg-white sr-user-accent-text shadow-sm"
                                     : "text-gray-500"
                                 }`}
                               >
@@ -864,7 +1005,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                           type="button"
                           disabled={!canSubmitManualCatalog}
                           onClick={handleSubmitCatalogRequest}
-                          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+                          className="sr-user-btn-primary flex h-11 w-full items-center justify-center rounded-xl text-sm font-extrabold"
                         >
                           {pendingCatalogRequest ? "등록 중..." : "카드 요청 등록"}
                         </button>
@@ -895,7 +1036,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                               setCardMsg(null);
                             }}
                             className={`h-10 rounded-xl text-sm font-extrabold transition ${
-                              active ? "bg-white text-[#409A53] shadow-sm" : "text-gray-500"
+                              active ? "bg-white sr-user-accent-text shadow-sm" : "text-gray-500"
                             }`}
                           >
                             {CARD_KIND_LABEL[kind]}
@@ -927,7 +1068,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   type="button"
                   disabled={!canAddCard}
                   onClick={handleAddCard}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#409A53] text-sm font-extrabold text-white hover:bg-[#357945] disabled:bg-gray-300"
+                  className="sr-user-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
                 >
                   <Plus className="size-4" aria-hidden />
                   {pendingCard ? "등록 중..." : "보유카드에 추가"}
@@ -961,8 +1102,8 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               ? `연결된 할인 ${b.connectedDiscountCount}개`
               : "혜택 확인중";
             let statusClass = hasConnectedDiscounts
-              ? "bg-white text-[#409A53]"
-              : "bg-white text-gray-500";
+              ? "sr-user-badge sr-user-badge--match px-2 py-0.5"
+              : "sr-user-badge px-2 py-0.5 text-gray-500";
 
             if (isPending) {
               statusLabel = "검토중";
@@ -980,7 +1121,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                     ? "border-red-200 bg-red-50/60"
                     : isPending
                       ? "border-amber-200 bg-amber-50/60"
-                      : "border-[#409A53]/35 bg-[#409A53]/10"
+                      : "sr-user-chip border-[color:var(--sr-border-card)]"
                 }`}
               >
                 <span className="min-w-0">
@@ -1025,7 +1166,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+      <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-gray-900">등록 요약</h3>
           <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
@@ -1048,13 +1189,13 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
       </section>
 
       {mode === "onboarding" ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-100 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:static md:z-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <UserBottomDock>
           <Link
             href="/"
             aria-disabled={registeredCount < 1}
             tabIndex={registeredCount < 1 ? -1 : 0}
             className={`flex h-12 w-full items-center justify-center rounded-2xl text-base font-bold text-white transition ${
-              registeredCount < 1 ? "cursor-not-allowed bg-gray-300" : "bg-sr-primary hover:bg-sr-primary-hover"
+              registeredCount < 1 ? "cursor-not-allowed opacity-45" : "sr-user-btn-primary"
             }`}
             onClick={(e) => {
               if (registeredCount < 1) e.preventDefault();
@@ -1067,7 +1208,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               통신사 또는 카드를 최소 1개 등록해 주세요.
             </p>
           ) : null}
-        </div>
+        </UserBottomDock>
       ) : null}
     </div>
   );

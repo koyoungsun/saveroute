@@ -1,0 +1,319 @@
+/**
+ * ============================================================================
+ * SaveRoute Brand Color System
+ * ============================================================================
+ *
+ * Brand impression: Premium Benefit Search Engine
+ * Keywords: Luxury · Fast · Premium · Benefit · Trust · Minimal
+ *
+ * UX priority: first 3 seconds → search → discount → benefit → exit
+ * (not a dwell-time lifestyle app; emphasize clarity and decision speed)
+ *
+ * Color philosophy
+ *   Black  = premium, stability
+ *   Purple = brand atmosphere (background / tone only — never dominant CTA)
+ *   Gold   = benefit / discount / savings (numbers & badges — never large fills)
+ *   Blue   = action / search / trust (buttons, links, focus, selection)
+ *   White  = information / readability
+ *
+ * Usage ratio (whole UI — approximate)
+ *   Black + White  ≈ 70%
+ *   Purple tone    ≈ 10%
+ *   Blue action    ≈ 10%
+ *   Gold highlight ≈  8%
+ *   Red alert      ≈  2%
+ *
+ * Prohibited
+ *   ✗ Gold as large-area background
+ *   ✗ Purple as primary button color (overuse)
+ *   ✗ Red for discount / savings
+ *   ✗ Green as main brand color
+ *   ✗ Multiple accent colors competing at once
+ *
+ * Avoid feeling like: shopping-mall sale app · game UI · cheap event page ·
+ *                     character-driven lifestyle app
+ *
+ * Target reference: “slightly more premium than Toss” benefit discovery UI
+ *
+ * STATUS: Definition only — not wired into UI yet.
+ *         Migrate user-theme.css / admin.css to these tokens in a later pass.
+ * ============================================================================
+ */
+
+@layer sr.tokens {
+  :root {
+    /* ─────────────────────────────────────────────────────────────────────
+       1. Core palette (primitives — do not use directly in components)
+       ───────────────────────────────────────────────────────────────────── */
+
+    /* Background base */
+    --sr-color-black: #0b0b0f;
+
+    /* Brand tone */
+    --sr-color-purple: #200624;
+
+    /* Benefit highlight */
+    --sr-color-gold: #f6c453;
+
+    /* Primary action */
+    --sr-color-blue: #4d7cfe;
+
+    /* Danger / expire / alert */
+    --sr-color-red: #ff5c5c;
+
+    /* Default UI neutrals */
+    --sr-color-white: #ffffff;
+    --sr-color-soft-white: #f5f5f7;
+    --sr-color-gray: #b8b8c2;
+    --sr-color-muted-gray: #8b8b97;
+
+    /* ─────────────────────────────────────────────────────────────────────
+       2. Derived palette (tints, hovers, overlays)
+       ───────────────────────────────────────────────────────────────────── */
+
+    /* Purple atmosphere — headers, gradients, shadow tint */
+    --sr-color-purple-deep: #18051c;
+    --sr-color-purple-mid: #2a0a30;
+    --sr-color-purple-glow: rgba(32, 6, 36, 0.45);
+    --sr-color-purple-overlay-08: rgba(32, 6, 36, 0.08);
+    --sr-color-purple-overlay-16: rgba(32, 6, 36, 0.16);
+    --sr-color-purple-overlay-24: rgba(32, 6, 36, 0.24);
+
+    /* Gold benefit — numbers, BEST, coupon, KPI */
+    --sr-color-gold-strong: #e8b23a;
+    --sr-color-gold-muted: #c9b07a;
+    --sr-color-gold-soft: rgba(246, 196, 83, 0.18);
+    --sr-color-gold-border: rgba(246, 196, 83, 0.35);
+
+    /* Blue action — CTA, links, focus */
+    --sr-color-blue-hover: #3d6ae8;
+    --sr-color-blue-active: #2f5ad4;
+    --sr-color-blue-soft: rgba(77, 124, 254, 0.14);
+    --sr-color-blue-border: rgba(77, 124, 254, 0.28);
+    --sr-color-blue-focus-ring: rgba(77, 124, 254, 0.35);
+
+    /* Red alert — expiry, warning, delete */
+    --sr-color-red-soft: rgba(255, 92, 92, 0.16);
+    --sr-color-red-border: rgba(255, 92, 92, 0.32);
+
+    /* Surfaces on black canvas */
+    --sr-color-surface-1: #15151c;
+    --sr-color-surface-2: #181820;
+    --sr-color-surface-3: #20202a;
+    --sr-color-border-subtle: rgba(255, 255, 255, 0.08);
+    --sr-color-border-strong: rgba(255, 255, 255, 0.14);
+
+    /* Light card surfaces (search result cards, floating panels) */
+    --sr-color-card: var(--sr-color-white);
+    --sr-color-card-soft: var(--sr-color-soft-white);
+    --sr-color-card-text: #111111;
+    --sr-color-card-text-secondary: #3a3a44;
+    --sr-color-card-text-muted: var(--sr-color-muted-gray);
+    --sr-color-card-border: #e8e8ec;
+
+    /* ─────────────────────────────────────────────────────────────────────
+       3. Semantic tokens (use these in components)
+       ───────────────────────────────────────────────────────────────────── */
+
+    /* Canvas & layout */
+    --sr-bg: var(--sr-color-black);
+    --sr-bg-brand: var(--sr-color-purple);
+    --sr-bg-surface: var(--sr-color-surface-1);
+    --sr-bg-surface-raised: var(--sr-color-surface-2);
+    --sr-bg-surface-hover: var(--sr-color-surface-3);
+
+    /* Brand atmosphere (limited ~10%) */
+    --sr-brand-tone: var(--sr-color-purple);
+    --sr-brand-gradient: linear-gradient(
+      180deg,
+      var(--sr-color-purple) 0%,
+      var(--sr-color-black) 42%,
+      var(--sr-color-black) 100%
+    );
+    --sr-brand-gradient-subtle: radial-gradient(
+      circle at top right,
+      var(--sr-color-purple-overlay-24) 0%,
+      transparent 38%
+    );
+    --sr-brand-shadow-tint: 0 8px 24px var(--sr-color-purple-glow);
+
+    /* Typography on dark canvas */
+    --sr-text: var(--sr-color-white);
+    --sr-text-secondary: var(--sr-color-gray);
+    --sr-text-muted: var(--sr-color-muted-gray);
+
+    /* Typography on light cards */
+    --sr-text-on-card: var(--sr-color-card-text);
+    --sr-text-on-card-secondary: var(--sr-color-card-text-secondary);
+    --sr-text-on-card-muted: var(--sr-color-card-text-muted);
+
+    /* Benefit / discount (limited ~8%) */
+    --sr-benefit: var(--sr-color-gold);
+    --sr-benefit-strong: var(--sr-color-gold-strong);
+    --sr-benefit-muted: var(--sr-color-gold-muted);
+    --sr-benefit-soft: var(--sr-color-gold-soft);
+    --sr-benefit-border: var(--sr-color-gold-border);
+
+    /* Action / CTA / navigation (limited ~10%) */
+    --sr-action: var(--sr-color-blue);
+    --sr-action-hover: var(--sr-color-blue-hover);
+    --sr-action-active: var(--sr-color-blue-active);
+    --sr-action-soft: var(--sr-color-blue-soft);
+    --sr-action-border: var(--sr-color-blue-border);
+    --sr-action-focus: var(--sr-color-blue-focus-ring);
+
+    /* Links inherit action blue */
+    --sr-link: var(--sr-action);
+    --sr-link-hover: var(--sr-action-hover);
+
+    /* Alert / danger (limited ~2%) */
+    --sr-danger: var(--sr-color-red);
+    --sr-danger-soft: var(--sr-color-red-soft);
+    --sr-danger-border: var(--sr-color-red-border);
+
+    /* Borders & chrome */
+    --sr-border: var(--sr-color-border-subtle);
+    --sr-border-strong: var(--sr-color-border-strong);
+    --sr-border-card: var(--sr-color-card-border);
+
+    /* ─────────────────────────────────────────────────────────────────────
+       4. Component-role tokens (semantic → UI part)
+       ───────────────────────────────────────────────────────────────────── */
+
+    /* Search page */
+    --sr-search-canvas-bg: var(--sr-bg);
+    --sr-search-canvas-gradient: var(--sr-brand-gradient-subtle), var(--sr-brand-gradient);
+    --sr-search-input-bg: var(--sr-color-card);
+    --sr-search-input-text: var(--sr-text-on-card);
+    --sr-search-input-placeholder: var(--sr-text-on-card-muted);
+    --sr-search-input-focus-border: var(--sr-action);
+    --sr-search-input-focus-ring: var(--sr-action-focus);
+    --sr-search-button-bg: var(--sr-action);
+    --sr-search-button-bg-hover: var(--sr-action-hover);
+    --sr-search-discount-value: var(--sr-benefit);
+    --sr-search-description: var(--sr-text-secondary);
+
+    /* Discount / benefit result card */
+    --sr-result-card-bg: var(--sr-color-card);
+    --sr-result-card-bg-alt: var(--sr-color-card-soft);
+    --sr-result-card-benefit-value: var(--sr-benefit);
+    --sr-result-card-button-bg: var(--sr-action);
+    --sr-result-card-button-bg-hover: var(--sr-action-hover);
+    --sr-result-card-title: var(--sr-text-on-card);
+    --sr-result-card-body: var(--sr-text-on-card-secondary);
+    --sr-result-card-meta: var(--sr-text-on-card-muted);
+    --sr-result-card-best-border: var(--sr-benefit-border);
+    --sr-result-card-best-glow: 0 6px 20px var(--sr-color-gold-soft);
+
+    /* Badges & chips */
+    --sr-badge-benefit-bg: var(--sr-benefit-soft);
+    --sr-badge-benefit-text: var(--sr-benefit-strong);
+    --sr-badge-benefit-border: var(--sr-benefit-border);
+    --sr-badge-action-bg: var(--sr-action-soft);
+    --sr-badge-action-text: var(--sr-action);
+    --sr-badge-action-border: var(--sr-action-border);
+    --sr-badge-alert-bg: var(--sr-danger-soft);
+    --sr-badge-alert-text: var(--sr-danger);
+    --sr-badge-alert-border: var(--sr-danger-border);
+
+    /* Buttons */
+    --sr-btn-primary-bg: var(--sr-action);
+    --sr-btn-primary-bg-hover: var(--sr-action-hover);
+    --sr-btn-primary-bg-active: var(--sr-action-active);
+    --sr-btn-primary-text: var(--sr-color-white);
+    --sr-btn-primary-focus-ring: var(--sr-action-focus);
+
+    --sr-btn-secondary-bg: var(--sr-color-card);
+    --sr-btn-secondary-bg-hover: var(--sr-color-card-soft);
+    --sr-btn-secondary-text: var(--sr-text-on-card);
+    --sr-btn-secondary-border: var(--sr-border-card);
+
+    /* Admin console */
+    --sr-admin-bg: var(--sr-bg);
+    --sr-admin-header-bg: var(--sr-brand-tone);
+    --sr-admin-panel-bg: var(--sr-bg-surface);
+    --sr-admin-panel-bg-soft: var(--sr-bg-surface-raised);
+    --sr-admin-hover-bg: var(--sr-bg-surface-hover);
+    --sr-admin-text: var(--sr-text);
+    --sr-admin-text-sub: var(--sr-text-secondary);
+    --sr-admin-text-muted: var(--sr-text-muted);
+    --sr-admin-kpi-value: var(--sr-benefit-muted);
+    --sr-admin-kpi-accent: var(--sr-benefit);
+    --sr-admin-accent: var(--sr-action);
+    --sr-admin-accent-hover: var(--sr-action-hover);
+    --sr-admin-accent-soft: var(--sr-action-soft);
+    --sr-admin-danger: var(--sr-danger);
+    --sr-admin-border: var(--sr-border);
+    --sr-admin-sidebar-active-indicator: var(--sr-benefit);
+
+    /* Focus & selection (always blue — never gold/purple) */
+    --sr-focus-ring: 0 0 0 2px var(--sr-action-focus);
+    --sr-selection-bg: var(--sr-action-soft);
+    --sr-selection-text: var(--sr-action);
+  }
+
+  /*
+   * ─────────────────────────────────────────────────────────────────────────
+   * 5. Page-level application guide (reference — not auto-applied)
+   * ─────────────────────────────────────────────────────────────────────────
+   *
+   * SEARCH PAGE (/search, home hero)
+   *   background     → --sr-search-canvas-bg + --sr-search-canvas-gradient
+   *   search input   → --sr-search-input-bg (white or dark premium input)
+   *   search button  → --sr-search-button-bg (blue only)
+   *   discount %     → --sr-search-discount-value (gold only)
+   *   conditions     → --sr-search-description (white / gray)
+   *
+   * RESULT CARD
+   *   card surface   → --sr-result-card-bg
+   *   benefit number → --sr-result-card-benefit-value (gold)
+   *   CTA button     → --sr-result-card-button-bg (blue)
+   *   copy           → --sr-result-card-title / body / meta
+   *
+   * ADMIN
+   *   page bg        → --sr-admin-bg
+   *   header/sidebar → --sr-admin-header-bg (purple tone)
+   *   KPI numbers    → --sr-admin-kpi-value / --sr-admin-kpi-accent (gold)
+   *   primary button → --sr-admin-accent (blue)
+   *   body text      → --sr-admin-text / sub / muted (white scale)
+   *
+   * ─────────────────────────────────────────────────────────────────────────
+   * 6. Migration map (current → target) — for future UI pass
+   * ─────────────────────────────────────────────────────────────────────────
+   *
+   * USER (user-theme.css)
+   *   --sr-bg #0a0f1c              → --sr-bg (#0B0B0F)
+   *   --sr-primary #5b5cf6        → --sr-action (#4D7CFE)  [purple → blue]
+   *   --sr-primary-blue #3b82f6   → --sr-action (#4D7CFE)
+   *   --sr-gold #c9a86a           → --sr-benefit (#F6C453)
+   *   --sr-discount-emphasis      → --sr-benefit
+   *   --sr-cta-bg gradient        → solid --sr-action (no purple gradient CTA)
+   *   --sr-white-text             → --sr-text
+   *   --sr-text-muted #6b7280     → --sr-text-on-card-muted
+   *
+   * ADMIN (admin.css)
+   *   --admin-page-bg #0b0b0f     → --sr-admin-bg ✓ aligned
+   *   --admin-header-bg #200624   → --sr-admin-header-bg ✓ aligned
+   *   --admin-gold #f6c453        → --sr-admin-kpi-accent ✓ aligned
+   *   --admin-accent #409a53      → --sr-admin-accent (#4D7CFE) [green → blue]
+   *   --admin-danger #e15a5a      → --sr-admin-danger (#FF5C5C)
+   *   --admin-text-sub #b8b8c2    → --sr-admin-text-sub ✓ aligned
+   *   --admin-text-muted #8b8b97  → --sr-admin-text-muted ✓ aligned
+   *
+   * ─────────────────────────────────────────────────────────────────────────
+   * 7. Token naming convention
+   * ─────────────────────────────────────────────────────────────────────────
+   *
+   * Primitives   : --sr-color-{name}
+   * Semantic     : --sr-{role}          (bg, text, action, benefit, danger…)
+   * Component    : --sr-{component}-{part}-{property}
+   * Admin scope  : --sr-admin-{part}
+   *
+   * Rules:
+   *   • Components consume semantic/component tokens, not raw --sr-color-* .
+   *   • Gold tokens only for benefit/discount/KPI numerics.
+   *   • Blue tokens only for interactive/action states.
+   *   • Purple tokens only for canvas/header/gradient atmosphere.
+   *   • Red tokens only for alert/danger/expiry — never savings.
+   */
+}

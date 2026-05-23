@@ -124,7 +124,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
     <>
       <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-          <h1 className="h3 mb-1">Dashboard</h1>
+          <h1 className="admin-page-title mb-1">Dashboard</h1>
           <p className="text-muted mb-0">
             search_logs, result_click_logs, brand_requests, user_benefits 및 카탈로그 테이블을 기준으로
             실제 집계를 표시합니다. 검색 횟수는 검색창에서 검색 버튼(또는 Enter)으로
@@ -158,7 +158,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         </div>
       ) : null}
 
-      <div className="mb-3 fw-semibold text-muted small">
+      <div className="mb-3 admin-section-title">
         오늘 검색 (search_logs · KST {stats.searchLogsTodayWindow.localDateLabel} 00:00~)
       </div>
       <div className="row g-4 mb-2">
@@ -175,7 +175,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         ))}
       </div>
 
-      <div className="mb-3 fw-semibold text-muted small mt-4">카탈로그 · 회원 규모</div>
+      <div className="mb-3 admin-section-title mt-4">카탈로그 · 회원 규모</div>
       <div className="row g-4 mb-2">
         {catalogKpis.map(([title, value, variant, icon]) => (
           <div key={title} className="col-6 col-xl-3">
@@ -189,7 +189,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         ))}
       </div>
 
-      <div className="mb-3 fw-semibold text-muted small mt-4">
+      <div className="mb-3 admin-section-title mt-4">
         선택 기간 운영 (검색·클릭·요청·보유혜택)
       </div>
       <div className="row g-4 mb-4">
@@ -211,7 +211,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
-            <div className="fw-bold">Dashboard 기간 필터</div>
+            <div className="admin-section-title">Dashboard 기간 필터</div>
             <div className="small text-muted">현재 분석 구간: {stats.period.label}</div>
             {stats.logSampleCapped ? (
               <div className="small text-warning mt-1">
@@ -246,7 +246,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <span key={row.keyword} className="fw-semibold">
               {row.keyword}
             </span>,
-            <span key={`${row.keyword}-count`} className="d-block text-end">
+            <span key={`${row.keyword}-count`} className="d-block text-end sr-admin-num">
               {formatAdminStatsNumber(row.count)}
             </span>,
           ])}
@@ -262,7 +262,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <span key={row.brandName} className="fw-semibold">
               {row.brandName}
             </span>,
-            <span key={`${row.brandName}-count`} className="d-block text-end">
+            <span key={`${row.brandName}-count`} className="d-block text-end sr-admin-num">
               {formatAdminStatsNumber(row.count)}
             </span>,
           ])}
@@ -278,7 +278,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <span key={row.brandName} className="fw-semibold">
               {row.brandName}
             </span>,
-            <span key={`${row.brandName}-c`} className="d-block text-end">
+            <span key={`${row.brandName}-c`} className="d-block text-end sr-admin-num">
               {formatAdminStatsNumber(row.count)}
             </span>,
           ])}
@@ -294,7 +294,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <span key={row.brandName} className="fw-semibold">
               {row.brandName}
             </span>,
-            <span key={`${row.brandName}-count`} className="d-block text-end">
+            <span key={`${row.brandName}-count`} className="d-block text-end sr-admin-num">
               {formatAdminStatsNumber(row.count)}
             </span>,
           ])}
@@ -311,7 +311,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
               {row.productName}
             </span>,
             row.providerName ?? "-",
-            <span key={`${row.productName}-count`} className="d-block text-end">
+            <span key={`${row.productName}-count`} className="d-block text-end sr-admin-num">
               {formatAdminStatsNumber(row.count)}
             </span>,
           ])}
@@ -348,6 +348,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
         <DashboardTable
           title="최근 업데이트 요청 (brand_requests)"
+          titleClassName="admin-card-title"
           description="최근 활동 순 10건"
           columns={["키워드", "누적 요청", "상태", "최근 요청 시각"]}
           emptyText="아직 업데이트 요청이 없습니다."
@@ -411,8 +412,10 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
         <div className="col-12">
           <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white py-3">
-              <div className="fw-bold">카테고리별 브랜드 / 활성 할인 수</div>
+            <div className="card-header sr-card-header py-3">
+              <div className="admin-card-title">
+                카테고리별 브랜드 / 활성 할인 수
+              </div>
               <div className="small text-muted mt-1">
                 브랜드는 brands.category_id 기준·할인은 활성 상태 분포입니다.
               </div>
@@ -431,7 +434,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                               <div className="small text-muted">{row.categoryCode}</div>
                             </div>
                             <div className="text-end">
-                              <div className="fs-4 fw-bold">
+                              <div className="sr-admin-stat-value">
                                 {formatAdminStatsNumber(row.discountCount)}
                               </div>
                               <div className="small text-muted">
@@ -475,12 +478,14 @@ function RankBadge({ rank }: { rank: number }) {
 
 function DashboardTable({
   title,
+  titleClassName = "admin-card-title",
   description,
   columns,
   rows,
   emptyText,
 }: {
   title: string;
+  titleClassName?: string;
   description: string;
   columns: string[];
   rows: ReactNode[][];
@@ -489,8 +494,8 @@ function DashboardTable({
   return (
     <div className="col-xl-6">
       <div className="card h-100 border-0 shadow-sm">
-        <div className="card-header bg-white py-3">
-          <div className="fw-bold">{title}</div>
+        <div className="card-header sr-card-header py-3">
+          <div className={titleClassName}>{title}</div>
           <div className="small text-muted mt-1">{description}</div>
         </div>
         <div className="table-responsive">

@@ -16,10 +16,12 @@ import {
 } from "@/lib/admin/discount-benefit-product-links";
 import { isDiscountOptionGroupEnabled } from "@/lib/admin/discount-form-option-groups";
 import { parseDiscountValueFields } from "@/lib/admin/parse-discount-value-fields";
+import {
+  isDiscountUnitValue,
+} from "@/lib/discounts/discount-units";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
 
-type DiscountUnit = "percent" | "won" | "special_price" | "free" | "unknown";
 type DiscountStatus = "draft" | "active" | "expired" | "hidden";
 
 export type DiscountEditFormState = {
@@ -41,14 +43,6 @@ export type DiscountEditFormState = {
     >
   >;
 };
-
-const discountUnits = new Set<DiscountUnit>([
-  "percent",
-  "won",
-  "special_price",
-  "free",
-  "unknown",
-]);
 
 const discountStatuses = new Set<DiscountStatus>([
   "draft",
@@ -112,13 +106,13 @@ export async function updateDiscountAction(
     fieldErrors.title = "할인 제목을 입력해 주세요.";
   }
 
-  const discountUnit = discountUnitValue as DiscountUnit;
-  if (!discountUnits.has(discountUnit)) {
+  const discountUnit = discountUnitValue;
+  if (!isDiscountUnitValue(discountUnit)) {
     fieldErrors.discount_unit = "할인 유형을 선택해 주세요.";
   }
 
   const parsedDiscountValues =
-    discountUnit && discountUnits.has(discountUnit)
+    isDiscountUnitValue(discountUnit)
       ? parseDiscountValueFields(formData, discountUnit)
       : null;
 

@@ -11,6 +11,8 @@ import {
 import { DiscountValueFields } from "@/components/admin/DiscountValueFields";
 import { MoneyInput } from "@/components/admin/MoneyInput";
 
+import { AdminDiscountUnitSelect } from "../AdminDiscountUnitSelect";
+
 import { DiscountBenefitInfoGroup } from "../DiscountBenefitInfoGroup";
 import { DiscountConditionDetailFields } from "../DiscountConditionDetailFields";
 import { DiscountFormField } from "../DiscountFormField";
@@ -66,6 +68,7 @@ export function DiscountForm({
   const [state, formAction] = useActionState(createDiscountAction, initialState);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedProviderId, setSelectedProviderId] = useState("");
+  const [providerOptions, setProviderOptions] = useState(providers);
   const [productOptions, setProductOptions] = useState(products);
   const [selectedBenefitProductIds, setSelectedBenefitProductIds] = useState<number[]>([]);
   const [discountType, setDiscountType] = useState("percent");
@@ -73,17 +76,19 @@ export function DiscountForm({
   const filteredProviders = useMemo(
     () =>
       selectedCategoryId
-        ? providers.filter(
+        ? providerOptions.filter(
             (provider) =>
               provider.benefit_category_id === Number(selectedCategoryId),
           )
-        : providers,
-    [providers, selectedCategoryId],
+        : providerOptions,
+    [providerOptions, selectedCategoryId],
   );
 
   const selectedCategoryCode = resolveCategoryCode(selectedCategoryId, categories);
   const cardCategoryId =
     categories.find((category) => category.code === "card")?.id ?? null;
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
 
   const filteredProducts = useMemo(
     () =>
@@ -112,6 +117,22 @@ export function DiscountForm({
       }
       return [...current, product];
     });
+  };
+
+  const handleProviderUpsert = (
+    provider: ProviderOption,
+    allProduct?: BenefitProductOption,
+  ) => {
+    setProviderOptions((current) => {
+      if (current.some((row) => row.id === provider.id)) {
+        return current;
+      }
+      return [...current, provider];
+    });
+
+    if (allProduct) {
+      handleProductUpsert(allProduct);
+    }
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -187,10 +208,12 @@ export function DiscountForm({
               selectedProviderId={selectedProviderId}
               selectedCategoryCode={selectedCategoryCode}
               cardCategoryId={cardCategoryId}
+              membershipCategoryId={membershipCategoryId}
               selectedProviderName={selectedProviderName}
               selectedBenefitProductIds={selectedBenefitProductIds}
               onCategoryChange={handleCategoryChange}
               onProviderChange={handleProviderChange}
+              onProviderUpsert={handleProviderUpsert}
               onChangeSelectedIds={setSelectedBenefitProductIds}
               onProductUpsert={handleProductUpsert}
               fieldErrors={state.fieldErrors}
@@ -201,27 +224,20 @@ export function DiscountForm({
             <div className="sr-discounts-form-section">
               <p className="sr-discounts-group-title mb-2">할인 정보</p>
               <div className="sr-discounts-form-fields sr-discounts-discount-info-fields">
-                <DiscountFormField
+                  <DiscountFormField
                     label="할인 유형"
                   htmlFor="discount_type"
                   required
                   className="sr-discounts-field--discount-type"
                   error={state.fieldErrors?.discount_type}
                   >
-                    <select
+                    <AdminDiscountUnitSelect
                       id="discount_type"
                       name="discount_type"
-                      className="form-select"
                       value={discountType}
-                      onChange={(event) => setDiscountType(event.target.value)}
+                      onChange={setDiscountType}
                       required
-                    >
-                      <option value="percent">percent</option>
-                      <option value="won">won</option>
-                      <option value="special_price">special_price</option>
-                      <option value="free">free</option>
-                      <option value="unknown">unknown</option>
-                    </select>
+                    />
                   </DiscountFormField>
 
                   <DiscountFormField
@@ -244,19 +260,21 @@ export function DiscountForm({
                     />
                   </DiscountFormField>
 
-                <div className="sr-discounts-compact-row">
-                  <DiscountFormField
-                    label="최대 할인 한도 금액"
-                    htmlFor="max_discount_amount"
-                    hint="할인율/할인값 범위와 별개 · 실제 적용되는 할인 상한 금액"
-                  >
-                    <MoneyInput
-                      id="max_discount_amount"
-                      name="max_discount_amount"
-                      placeholder="예: 10,000"
-                    />
-                  </DiscountFormField>
+                <DiscountFormField
+                  label="최대 할인 한도 금액"
+                  htmlFor="max_discount_amount"
+                  className="sr-discounts-field--max-discount-amount"
+                  hint="예: 월 최대 10,000원 할인 시 10000 입력"
+                  hintInline
+                >
+                  <MoneyInput
+                    id="max_discount_amount"
+                    name="max_discount_amount"
+                    placeholder="예: 10,000"
+                  />
+                </DiscountFormField>
 
+                <div className="sr-discounts-compact-row">
                   <DiscountFormField label="최소 결제 금액" htmlFor="min_payment_amount">
                     <MoneyInput
                       id="min_payment_amount"

@@ -17,8 +17,19 @@ function form(entries: Record<string, string>) {
 }
 
 assert.equal(formatAdminDiscountListValue(20, "percent"), "20%");
+assert.equal(formatAdminDiscountListValue(5, "point_percent"), "5% 포인트");
 assert.equal(formatAdminDiscountListValue(20, "percent", 30), "20% ~ 30%");
+assert.equal(formatAdminDiscountListValue(5, "point_percent", 10), "5% ~ 10% 포인트");
 assert.equal(formatAdminDiscountListValue(5000, "won", 10000), "5,000원 ~ 10,000원");
+
+assert.equal(
+  formatDiscountValueDisplay({
+    value: 5,
+    unit: "point_percent",
+    style: "search",
+  }),
+  "5% 포인트 적립",
+);
 
 assert.equal(
   formatDiscountValueDisplay({

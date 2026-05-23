@@ -5,6 +5,7 @@
 
 export type DiscountUnit =
   | "percent"
+  | "point_percent"
   | "won"
   | "amount"
   | "special_price"

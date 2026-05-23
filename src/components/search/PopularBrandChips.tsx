@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { submitExplicitSearch } from "@/lib/search/submit-explicit-search";
+import { emitNavigationTransitionStart } from "@/lib/user/navigation-transition-events";
 
 interface PopularBrandChipsProps {
   brands: string[];
@@ -12,6 +13,10 @@ export function PopularBrandChips({ brands }: PopularBrandChipsProps) {
   const router = useRouter();
 
   const handleClick = (brand: string) => {
+    emitNavigationTransitionStart(
+      "search",
+      `/search?keyword=${encodeURIComponent(brand)}`,
+    );
     void submitExplicitSearch(router, brand);
   };
 
@@ -24,7 +29,7 @@ export function PopularBrandChips({ brands }: PopularBrandChipsProps) {
             key={brand}
             type="button"
             onClick={() => handleClick(brand)}
-            className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-orange-200 hover:text-orange-600"
+            className="sr-user-badge whitespace-nowrap px-4 py-2 text-sm font-medium shadow-sm transition hover:border-[color:var(--sr-primary)]/35 hover:sr-user-accent-text"
           >
             {brand}
           </button>

@@ -4,13 +4,12 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { FontSizeControl } from "@/components/settings/FontSizeControl";
+import { UserPage } from "@/components/layout/UserPage";
 import {
   updateConsentAction,
   updateDemographicsAction,
   updateNicknameAction,
 } from "../actions";
-
-const ACCENT = "#409A53";
 
 export type SettingsInitial = {
   email: string;
@@ -56,8 +55,8 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
       : "none";
 
   return (
-    <div className="px-4 py-6 pb-28">
-      <div className="mb-6 flex items-center gap-3">
+    <UserPage withBottomDock className="sr-user-stack">
+      <div className="flex items-center gap-3">
         <Link href="/mypage" className="text-sm font-medium text-gray-600">
           ← 마이페이지
         </Link>
@@ -68,7 +67,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
 
       <div className="mt-6 space-y-6">
         <section
-          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          className="sr-user-card rounded-2xl p-4"
           aria-label="글자 크기 설정"
         >
           <FontSizeControl variant="full" />
@@ -76,10 +75,9 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
 
         <section
           id="nickname"
-          className="rounded-2xl border-2 bg-white p-4 shadow-sm scroll-mt-20"
-          style={{ borderColor: ACCENT }}
+          className="sr-user-card sr-user-card--featured rounded-2xl p-4 scroll-mt-20"
         >
-          <h2 className="text-base font-semibold" style={{ color: ACCENT }}>
+          <h2 className="sr-user-accent-text text-base font-semibold">
             닉네임
           </h2>
           <form action={nicknameFormAction} className="mt-4 space-y-3">
@@ -93,13 +91,12 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
               maxLength={40}
               defaultValue={initial.nickname ?? ""}
               placeholder="표시할 이름을 입력하세요"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none ring-[#409A53] focus:ring-2"
+              className="sr-user-input px-4 py-3 text-sm"
             />
             <button
               type="submit"
               disabled={nicknamePending}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: ACCENT }}
+              className="sr-user-btn-primary w-full rounded-xl py-3 text-sm font-semibold"
             >
               {nicknamePending ? "저장 중…" : "닉네임 저장"}
             </button>
@@ -113,7 +110,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
           ) : null}
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <section className="sr-user-card rounded-2xl p-4">
           <h2 className="text-base font-semibold text-gray-900">
             통계 · 추천 · 알림 동의
           </h2>
@@ -127,7 +124,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                 type="checkbox"
                 name="allow_search_stats"
                 defaultChecked={initial.allow_search_stats}
-                className="mt-0.5 size-4 shrink-0 accent-[#409A53]"
+                className="mt-0.5 size-4 shrink-0 accent-[#6D5EF7]"
               />
               <span>
                 <span className="font-medium text-gray-900">검색 통계 저장에 동의</span>
@@ -142,7 +139,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                 type="checkbox"
                 name="allow_personalized_recommendations"
                 defaultChecked={initial.allow_personalized_recommendations}
-                className="mt-0.5 size-4 shrink-0 accent-[#409A53]"
+                className="mt-0.5 size-4 shrink-0 accent-[#6D5EF7]"
               />
               <span>
                 <span className="font-medium text-gray-900">
@@ -159,7 +156,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                 type="checkbox"
                 name="allow_marketing_notifications"
                 defaultChecked={initial.allow_marketing_notifications}
-                className="mt-0.5 size-4 shrink-0 accent-[#409A53]"
+                className="mt-0.5 size-4 shrink-0 accent-[#6D5EF7]"
               />
               <span>
                 <span className="font-medium text-gray-900">
@@ -174,8 +171,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
             <button
               type="submit"
               disabled={consentPending}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: ACCENT }}
+              className="sr-user-btn-primary w-full rounded-xl py-3 text-sm font-semibold"
             >
               {consentPending ? "저장 중…" : "동의 설정 저장"}
             </button>
@@ -189,7 +185,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
           ) : null}
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <section className="sr-user-card rounded-2xl p-4">
           <h2 className="text-base font-semibold text-gray-900">
             통계 세그먼트 (선택)
           </h2>
@@ -216,7 +212,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                       name="gender_group"
                       value={value}
                       defaultChecked={genderValue === value}
-                      className="size-4 accent-[#409A53]"
+                      className="size-4 accent-[#6D5EF7]"
                     />
                     {label}
                   </label>
@@ -232,7 +228,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                 id="age_group"
                 name="age_group"
                 defaultValue={ageValue}
-                className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#409A53]"
+                className="sr-user-input mt-2 px-4 py-3 text-sm"
               >
                 <option value="none">응답 안 함</option>
                 <option value="10s">10대</option>
@@ -247,8 +243,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
             <button
               type="submit"
               disabled={demoPending}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: ACCENT }}
+              className="sr-user-btn-primary w-full rounded-xl py-3 text-sm font-semibold"
             >
               {demoPending ? "저장 중…" : "통계 세그먼트 저장"}
             </button>
@@ -262,6 +257,6 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
           ) : null}
         </section>
       </div>
-    </div>
+    </UserPage>
   );
 }

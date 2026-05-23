@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { submitExplicitSearch } from "@/lib/search/submit-explicit-search";
+import { emitNavigationTransitionStart } from "@/lib/user/navigation-transition-events";
 
 import { getRecentSearches } from "./recentSearchesStorage";
 
@@ -34,6 +35,10 @@ export function RecentSearches() {
   }
 
   const handleClick = (keyword: string) => {
+    emitNavigationTransitionStart(
+      "search",
+      `/search?keyword=${encodeURIComponent(keyword)}`,
+    );
     void submitExplicitSearch(router, keyword);
   };
 
@@ -51,7 +56,7 @@ export function RecentSearches() {
               key={keyword}
               type="button"
               onClick={() => handleClick(keyword)}
-              className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 transition hover:border-orange-200 hover:bg-orange-100"
+              className="sr-user-badge rounded-full px-3 py-1.5 text-sm font-medium transition hover:border-[color:var(--sr-primary)]/35"
             >
               {keyword}
             </button>

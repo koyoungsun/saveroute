@@ -1,4 +1,5 @@
 import { UserShell } from "@/components/layout/UserShell";
+import { ContentPageShell } from "@/components/layout/ContentPageShell";
 
 const sections = [
   {
@@ -38,28 +39,24 @@ const sections = [
 export default function PrivacyPage() {
   return (
     <UserShell>
-      <div className="px-4 py-8">
-        <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">개인정보 처리방침</h1>
-          <p className="mt-2 rounded-xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-800">
+      <ContentPageShell>
+        <article className="sr-user-content-card">
+          <h1 className="sr-user-content-page__title">개인정보 처리방침</h1>
+          <p className="sr-user-content-page__notice">
             본 문서는 MVP 검토를 위한 개인정보처리방침 초안이며, 법적 완성본이
             아닙니다.
           </p>
 
-          <div className="mt-6 space-y-5">
+          <div className="sr-user-content-page__sections">
             {sections.map((section) => (
               <section key={section.title}>
-                <h2 className="text-base font-semibold text-gray-800">
-                  {section.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-600">
-                  {section.body}
-                </p>
+                <h2 className="sr-user-content-page__section-title">{section.title}</h2>
+                <p className="sr-user-content-page__prose">{section.body}</p>
               </section>
             ))}
           </div>
         </article>
-      </div>
+      </ContentPageShell>
     </UserShell>
   );
 }

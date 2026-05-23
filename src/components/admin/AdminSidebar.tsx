@@ -127,7 +127,7 @@ export function AdminSidebar() {
       className="sr-sidebar text-white flex-shrink-0 vh-100 overflow-auto border-end border-dark"
       style={{ width: "240px" }}
     >
-      <div className="px-3 py-3 border-bottom border-secondary-subtle">
+      <div className="sr-sidebar-brand px-3 border-bottom">
         <div className="d-flex align-items-center gap-2">
           <i className="bi bi-compass sr-sidebar-brand-icon" aria-hidden="true" />
           <div className="min-w-0">

@@ -9,6 +9,7 @@ import {
   escapeIlikePattern,
   formatAdminDiscountTimestamp,
   getDiscountBrandMeta,
+  getDiscountBenefitCategoryLabel,
   getDiscountRelationName,
   parseDiscountListQuery,
   sortDiscountListRows,
@@ -103,7 +104,7 @@ export default async function AdminDiscountsPage({
           created_at,
           updated_at,
           brand:brands(name,slug),
-          benefit_category:benefit_categories(name),
+          benefit_category:benefit_categories(name,code),
           provider:providers(name),
           benefit_product:benefit_products(name)
         `,
@@ -215,7 +216,7 @@ export default async function AdminDiscountsPage({
     return [
       clipCellText(getDiscountBrandMeta(discount).name),
       clipCellText(discount.title, 2),
-      getDiscountRelationName(discount.benefit_category),
+      getDiscountBenefitCategoryLabel(discount.benefit_category),
       clipCellText(getDiscountRelationName(discount.provider)),
       <DiscountBenefitProductsCell key={`${key}-products`} names={linkedNames} />,
       formatAdminDiscountListValue(
@@ -256,7 +257,7 @@ export default async function AdminDiscountsPage({
   return (
     <>
       <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
-        <h1 className="h3 mb-0">Discounts</h1>
+        <h1 className="admin-page-title mb-0">Discounts</h1>
         <Link href="/admin/discounts/new" className="btn btn-primary">
           + 할인 등록
         </Link>
@@ -343,6 +344,7 @@ export default async function AdminDiscountsPage({
       ) : (
         <PaginatedTable
           title="할인 목록"
+          titleClassName="admin-card-title"
           legendType="discount"
           pageSize={10}
           fixedRows={10}

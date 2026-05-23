@@ -6,11 +6,19 @@ import { FormEvent, Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
-import { AuthBrand } from "@/components/auth/AuthBrand";
+import { AuthField } from "@/components/auth/AuthField";
+import { AuthPageChrome } from "@/components/auth/AuthPageChrome";
+import { AuthSubmitButton } from "@/components/auth/AuthSubmitButton";
+import { UserPage } from "@/components/layout/UserPage";
 import {
   getOAuthCallbackUrl,
   stashOAuthReturnPath,
 } from "@/lib/auth/oauth-return-path";
+import {
+  SHOW_AUTH_OAUTH,
+  SHOW_AUTH_SWITCH_LINK,
+  SHOW_AUTH_TAGLINE,
+} from "@/lib/user/home-layout-flags";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -74,110 +82,95 @@ function LoginForm() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-10 md:py-16">
-      <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
-        <AuthBrand />
+    <UserPage tone="comfortable" as="main" className="sr-user-auth-page">
+      <AuthPageChrome />
 
-        <div className="mt-6 text-center">
-          <p className="text-sm leading-6 text-gray-600">
-            내 혜택 기준으로 더 정확한 할인을 확인해보세요.
-          </p>
-        </div>
+      <div className="sr-user-auth-page__body">
+        <section className="sr-user-auth-form">
+          {SHOW_AUTH_TAGLINE ? (
+            <p className="sr-user-auth-form__tagline sr-user-canvas-text-secondary text-center">
+              내 혜택 기준으로 더 정확한 할인을 확인해보세요.
+            </p>
+          ) : null}
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              이메일
-            </label>
-            <input
+          <form onSubmit={handleSubmit} className="sr-user-auth-form__fields">
+            <AuthField
               id="email"
+              label="이메일"
               type="email"
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="example@email.com"
-              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
             />
-          </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              비밀번호
-            </label>
-            <div className="relative mt-2">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500"
-              />
+            <AuthField
+              id="password"
+              label="비밀번호"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              endAdornment={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                  className="sr-user-auth-field__toggle"
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-5" aria-hidden="true" />
+                  ) : (
+                    <Eye className="size-5" aria-hidden="true" />
+                  )}
+                </button>
+              }
+            />
+
+            {error ? <p className="sr-user-auth-form__error">{error}</p> : null}
+
+            <AuthSubmitButton disabled={isLoading} className="sr-user-auth-form__submit">
+              {isLoading ? "로그인 중..." : "이메일로 로그인"}
+            </AuthSubmitButton>
+          </form>
+
+          {SHOW_AUTH_OAUTH ? (
+            <>
+              <div className="sr-user-auth-form__divider" aria-hidden="true">
+                <span className="sr-user-auth-form__divider-line" />
+                <span className="sr-user-auth-form__divider-label">또는</span>
+                <span className="sr-user-auth-form__divider-line" />
+              </div>
+
               <button
                 type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                onClick={() => void handleGoogle()}
+                disabled={oauthLoading !== null}
+                className="sr-user-auth-oauth-btn"
               >
-                {showPassword ? (
-                  <EyeOff className="size-5" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-5" aria-hidden="true" />
-                )}
+                <Image
+                  src="/icons/icon_google.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                  style={{ height: "20px", width: "20px" }}
+                  aria-hidden="true"
+                />
+                {oauthLoading === "google" ? "이동 중..." : "Google로 계속하기"}
               </button>
-            </div>
-          </div>
+            </>
+          ) : null}
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="mx-auto flex h-12 w-full max-w-[280px] items-center justify-center rounded-3xl bg-sr-primary font-semibold text-white hover:bg-sr-primary-hover disabled:bg-gray-300 md:w-[70%]"
-          >
-            {isLoading ? "로그인 중..." : "이메일로 로그인"}
-          </button>
-        </form>
-
-        <div className="mt-8 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-200" />
-          <p className="shrink-0 text-xs font-medium text-gray-400">또는</p>
-          <div className="h-px flex-1 bg-gray-200" />
-        </div>
-
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={() => void handleGoogle()}
-            disabled={oauthLoading !== null}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-gray-200 bg-white font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
-          >
-            <Image
-              src="/icons/icon_google.png"
-              alt=""
-              width={20}
-              height={20}
-              style={{ height: "20px", width: "20px" }}
-              aria-hidden="true"
-            />
-            {oauthLoading === "google" ? "이동 중..." : "Google로 계속하기"}
-          </button>
-        </div>
-
-        <p className="mt-8 text-center text-sm text-gray-500">
-          아직 계정이 없나요?{" "}
-          <Link href={signupHref} className="font-semibold text-orange-600">
-            회원가입
-          </Link>
-        </p>
-      </section>
-    </main>
+          {SHOW_AUTH_SWITCH_LINK ? (
+            <p className="sr-user-auth-form__switch sr-user-canvas-text-secondary">
+              아직 계정이 없나요?{" "}
+              <Link href={signupHref} className="sr-user-auth-form__link">
+                회원가입
+              </Link>
+            </p>
+          ) : null}
+        </section>
+      </div>
+    </UserPage>
   );
 }
 
@@ -185,9 +178,11 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-xl px-4 py-16 text-center text-sm text-gray-500">
-          불러오는 중…
-        </main>
+        <UserPage tone="comfortable" as="main" className="sr-user-auth-page">
+          <p className="sr-user-auth-form__status sr-user-canvas-text-secondary text-center">
+            불러오는 중…
+          </p>
+        </UserPage>
       }
     >
       <LoginForm />

@@ -3,6 +3,12 @@
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import {
+  InlineProviderAddPanel,
+  type InlineProviderOption,
+} from "@/app/admin/providers/InlineCardProviderAddPanel";
+import { formatBenefitCategoryDisplayName } from "@/lib/benefits/format-benefit-category-label";
+
 import type { BenefitProductFormState } from "./form-actions";
 
 export type BenefitProductFormValues = {
@@ -77,6 +83,7 @@ export function BenefitProductForm({
   const [selectedProviderId, setSelectedProviderId] = useState(
     initialValues ? String(initialValues.provider_id) : "",
   );
+  const [providerOptions, setProviderOptions] = useState(providers);
   const [isAllProduct, setIsAllProduct] = useState(
     initialValues?.is_all_product ?? false,
   );
@@ -84,12 +91,12 @@ export function BenefitProductForm({
   const filteredProviders = useMemo(
     () =>
       selectedCategoryId
-        ? providers.filter(
+        ? providerOptions.filter(
             (provider) =>
               provider.benefit_category_id === Number(selectedCategoryId),
           )
-        : providers,
-    [providers, selectedCategoryId],
+        : providerOptions,
+    [providerOptions, selectedCategoryId],
   );
 
   const isCardCategory =
@@ -112,6 +119,25 @@ export function BenefitProductForm({
   const defaultBenefitType = isAllProduct
     ? "all"
     : (initialValues?.benefit_type ?? "");
+
+  const handleProviderUpsert = (provider: InlineProviderOption) => {
+    setProviderOptions((current) => {
+      if (current.some((row) => row.id === provider.id)) {
+        return current;
+      }
+      return [...current, provider];
+    });
+  };
+
+  const inlineProviderCategory = isCardCategory
+    ? cardCategoryId != null
+      ? ({ code: "card" as const, benefitCategoryId: cardCategoryId })
+      : null
+    : isMembershipCategory
+      ? membershipCategoryId != null
+        ? ({ code: "membership" as const, benefitCategoryId: membershipCategoryId })
+        : null
+      : null;
 
   return (
     <form action={formAction} className="card sr-block">
@@ -147,7 +173,7 @@ export function BenefitProductForm({
               </option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {formatBenefitCategoryDisplayName(category.code, category.name)}
                 </option>
               ))}
             </select>
@@ -183,6 +209,16 @@ export function BenefitProductForm({
               <div className="form-text text-danger">
                 {state.fieldErrors.provider_id}
               </div>
+            ) : null}
+            {inlineProviderCategory ? (
+              <InlineProviderAddPanel
+                categoryCode={inlineProviderCategory.code}
+                benefitCategoryId={inlineProviderCategory.benefitCategoryId}
+                visible
+                disabled={!selectedCategoryId}
+                onProviderCreated={handleProviderUpsert}
+                onSelectProvider={setSelectedProviderId}
+              />
             ) : null}
           </div>
 

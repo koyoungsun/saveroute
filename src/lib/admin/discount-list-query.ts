@@ -1,4 +1,5 @@
 import { getEffectiveDiscountValueForSort } from "@/lib/discounts/format-discount-value";
+import { formatBenefitCategoryDisplayName } from "@/lib/benefits/format-benefit-category-label";
 
 export const DISCOUNT_SORT_OPTIONS = [
 
@@ -130,7 +131,10 @@ export type DiscountListRow = {
 
   brand: DiscountListBrandRelation;
 
-  benefit_category: { name: string } | { name: string }[] | null;
+  benefit_category:
+    | { name: string; code?: string }
+    | { name: string; code?: string }[]
+    | null;
 
   provider: { name: string } | { name: string }[] | null;
 
@@ -155,6 +159,31 @@ export function getDiscountRelationName(
 
 
   return relation?.name ?? "-";
+
+}
+
+
+
+export function getDiscountBenefitCategoryLabel(
+
+  relation:
+    | { name: string; code?: string }
+    | { name: string; code?: string }[]
+    | null,
+
+): string {
+
+  const row = Array.isArray(relation) ? relation[0] : relation;
+
+  if (!row) {
+
+    return "-";
+
+  }
+
+
+
+  return formatBenefitCategoryDisplayName(row.code, row.name);
 
 }
 

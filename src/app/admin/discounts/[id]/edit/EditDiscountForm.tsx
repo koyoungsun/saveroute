@@ -10,6 +10,8 @@ import {
 
 import { DiscountValueFields } from "@/components/admin/DiscountValueFields";
 
+import { AdminDiscountUnitSelect } from "../../AdminDiscountUnitSelect";
+
 import { DiscountBenefitInfoGroup } from "../../DiscountBenefitInfoGroup";
 import { DiscountConditionDetailFields } from "../../DiscountConditionDetailFields";
 import { DiscountFormField } from "../../DiscountFormField";
@@ -106,6 +108,7 @@ export function EditDiscountForm({
   const [selectedProviderId, setSelectedProviderId] = useState(
     String(discount.provider_id),
   );
+  const [providerOptions, setProviderOptions] = useState(providers);
   const [productOptions, setProductOptions] = useState(products);
   const [selectedBenefitProductIds, setSelectedBenefitProductIds] = useState<number[]>(
     defaultBenefitProductIds,
@@ -116,17 +119,19 @@ export function EditDiscountForm({
   const filteredProviders = useMemo(
     () =>
       selectedCategoryId
-        ? providers.filter(
+        ? providerOptions.filter(
             (provider) =>
               provider.benefit_category_id === Number(selectedCategoryId),
           )
-        : providers,
-    [providers, selectedCategoryId],
+        : providerOptions,
+    [providerOptions, selectedCategoryId],
   );
 
   const selectedCategoryCode = resolveCategoryCode(selectedCategoryId, categories);
   const cardCategoryId =
     categories.find((category) => category.code === "card")?.id ?? null;
+  const membershipCategoryId =
+    categories.find((category) => category.code === "membership")?.id ?? null;
 
   const filteredProducts = useMemo(
     () =>
@@ -155,6 +160,22 @@ export function EditDiscountForm({
       }
       return [...current, product];
     });
+  };
+
+  const handleProviderUpsert = (
+    provider: ProviderOption,
+    allProduct?: BenefitProductOption,
+  ) => {
+    setProviderOptions((current) => {
+      if (current.some((row) => row.id === provider.id)) {
+        return current;
+      }
+      return [...current, provider];
+    });
+
+    if (allProduct) {
+      handleProductUpsert(allProduct);
+    }
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -230,12 +251,14 @@ export function EditDiscountForm({
               selectedProviderId={selectedProviderId}
               selectedCategoryCode={selectedCategoryCode}
               cardCategoryId={cardCategoryId}
+              membershipCategoryId={membershipCategoryId}
               selectedProviderName={selectedProviderName}
               selectedBenefitProductIds={selectedBenefitProductIds}
               defaultBenefitProductIds={defaultBenefitProductIds}
               defaultBenefitProductId={discount.benefit_product_id}
               onCategoryChange={handleCategoryChange}
               onProviderChange={handleProviderChange}
+              onProviderUpsert={handleProviderUpsert}
               onChangeSelectedIds={setSelectedBenefitProductIds}
               onProductUpsert={handleProductUpsert}
               fieldErrors={state.fieldErrors}
@@ -253,20 +276,13 @@ export function EditDiscountForm({
                   className="sr-discounts-field--discount-type"
                   error={state.fieldErrors?.discount_unit}
                 >
-                  <select
+                  <AdminDiscountUnitSelect
                     id="discount_unit"
                     name="discount_unit"
-                    className="form-select"
                     value={discountUnit}
-                    onChange={(event) => setDiscountUnit(event.target.value)}
+                    onChange={setDiscountUnit}
                     required
-                  >
-                    <option value="percent">percent</option>
-                    <option value="won">won</option>
-                    <option value="special_price">special_price</option>
-                    <option value="free">free</option>
-                    <option value="unknown">unknown</option>
-                  </select>
+                  />
                 </DiscountFormField>
 
                 <DiscountFormField

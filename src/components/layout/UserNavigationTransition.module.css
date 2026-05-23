@@ -1,0 +1,71 @@
+.content {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-x: clip;
+  opacity: 1;
+  transition: opacity var(--sr-nav-enter-ms, 220ms) ease-out;
+}
+
+.contentExiting,
+.contentLoading {
+  opacity: 0;
+  transition-duration: var(--sr-nav-exit-ms, 180ms);
+}
+
+.contentEntering {
+  opacity: 0;
+}
+
+.contentVisible {
+  opacity: 1;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(8, 10, 24, 0.72);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+
+.overlayVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.overlayScan {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+
+.overlayScanVisible {
+  opacity: 1;
+}
+
+.overlayCenter {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content {
+    transition-duration: 0.01ms;
+  }
+
+  .overlay {
+    transition-duration: 0.01ms;
+  }
+}

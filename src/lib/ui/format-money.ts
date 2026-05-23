@@ -2,6 +2,7 @@ import { formatDiscountValueDisplay } from "@/lib/discounts/format-discount-valu
 
 export type DiscountAmountUnit =
   | "percent"
+  | "point_percent"
   | "won"
   | "special_price"
   | "free"

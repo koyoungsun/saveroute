@@ -1,0 +1,71 @@
+.field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  contain: strict;
+}
+
+.fieldLite {
+  opacity: 0.72;
+}
+
+.fragment {
+  position: absolute;
+  font-family: inherit;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate3d(-6px, 10px, 0);
+  animation: sr-data-scan-drift var(--scan-duration, 1.4s) ease-out infinite;
+  animation-delay: var(--scan-delay, 0ms);
+}
+
+.variantBlue {
+  color: rgba(176, 202, 255, 0.72);
+  text-shadow: 0 0 10px rgba(120, 160, 255, 0.28);
+}
+
+.variantViolet {
+  color: rgba(196, 188, 255, 0.68);
+  text-shadow: 0 0 10px rgba(150, 130, 255, 0.24);
+}
+
+.variantWhite {
+  color: rgba(232, 240, 255, 0.64);
+  text-shadow: 0 0 8px rgba(220, 235, 255, 0.2);
+}
+
+@keyframes sr-data-scan-drift {
+  0% {
+    opacity: 0;
+    transform: translate3d(-6px, 10px, 0);
+  }
+
+  18% {
+    opacity: var(--scan-peak, 0.22);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--scan-drift-x, 28px), var(--scan-drift-y, -18px), 0);
+  }
+}
+
+@media (max-width: 430px) {
+  .fragment {
+    font-size: 0.5rem;
+    animation-duration: 1.2s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    display: none;
+  }
+}

@@ -1,0 +1,413 @@
+.root {
+  --hud-size: min(88vw, 390px);
+  --track-radius: calc(var(--hud-size) * 0.445);
+  --comet-speed: 18s;
+  --comet-phase: 52deg;
+  --arc-speed: 12s;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: clamp(0.5rem, 2.5vh, 1.25rem);
+}
+
+.hudStage {
+  position: relative;
+  width: var(--hud-size);
+  height: var(--hud-size);
+  margin-inline: auto;
+  isolation: isolate;
+}
+
+/* Layer 0 — deep center halo (behind all rings) */
+.depthField {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.centerHalo {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(90, 100, 255, 0.22) 0%,
+    rgba(40, 50, 140, 0.12) 35%,
+    transparent 75%
+  );
+}
+
+/* Layer 1 — radar rings + motion */
+.hudAtmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+  transition: transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hudSvgWrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.hudSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Layer A — outer glow ring */
+.ringOuterGlow {
+  fill: none;
+  stroke: rgba(140, 170, 255, 0.45);
+  stroke-width: 2;
+  opacity: 0.18;
+}
+
+.ringInnerDotted {
+  fill: none;
+  stroke: rgba(150, 178, 255, 0.72);
+  stroke-width: 1;
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+  opacity: 0.34;
+  animation: hud-inner-dash-scan 28s linear infinite;
+}
+
+.ringMain {
+  fill: none;
+  stroke: url(#sr-ring-main-gradient);
+  stroke-width: 1.35;
+  opacity: 0.45;
+}
+
+.energyArcGroup {
+  transform-origin: 200px 200px;
+  animation: hud-rotate var(--arc-speed) linear infinite;
+  opacity: 0.88;
+}
+
+.energyArcTail {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 10 90;
+  opacity: 0.2;
+}
+
+.energyArcHead {
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-dasharray: 5 95;
+  opacity: 0.48;
+}
+
+/* Layer E — comet (foreground particle; tangent-locked to orbit) */
+.cometLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.cometRunner {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  animation: hud-comet-orbit var(--comet-speed) linear infinite;
+}
+
+.cometAnchor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateY(calc(-1 * var(--track-radius)));
+}
+
+.cometSprite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Head sits on orbit point; tail extends backward along path tangent (────●) */
+.cometHead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(220, 235, 255, 0.85) 55%,
+    rgba(150, 180, 255, 0.35) 100%
+  );
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.85),
+    0 0 16px rgba(160, 190, 255, 0.45);
+}
+
+.cometTail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.5rem;
+  height: 2px;
+  transform: translateY(-50%);
+  transform-origin: right center;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(120, 160, 255, 0.18) 45%,
+    rgba(220, 235, 255, 0.72) 88%,
+    rgba(255, 255, 255, 0.82) 100%
+  );
+  opacity: 0.85;
+}
+
+/* Layer F — HUD nodes (below comet) */
+.hudNodeSlot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--node-angle)) translateY(calc(-1 * var(--track-radius)));
+}
+
+.hudNode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  margin: -0.9375rem 0 0 -0.9375rem;
+  border-radius: 50%;
+  border: 1px solid rgba(150, 180, 255, 0.38);
+  background: rgba(14, 20, 48, 0.78);
+  color: rgba(242, 246, 255, 0.92);
+  transform: rotate(calc(-1 * var(--node-angle)));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.hudNodeIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke-width: 1.4;
+  opacity: 0.92;
+}
+
+/* Brand core — strongest */
+.brandCore {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
+  padding: 0 2rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.logoLink {
+  pointer-events: auto;
+  display: inline-flex;
+  justify-content: center;
+  max-width: 72%;
+}
+
+.logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 2.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.16)) drop-shadow(0 2px 14px rgba(0, 0, 0, 0.52));
+}
+
+.slogan {
+  margin: 0;
+  width: 100%;
+  max-width: 88%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(197, 163, 101, 0.92);
+  font-size: clamp(0.625rem, 2.6vw, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.008em;
+  line-height: 1.4;
+}
+
+.searchWrap {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: calc(100% - 2rem);
+  max-width: 100%;
+  margin-top: clamp(2.5rem, 7vh, 3.25rem);
+  margin-inline: auto;
+  overflow: visible;
+}
+
+.isSearching .centerHalo {
+  background: radial-gradient(
+    circle,
+    rgba(90, 100, 255, 0.3) 0%,
+    rgba(40, 50, 140, 0.16) 35%,
+    transparent 75%
+  );
+}
+
+.isSearching .hudAtmosphere {
+  animation: hud-pulse 0.8s ease-out;
+}
+
+.isSearching {
+  --comet-speed: 9s;
+  --arc-speed: 6s;
+}
+
+.isSearching .ringMain {
+  opacity: 0.52;
+}
+
+.menuActive .hudAtmosphere {
+  transform: rotate(5deg) scale(1.015);
+}
+
+.menuActive {
+  --comet-speed: 11s;
+  --arc-speed: 7s;
+}
+
+.menuActive .ringMain {
+  opacity: 0.48;
+}
+
+@keyframes hud-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hud-inner-dash-scan {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -110;
+  }
+}
+
+@keyframes hud-comet-orbit {
+  from {
+    transform: rotate(var(--comet-phase));
+  }
+
+  to {
+    transform: rotate(calc(var(--comet-phase) + 360deg));
+  }
+}
+
+@keyframes hud-pulse {
+  0% {
+    opacity: 1;
+  }
+
+  40% {
+    opacity: 1.06;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 430px) {
+  .ringInnerDotted {
+    animation: none;
+  }
+
+  .cometTail {
+    width: 2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .root {
+    --hud-size: min(88vw, 360px);
+  }
+
+  .hudNode {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: -0.875rem 0 0 -0.875rem;
+  }
+
+  .hudNodeIcon {
+    width: 0.6875rem;
+    height: 0.6875rem;
+  }
+
+  .logo {
+    max-height: 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cometRunner,
+  .energyArcGroup,
+  .ringInnerDotted {
+    animation: none;
+    transform: none;
+  }
+
+  .cometLayer {
+    opacity: 0.85;
+  }
+
+  .hudAtmosphere {
+    transition: none;
+  }
+
+  .menuActive .hudAtmosphere {
+    transform: none;
+  }
+
+  .isSearching .hudAtmosphere {
+    animation: none;
+  }
+}

@@ -1,6 +1,7 @@
 interface ChartCardProps {
   title: string;
   description?: string;
+  titleClassName?: string;
   children: React.ReactNode;
   height?: number;
 }
@@ -8,15 +9,16 @@ interface ChartCardProps {
 export function ChartCard({
   title,
   description,
+  titleClassName = "admin-card-title",
   children,
   height = 300,
 }: ChartCardProps) {
   return (
     <div className="sr-chart-card card h-100 border-0">
-      <div className="sr-card-header card-header bg-white py-3 border-bottom">
+      <div className="sr-card-header card-header py-3 border-bottom">
         <div className="d-flex align-items-start justify-content-between gap-3">
           <div className="min-w-0">
-            <div className="fw-bold text-body">{title}</div>
+            <div className={titleClassName}>{title}</div>
             {description ? (
               <div className="small text-muted mt-1 fw-semibold">{description}</div>
             ) : null}

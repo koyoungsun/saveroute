@@ -14,7 +14,7 @@ export function KpiCard({
   icon,
 }: KpiCardProps) {
   return (
-    <div className={`sr-kpi-card card border-0 bg-${variant}-subtle h-100`}>
+    <div className="sr-kpi-card card border-0 h-100">
       <div
         className="card-body d-flex gap-3 align-items-center"
         style={{ minHeight: "112px" }}
@@ -28,7 +28,7 @@ export function KpiCard({
 
         <div className="min-w-0">
           <div className="text-muted small fw-semibold">{title}</div>
-          <div className="mt-1 fs-2 fw-bold lh-1">{value}</div>
+          <div className="sr-kpi-value">{value}</div>
           {changeText ? <div className="small text-muted">{changeText}</div> : null}
         </div>
       </div>

@@ -259,6 +259,57 @@
   content: "- ";
 }
 
+.sr-admin .sr-discounts-field--hint-inline .sr-discounts-field__control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem 0.875rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.sr-admin .sr-discounts-field--hint-inline .sr-discounts-field__hint--inline {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin-top: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sr-admin .sr-discounts-field--hint-inline .sr-discounts-field__hint--inline::before {
+  content: none;
+}
+
+.sr-admin .sr-discounts-field--max-discount-amount {
+  width: 100%;
+  max-width: 100%;
+}
+
+.sr-admin .sr-discounts-field--max-discount-amount .sr-discounts-field__control {
+  flex: 0 0 auto;
+  width: 11.25rem;
+  max-width: min(100%, 11.25rem);
+  min-width: min(100%, 9.5rem);
+}
+
+@media (max-width: 767.98px) {
+  .sr-admin .sr-discounts-field--hint-inline .sr-discounts-field__control-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sr-admin .sr-discounts-field--hint-inline .sr-discounts-field__hint--inline {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .sr-admin .sr-discounts-field--max-discount-amount .sr-discounts-field__control {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 .sr-admin .sr-discounts-field__error {
   margin-top: 0.35rem;
   color: #f00 !important;
@@ -395,19 +446,19 @@
   gap: 0.75rem;
   flex-wrap: nowrap;
   font-size: 13px;
-  color: #64748b;
+  color: var(--admin-text-muted);
   white-space: nowrap;
 }
 
 .sr-admin .sr-admin-discounts-meta-date {
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--admin-text);
   letter-spacing: -0.3px;
 }
 
 .sr-admin .sr-admin-discounts-meta-sep {
-  color: #cbd5e1;
+  color: var(--admin-text-muted);
 }
 
 .sr-admin .sr-admin-discounts-meta-badges {
@@ -422,9 +473,9 @@
   align-items: center;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(249, 115, 22, 0.28);
-  background: rgba(255, 237, 213, 0.65);
-  color: #c2410c;
+  border: 1px solid rgba(64, 154, 83, 0.28);
+  background: rgba(64, 154, 83, 0.16);
+  color: #8fd4a0;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -451,7 +502,7 @@
 
 .sr-admin .sr-discounts-card-select-area .small.text-muted {
   font-size: var(--sr-discounts-help-font-size);
-  color: #64748b !important;
+  color: var(--admin-text-muted) !important;
 }
 
 .sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset .small.text-muted,
@@ -465,14 +516,14 @@
 .sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset > div > .small.fw-semibold {
   font-size: var(--sr-discounts-control-font-size);
   font-weight: 600 !important;
-  color: #64748b !important;
+  color: var(--admin-text-muted) !important;
 }
 
 .sr-admin .sr-discounts-card-add-panel__title {
   margin: 0 0 0.75rem;
   font-size: var(--sr-discounts-label-font-size);
   font-weight: 700;
-  color: #9a3412;
+  color: var(--admin-accent);
   letter-spacing: -0.3px;
   line-height: 1.35;
 }
@@ -487,7 +538,7 @@
   margin-top: 0.625rem;
   padding: 0.75rem 0 0;
   border: 0;
-  border-top: 1px dashed rgba(249, 115, 22, 0.35);
+  border-top: 1px dashed rgba(64, 154, 83, 0.35);
   border-radius: 0;
   background: transparent;
 }
@@ -526,55 +577,55 @@
 }
 
 .sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-outline-secondary {
-  --bs-btn-color: #495057;
-  --bs-btn-border-color: #adb5bd;
-  --bs-btn-hover-color: #212529;
-  --bs-btn-hover-bg: #f8f9fa;
-  --bs-btn-hover-border-color: #6c757d;
-  --bs-btn-active-color: #212529;
-  --bs-btn-active-bg: #e9ecef;
-  --bs-btn-active-border-color: #6c757d;
+  --bs-btn-color: var(--admin-text-sub);
+  --bs-btn-border-color: var(--admin-border);
+  --bs-btn-hover-color: var(--admin-text);
+  --bs-btn-hover-bg: var(--admin-hover-bg);
+  --bs-btn-hover-border-color: rgba(255, 255, 255, 0.14);
+  --bs-btn-active-color: var(--admin-text);
+  --bs-btn-active-bg: #2a2a36;
+  --bs-btn-active-border-color: rgba(255, 255, 255, 0.16);
 }
 
 .sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-dark {
   --bs-btn-color: #fff;
-  --bs-btn-bg: #212529;
-  --bs-btn-border-color: #212529;
+  --bs-btn-bg: var(--admin-hover-bg);
+  --bs-btn-border-color: var(--admin-border);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #343a40;
-  --bs-btn-hover-border-color: #343a40;
+  --bs-btn-hover-bg: #2a2a36;
+  --bs-btn-hover-border-color: rgba(255, 255, 255, 0.14);
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #1a1e21;
-  --bs-btn-active-border-color: #1a1e21;
+  --bs-btn-active-bg: #32323e;
+  --bs-btn-active-border-color: rgba(255, 255, 255, 0.16);
   --bs-btn-disabled-color: rgba(255, 255, 255, 0.75);
-  --bs-btn-disabled-bg: #495057;
-  --bs-btn-disabled-border-color: #495057;
+  --bs-btn-disabled-bg: var(--admin-panel-bg-soft);
+  --bs-btn-disabled-border-color: var(--admin-border);
 }
 
 .sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-outline-primary {
-  --bs-btn-color: #0d6efd;
-  --bs-btn-border-color: #0d6efd;
+  --bs-btn-color: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-accent);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #0d6efd;
-  --bs-btn-hover-border-color: #0d6efd;
+  --bs-btn-hover-bg: var(--admin-accent);
+  --bs-btn-hover-border-color: var(--admin-accent);
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #0a58ca;
-  --bs-btn-active-border-color: #0a58ca;
+  --bs-btn-active-bg: #368647;
+  --bs-btn-active-border-color: #368647;
 }
 
 .sr-admin .sr-admin-discounts .sr-discounts-action-btn.btn-primary {
   --bs-btn-color: #fff;
-  --bs-btn-bg: #0d6efd;
-  --bs-btn-border-color: #0d6efd;
+  --bs-btn-bg: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-accent);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #0b5ed7;
-  --bs-btn-hover-border-color: #0a58ca;
+  --bs-btn-hover-bg: #368647;
+  --bs-btn-hover-border-color: #368647;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #0a58ca;
-  --bs-btn-active-border-color: #0a53be;
+  --bs-btn-active-bg: #2f7440;
+  --bs-btn-active-border-color: #2f7440;
   --bs-btn-disabled-color: rgba(255, 255, 255, 0.85);
-  --bs-btn-disabled-bg: #6ea8fe;
-  --bs-btn-disabled-border-color: #6ea8fe;
+  --bs-btn-disabled-bg: rgba(64, 154, 83, 0.45);
+  --bs-btn-disabled-border-color: rgba(64, 154, 83, 0.45);
 }
 
 .sr-admin .sr-admin-discounts-form .sr-discounts-card-select-area .input-group .sr-discounts-action-btn {
@@ -590,8 +641,8 @@
   gap: 0.75rem;
   margin-top: 1.5rem;
   padding: 1.5rem 1.25rem 1.25rem !important;
-  border-top: 1px solid var(--sr-border);
-  background: #fff;
+  border-top: 1px solid var(--admin-border);
+  background: var(--admin-panel-bg);
 }
 
 .sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .btn {
@@ -604,31 +655,31 @@
 }
 
 .sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .sr-discounts-cancel-btn {
-  --bs-btn-color: #495057;
-  --bs-btn-border-color: #adb5bd;
-  --bs-btn-hover-color: #212529;
-  --bs-btn-hover-bg: #f8f9fa;
-  --bs-btn-hover-border-color: #6c757d;
-  --bs-btn-active-color: #212529;
-  --bs-btn-active-bg: #e9ecef;
-  --bs-btn-active-border-color: #6c757d;
+  --bs-btn-color: var(--admin-text-sub);
+  --bs-btn-border-color: var(--admin-border);
+  --bs-btn-hover-color: var(--admin-text);
+  --bs-btn-hover-bg: var(--admin-hover-bg);
+  --bs-btn-hover-border-color: rgba(255, 255, 255, 0.14);
+  --bs-btn-active-color: var(--admin-text);
+  --bs-btn-active-bg: #2a2a36;
+  --bs-btn-active-border-color: rgba(255, 255, 255, 0.16);
 }
 
 .sr-admin .sr-admin-discounts-form .sr-discounts-form-footer .sr-discounts-submit-btn {
   min-width: 168px;
   --bs-btn-color: #fff;
-  --bs-btn-bg: #0d6efd;
-  --bs-btn-border-color: #0d6efd;
+  --bs-btn-bg: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-accent);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #0b5ed7;
-  --bs-btn-hover-border-color: #0a58ca;
+  --bs-btn-hover-bg: #368647;
+  --bs-btn-hover-border-color: #368647;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #0a58ca;
-  --bs-btn-active-border-color: #0a53be;
+  --bs-btn-active-bg: #2f7440;
+  --bs-btn-active-border-color: #2f7440;
   --bs-btn-disabled-color: rgba(255, 255, 255, 0.88);
-  --bs-btn-disabled-bg: #6ea8fe;
-  --bs-btn-disabled-border-color: #6ea8fe;
-  box-shadow: 0 1px 2px rgba(13, 110, 253, 0.2);
+  --bs-btn-disabled-bg: rgba(64, 154, 83, 0.45);
+  --bs-btn-disabled-border-color: rgba(64, 154, 83, 0.45);
+  box-shadow: 0 4px 12px rgba(64, 154, 83, 0.2);
 }
 
 .sr-admin .sr-admin-discounts-form textarea#condition_text,
@@ -689,7 +740,7 @@
 /* Option groups */
 .sr-admin .sr-admin-discounts-option-group {
   border: 0;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-top: 1px solid var(--admin-border);
   border-radius: 0;
   background: transparent;
   padding: 0.625rem 0 0;

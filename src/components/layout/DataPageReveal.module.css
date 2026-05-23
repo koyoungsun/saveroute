@@ -1,0 +1,43 @@
+.root {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.root[data-phase="pending"] {
+  pointer-events: none;
+}
+
+.root[data-phase="pending"] :global(.sr-user-page > *) {
+  opacity: 0;
+}
+
+.root[data-phase="shell"] :global(.sr-user-page > :first-child),
+.root[data-phase="revealed"] :global(.sr-user-page > :first-child) {
+  opacity: 1;
+  transition: opacity 180ms ease-out;
+}
+
+.root[data-phase="shell"] :global(.sr-user-page > :not(:first-child)),
+.root[data-phase="pending"] :global(.sr-user-page > :not(:first-child)) {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  pointer-events: none;
+}
+
+.root[data-phase="revealed"] :global(.sr-user-page > :not(:first-child)) {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root[data-phase="pending"] :global(.sr-user-page > *) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .root[data-phase="shell"] :global(.sr-user-page > :first-child),
+  .root[data-phase="revealed"] :global(.sr-user-page > :first-child) {
+    transition: none;
+  }
+}

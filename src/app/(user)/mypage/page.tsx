@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import MyPageClient from "./MyPageClient";
 import type { MyPageProfilePayload } from "./types";
+import { loadPersonalizedBestDiscounts } from "@/lib/benefits/load-personalized-best-discounts";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const CARD_TYPES = new Set(["credit_card", "debit_card", "prepaid_card"]);
@@ -128,7 +129,15 @@ export default async function MyPage() {
     );
   }
 
+  const personalizedBest = await loadPersonalizedBestDiscounts(supabase, user.id);
+
   return (
-    <MyPageClient profile={payload} loadWarnings={loadWarnings} />
+    <MyPageClient
+      profile={payload}
+      loadWarnings={loadWarnings}
+      hasBenefits={personalizedBest.hasBenefits}
+      telecomDiscounts={personalizedBest.telecomDiscounts}
+      cardDiscounts={personalizedBest.cardDiscounts}
+    />
   );
 }

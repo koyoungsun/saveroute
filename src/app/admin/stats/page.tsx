@@ -55,7 +55,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
     <>
       <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-          <h1 className="h3 mb-1">Statistics</h1>
+          <h1 className="admin-page-title mb-1">Statistics</h1>
           <p className="text-muted mb-0">
             search_logs, result_click_logs, brand_requests, user_benefits 및 카탈로그 테이블 기준
             실제 집계입니다.
@@ -84,7 +84,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
       <div className="sr-block card mb-4">
         <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
-            <div className="fw-bold">기간 필터</div>
+            <div className="admin-section-title">기간 필터</div>
             <div className="small text-muted">현재 분석 구간: {stats.period.label}</div>
             {stats.logSampleCapped ? (
               <div className="small text-warning mt-1">
@@ -154,6 +154,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
         <div className="col-lg-6">
           <ChartCard
             title="업데이트 요청 TOP"
+            titleClassName="admin-card-title"
             description="brand_requests.request_count 기준"
           >
             <BrandRequestTopBarChart data={brandRequestSeries} />
@@ -191,7 +192,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
         />
       ) : (
         <div className="sr-block card mt-4">
-          <div className="card-header bg-white fw-semibold">
+          <div className="card-header sr-card-header fw-semibold admin-card-title">
             기간 내 브랜드별 검색 순위 ({stats.period.label})
           </div>
           <div className="card-body py-4 text-center text-muted">

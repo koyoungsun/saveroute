@@ -2,6 +2,8 @@ import {
   getEffectiveDiscountValueForSort,
   formatDiscountValueDisplay,
 } from "@/lib/discounts/format-discount-value";
+import { isPercentLikeDiscountUnit } from "@/lib/discounts/discount-units";
+import { formatBenefitCategoryDisplayName } from "@/lib/benefits/format-benefit-category-label";
 import type {
   BenefitCategorySummary,
   BenefitProductSummary,
@@ -135,7 +137,7 @@ export function getDiscountScore(discount: DiscountResult) {
     return 1_000_000_000;
   }
 
-  if (discount.discount_unit === "percent") {
+  if (isPercentLikeDiscountUnit(discount.discount_unit)) {
     return value * 10_000;
   }
 
@@ -201,11 +203,11 @@ export function getBenefitTypeLabel(discount: DiscountResult) {
   const labels: Record<string, string> = {
     card: "카드",
     telecom: "통신사",
-    membership: "멤버십",
+    membership: "멤버십/포인트",
     coupon: "쿠폰",
   };
 
-  return (code ? labels[code] : null) ?? name ?? "혜택";
+  return (code ? labels[code] : null) ?? formatBenefitCategoryDisplayName(code, name) ?? "혜택";
 }
 
 export function rowsById<T extends { id: number }>(rows: T[] | null) {
@@ -245,7 +247,11 @@ export function mapBaseDiscountToResult(
     primaryProductId == null ? null : benefitProductById.get(primaryProductId);
 
   const benefit_category: BenefitCategorySummary | null = bc
-    ? { id: bc.id, name: bc.name, code: bc.code }
+    ? {
+        id: bc.id,
+        name: formatBenefitCategoryDisplayName(bc.code, bc.name),
+        code: bc.code,
+      }
     : null;
   const provider: ProviderSummary | null = pr ? { id: pr.id, name: pr.name } : null;
   const benefit_product: BenefitProductSummary | null = bp

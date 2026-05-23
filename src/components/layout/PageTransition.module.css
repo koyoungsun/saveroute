@@ -1,0 +1,24 @@
+.page {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--sr-page-enter-ms, 280ms) ease-out,
+    transform var(--sr-page-enter-ms, 280ms) ease-out;
+}
+
+.pageReady {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

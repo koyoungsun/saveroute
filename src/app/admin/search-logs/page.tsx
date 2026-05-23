@@ -23,7 +23,7 @@ const logs = [
 export default function SearchLogsPage() {
   return (
     <>
-      <h1 className="h3 mb-4">Search Logs</h1>
+      <h1 className="admin-page-title mb-4">Search Logs</h1>
 
       <div className="sr-block card">
         <div className="card-body">
@@ -67,6 +67,7 @@ export default function SearchLogsPage() {
 
       <PaginatedTable
         title="검색 로그"
+        titleClassName="admin-card-title"
         legendType="generic"
         pageSize={10}
         fixedRows={10}

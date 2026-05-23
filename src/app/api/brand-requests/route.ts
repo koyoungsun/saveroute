@@ -8,6 +8,30 @@ function normalizeKeyword(keyword: string) {
   return keyword.trim().toLowerCase().replace(/[^가-힣a-zA-Z0-9]/g, "");
 }
 
+type BrandRequestType = "brand" | "mvno";
+
+function parseRequestType(value: unknown): BrandRequestType {
+  if (value === "mvno" || value === "mvno_request") {
+    return "mvno";
+  }
+  return "brand";
+}
+
+function buildNormalizedKeyword(raw: string, requestType: BrandRequestType) {
+  const base = normalizeKeyword(raw);
+  if (requestType === "mvno") {
+    return `mvno_${base}`;
+  }
+  return base;
+}
+
+function buildStoredKeyword(raw: string, normalized: string, requestType: BrandRequestType) {
+  if (requestType === "mvno") {
+    return `[알뜰폰] ${raw || normalized.replace(/^mvno_/, "")}`;
+  }
+  return raw || normalized;
+}
+
 /** 로그인 사용자의 업데이트 요청 참여 로그 (마이페이지 집계용, 실패 시 무시) */
 async function recordBrandRequestParticipation(normalizedKeyword: string) {
   try {
@@ -75,11 +99,13 @@ export async function POST(request: Request) {
     typeof (body as { keyword?: unknown }).keyword === "string"
       ? (body as { keyword: string }).keyword.trim()
       : "";
-  const normalized = normalizeKeyword(raw);
-  if (!normalized) {
+  const requestType = parseRequestType((body as { requestType?: unknown }).requestType);
+  const normalized = buildNormalizedKeyword(raw, requestType);
+  if (!normalized || (requestType === "mvno" && normalized === "mvno_")) {
     return NextResponse.json({ error: "keyword required" }, { status: 400 });
   }
 
+  const storedKeyword = buildStoredKeyword(raw, normalized, requestType);
   const now = new Date().toISOString();
 
   const { data: existing, error: selectError } = await db
@@ -94,7 +120,7 @@ export async function POST(request: Request) {
 
   if (!existing) {
     const { error: insertError } = await db.from("brand_requests").insert({
-      keyword: raw || normalized,
+      keyword: storedKeyword,
       normalized_keyword: normalized,
       request_count: 1,
       status: "pending",
@@ -103,13 +129,13 @@ export async function POST(request: Request) {
 
     if (insertError) {
       if (insertError.code === "23505") {
-        return handleConcurrentExisting(db, normalized, raw, now);
+        return handleConcurrentExisting(db, normalized, storedKeyword, now);
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
     await recordBrandRequestParticipation(normalized);
-    return NextResponse.json({ ok: true, request_count: 1 });
+    return NextResponse.json({ ok: true, request_count: 1, request_type: requestType });
   }
 
   if (existing.request_count >= 10) {
@@ -126,7 +152,7 @@ export async function POST(request: Request) {
     .update({
       request_count: nextCount,
       last_requested_at: now,
-      keyword: raw || normalized,
+      keyword: storedKeyword,
       updated_at: now,
     })
     .eq("id", existing.id);
@@ -136,13 +162,13 @@ export async function POST(request: Request) {
   }
 
   await recordBrandRequestParticipation(normalized);
-  return NextResponse.json({ ok: true, request_count: nextCount });
+  return NextResponse.json({ ok: true, request_count: nextCount, request_type: requestType });
 }
 
 async function handleConcurrentExisting(
   client: SupabaseClient,
   normalized: string,
-  raw: string,
+  storedKeyword: string,
   now: string,
 ) {
   const { data: row, error } = await client
@@ -169,7 +195,7 @@ async function handleConcurrentExisting(
     .update({
       request_count: nextCount,
       last_requested_at: now,
-      keyword: raw || normalized,
+      keyword: storedKeyword,
       updated_at: now,
     })
     .eq("id", row.id);

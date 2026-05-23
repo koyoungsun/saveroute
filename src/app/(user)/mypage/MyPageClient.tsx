@@ -2,12 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Mail } from "lucide-react";
 
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { BrandHubChrome } from "@/components/layout/BrandHubChrome";
 import { FontSizeControl } from "@/components/settings/FontSizeControl";
+import { UserPage } from "@/components/layout/UserPage";
+import { SHOW_MYPAGE_FOOTER_ART } from "@/lib/user/home-layout-flags";
+import { buildSaverouteContactMailto } from "@/lib/user/brand-slogan";
+import {
+  PersonalizedBestSections,
+  type PersonalizedDiscount,
+} from "@/components/search/PersonalizedBestSections";
 
 import type { MyPageProfilePayload } from "./types";
-
-const ACCENT = "#409A53";
 
 function formatJoined(dateIso: string) {
   try {
@@ -25,7 +33,7 @@ function ConsentLabel({ active, label }: { active: boolean; label: string }) {
       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
         active ? "text-white" : "bg-gray-100 text-gray-600"
       }`}
-      style={active ? { backgroundColor: ACCENT } : undefined}
+      style={active ? { background: "var(--sr-cta-bg)" } : undefined}
     >
       {label}
     </span>
@@ -35,9 +43,15 @@ function ConsentLabel({ active, label }: { active: boolean; label: string }) {
 export default function MyPageClient({
   profile,
   loadWarnings,
+  hasBenefits,
+  telecomDiscounts,
+  cardDiscounts,
 }: {
   profile: MyPageProfilePayload;
   loadWarnings: string[];
+  hasBenefits: boolean;
+  telecomDiscounts: PersonalizedDiscount[];
+  cardDiscounts: PersonalizedDiscount[];
 }) {
   const nicknameDisplay =
     profile.nickname?.trim() || "닉네임을 설정해주세요";
@@ -47,13 +61,18 @@ export default function MyPageClient({
     profile.genderGroup != null &&
     profile.ageGroup != null;
 
+  const contactMailto = buildSaverouteContactMailto("SaveRoute 문의");
+
   return (
-    <div className="px-4 py-6 pb-28">
-      <h1 className="text-xl font-bold text-gray-900">마이페이지</h1>
+    <UserPage className="sr-user-account-page sr-user-stack">
+      <BrandHubChrome variant="account" />
+
+      <div className="sr-user-account-page__body">
+        <h1 className="sr-user-account-page__title">마이페이지</h1>
 
       {loadWarnings.length > 0 ? (
         <div
-          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          className="sr-user-account-page__notice mt-4 rounded-xl px-3 py-2 text-xs"
           role="status"
         >
           {loadWarnings.map((w) => (
@@ -64,18 +83,14 @@ export default function MyPageClient({
 
       <div className="mt-4 space-y-4">
         {/* 내정보 */}
-        <section
-          className="rounded-2xl border-2 bg-white p-4 shadow-sm"
-          style={{ borderColor: ACCENT }}
-        >
+        <section className="sr-user-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-base font-semibold" style={{ color: ACCENT }}>
+            <h2 className="sr-user-accent-text text-base font-semibold">
               내 정보
             </h2>
             <Link
               href="/mypage/settings#nickname"
-              className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
+              className="sr-user-btn-primary shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
             >
               닉네임 수정
             </Link>
@@ -108,23 +123,23 @@ export default function MyPageClient({
             </div>
             <div className="flex justify-between gap-3">
               <dt className="text-gray-500">등록된 보유혜택</dt>
-              <dd className="font-semibold tabular-nums" style={{ color: ACCENT }}>
+              <dd className="sr-user-accent-text font-semibold tabular-nums">
                 {profile.registeredBenefitCount.toLocaleString("ko-KR")}개
               </dd>
             </div>
           </dl>
-
-          <Link
-            href="/my-benefits"
-            className="mt-4 flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: ACCENT }}
-          >
-            내 혜택 수정
-          </Link>
         </section>
 
+        <PersonalizedBestSections
+          isAuthenticated
+          hasBenefits={hasBenefits}
+          telecomDiscounts={telecomDiscounts}
+          cardDiscounts={cardDiscounts}
+          variant="mypage"
+        />
+
         {/* 통계·개인화 요약 */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <section className="sr-user-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-gray-900">
@@ -136,8 +151,7 @@ export default function MyPageClient({
             </div>
             <Link
               href="/mypage/settings"
-              className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold"
-              style={{ borderColor: ACCENT, color: ACCENT }}
+              className="sr-user-btn-secondary sr-user-btn-secondary--accent inline-flex h-10 shrink-0 items-center justify-center rounded-xl px-4 text-sm font-semibold"
             >
               설정 수정
             </Link>
@@ -170,7 +184,7 @@ export default function MyPageClient({
           </ul>
 
           {settingsComplete ? (
-            <div className="mt-4 rounded-xl border border-gray-100 bg-white p-3">
+            <div className="sr-user-card mt-4 rounded-xl p-3">
               <p className="text-xs font-semibold text-gray-600">
                 할인 · 통계 요약
               </p>
@@ -209,14 +223,38 @@ export default function MyPageClient({
           )}
         </section>
 
+        <section className="sr-user-card rounded-2xl p-4" aria-label="서비스 및 고객지원">
+          <h2 className="text-base font-semibold text-gray-900">서비스 · 고객지원</h2>
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">
+            혜택 관리, 앱 설치, 문의를 한곳에서 이용할 수 있어요.
+          </p>
+          <div className="sr-user-utility-stack mt-4">
+            <Link
+              href="/my-benefits"
+              className="sr-user-btn-primary flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold text-white"
+            >
+              내 혜택 수정하기
+            </Link>
+            <InstallAppButton />
+            <a
+              href={contactMailto}
+              className="sr-user-btn-secondary sr-user-btn-secondary--accent flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold"
+              aria-label="이메일 문의하기"
+            >
+              <Mail aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+              이메일 문의하기
+            </a>
+          </div>
+        </section>
+
         <section
-          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          className="sr-user-card rounded-2xl p-4"
           aria-label="글자 크기 설정"
         >
           <FontSizeControl variant="compact" />
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <section className="sr-user-card rounded-2xl p-4">
           <h2 className="sr-only">메뉴</h2>
           <div className="divide-y divide-gray-100">
             <Link
@@ -251,16 +289,19 @@ export default function MyPageClient({
         </section>
       </div>
 
-      <div className="mt-10 mb-16 flex justify-center">
+      <div className="mt-10 flex justify-center">
+        {SHOW_MYPAGE_FOOTER_ART ? (
         <Image
           src="/icons/icon-good.png"
           alt=""
           width={320}
           height={320}
-          className="h-auto w-full max-w-[280px]"
+          className="sr-user-mypage-footer-art h-auto w-full max-w-[280px]"
           aria-hidden
         />
+        ) : null}
       </div>
-    </div>
+      </div>
+    </UserPage>
   );
 }

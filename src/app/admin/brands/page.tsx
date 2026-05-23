@@ -84,7 +84,7 @@ export default async function AdminBrandsPage({ searchParams }: AdminBrandsPageP
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">Brands</h1>
+        <h1 className="admin-page-title mb-0">Brands</h1>
         <Link href="/admin/brands/new" className="btn btn-primary">
           + 브랜드 등록
         </Link>
@@ -142,17 +142,18 @@ export default async function AdminBrandsPage({ searchParams }: AdminBrandsPageP
 
       <PaginatedTable
         title="브랜드 목록"
+        titleClassName="admin-card-title"
         legendType="generic"
         pageSize={10}
         fixedRows={10}
         className="sr-block"
         columns={[
-          { header: "브랜드명" },
-          { header: "slug" },
-          { header: "카테고리" },
+          { header: "브랜드명", className: "text-start" },
+          { header: "slug", className: "text-start" },
+          { header: "카테고리", className: "text-start" },
           { header: "연결 할인 수", className: "text-center" },
           { header: "별칭" },
-          { header: "설명" },
+          { header: "설명", className: "text-start" },
           { header: "웹사이트" },
           { header: "상태" },
           { header: "관리" },

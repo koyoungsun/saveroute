@@ -27,7 +27,7 @@ function OpsPanelSection({
   return (
     <section className="sr-admin-ops-section">
       <div className="sr-admin-ops-section-head">
-        <h3 className="sr-admin-ops-section-title">
+        <h3 className="sr-admin-ops-section-title admin-side-title">
           <i className={`bi ${icon} sr-admin-frame-icon sr-admin-ops-section-icon`} aria-hidden="true" />
           <span>{title}</span>
         </h3>
@@ -50,7 +50,7 @@ function ScrollList({
   renderItem: (item: unknown, index: number) => ReactNode;
 }) {
   if (items.length === 0) {
-    return <p className="sr-admin-ops-empty mb-0">{emptyText}</p>;
+    return <p className="sr-admin-ops-empty admin-side-empty mb-0">{emptyText}</p>;
   }
 
   return (
@@ -104,7 +104,7 @@ export function AdminOpsPanel() {
       <div className="sr-admin-ops-panel-inner">
         <header className="sr-admin-ops-panel-header">
           <div>
-            <h2 className="sr-admin-ops-panel-title mb-0">
+            <h2 className="sr-admin-ops-panel-title admin-side-title mb-0">
               <i className="bi bi-broadcast sr-admin-frame-icon sr-admin-ops-panel-title-icon" aria-hidden="true" />
               <span>실시간 운영</span>
             </h2>

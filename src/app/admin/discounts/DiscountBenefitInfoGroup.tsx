@@ -1,4 +1,10 @@
 import type { DiscountBenefitProductOption } from "@/lib/benefits/discount-product-options";
+import { formatBenefitCategoryDisplayName } from "@/lib/benefits/format-benefit-category-label";
+
+import {
+  InlineProviderAddPanel,
+  type InlineProviderOption,
+} from "@/app/admin/providers/InlineCardProviderAddPanel";
 
 import { CardBenefitProductCombobox } from "./CardBenefitProductCombobox";
 import { DiscountBenefitProductSelect } from "./DiscountBenefitProductSelect";
@@ -25,12 +31,14 @@ export function DiscountBenefitInfoGroup({
   selectedProviderId,
   selectedCategoryCode,
   cardCategoryId,
+  membershipCategoryId,
   selectedProviderName,
   selectedBenefitProductIds,
   defaultBenefitProductIds,
   defaultBenefitProductId,
   onCategoryChange,
   onProviderChange,
+  onProviderUpsert,
   onChangeSelectedIds,
   onProductUpsert,
   fieldErrors,
@@ -42,12 +50,17 @@ export function DiscountBenefitInfoGroup({
   selectedProviderId: string;
   selectedCategoryCode: string | null;
   cardCategoryId: number | null;
+  membershipCategoryId: number | null;
   selectedProviderName: string;
   selectedBenefitProductIds: number[];
   defaultBenefitProductIds?: number[];
   defaultBenefitProductId?: number | null;
   onCategoryChange: (categoryId: string) => void;
   onProviderChange: (providerId: string) => void;
+  onProviderUpsert: (
+    provider: InlineProviderOption,
+    allProduct?: DiscountBenefitProductOption,
+  ) => void;
   onChangeSelectedIds: (ids: number[]) => void;
   onProductUpsert: (product: DiscountBenefitProductOption) => void;
   fieldErrors?: {
@@ -62,6 +75,13 @@ export function DiscountBenefitInfoGroup({
       : selectedCategoryCode !== "telecom"
         ? "카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다."
         : undefined;
+
+  const inlineProviderCategory =
+    selectedCategoryCode === "card" && cardCategoryId != null
+      ? ({ code: "card" as const, benefitCategoryId: cardCategoryId })
+      : selectedCategoryCode === "membership" && membershipCategoryId != null
+        ? ({ code: "membership" as const, benefitCategoryId: membershipCategoryId })
+        : null;
 
   return (
     <fieldset className="sr-discounts-benefit-group">
@@ -87,7 +107,7 @@ export function DiscountBenefitInfoGroup({
             </option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.name}
+                {formatBenefitCategoryDisplayName(category.code, category.name)}
               </option>
             ))}
           </select>
@@ -116,6 +136,17 @@ export function DiscountBenefitInfoGroup({
               </option>
             ))}
           </select>
+          {inlineProviderCategory ? (
+            <InlineProviderAddPanel
+              categoryCode={inlineProviderCategory.code}
+              benefitCategoryId={inlineProviderCategory.benefitCategoryId}
+              visible
+              disabled={!selectedCategoryId}
+              panelClassName="sr-discounts-card-add-panel"
+              onProviderCreated={onProviderUpsert}
+              onSelectProvider={onProviderChange}
+            />
+          ) : null}
         </DiscountFormField>
       </div>
 

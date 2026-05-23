@@ -9,6 +9,7 @@ type LegendType = "discount" | "request" | "account" | "generic";
 
 export function PaginatedTable({
   title,
+  titleClassName = "admin-card-title",
   legendType,
   pageSize,
   fixedRows,
@@ -18,6 +19,7 @@ export function PaginatedTable({
   className,
 }: {
   title: string;
+  titleClassName?: string;
   legendType?: LegendType;
   pageSize: number;
   fixedRows: number;
@@ -39,8 +41,8 @@ export function PaginatedTable({
 
   return (
     <div className={["card", className].filter(Boolean).join(" ")}>
-      <div className="card-header bg-white fw-semibold">
-        {title}
+      <div className="card-header sr-card-header py-3 fw-semibold">
+        <div className={titleClassName}>{title}</div>
         {legendType ? (
           <div className="mt-2">
             <StatusLegend type={legendType} />

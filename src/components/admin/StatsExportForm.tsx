@@ -31,9 +31,9 @@ export function StatsExportForm() {
   };
 
   return (
-    <div className="card border-0 shadow-sm mb-4">
-      <div className="card-header bg-white py-3">
-        <div className="fw-bold">통계 엑셀 다운로드</div>
+    <div className="card sr-block mb-4">
+      <div className="card-header sr-card-header py-3">
+        <div className="admin-card-title">통계 엑셀 다운로드</div>
         <div className="small text-muted mt-1">
           일간/주간/월간/직접 기간 기준으로 최대 31일치 집계 데이터를 다운로드합니다.
         </div>

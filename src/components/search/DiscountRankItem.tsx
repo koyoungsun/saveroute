@@ -3,7 +3,7 @@ interface DiscountRankItemProps {
   providerName: string;
   productName?: string;
   discountValue: number;
-  discountUnit: "percent" | "won" | "special_price" | "free" | "unknown";
+  discountUnit: "percent" | "point_percent" | "won" | "special_price" | "free" | "unknown";
   usageType: string;
 }
 
@@ -22,6 +22,10 @@ function formatDiscountValue(
 ) {
   if (discountUnit === "percent") {
     return `최대 ${discountValue}%`;
+  }
+
+  if (discountUnit === "point_percent") {
+    return `${discountValue}% 포인트`;
   }
 
   if (discountUnit === "won") {
@@ -48,7 +52,7 @@ export function DiscountRankItem({
   usageType,
 }: DiscountRankItemProps) {
   return (
-    <article className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <article className="sr-user-card flex items-center justify-between p-4">
       <div>
         <p className="text-xs font-medium text-gray-400">{rank}위</p>
         <p className="mt-0.5 text-sm font-semibold text-gray-900">
@@ -63,7 +67,7 @@ export function DiscountRankItem({
         <p className="text-xl font-bold text-gray-900">
           {formatDiscountValue(discountValue, discountUnit)}
         </p>
-        <span className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+        <span className="sr-user-badge sr-user-badge--match mt-1 px-2 py-0.5">
           {usageTypeLabels[usageType] ?? usageTypeLabels.unknown}
         </span>
       </div>

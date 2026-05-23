@@ -2,7 +2,7 @@ interface DiscountRankFirstProps {
   providerName: string;
   productName?: string;
   discountValue: number;
-  discountUnit: "percent" | "won" | "special_price" | "free" | "unknown";
+  discountUnit: "percent" | "point_percent" | "won" | "special_price" | "free" | "unknown";
   usageType: string;
 }
 
@@ -21,6 +21,10 @@ function formatDiscountValue(
 ) {
   if (discountUnit === "percent") {
     return `최대 ${discountValue}%`;
+  }
+
+  if (discountUnit === "point_percent") {
+    return `${discountValue}% 포인트`;
   }
 
   if (discountUnit === "won") {

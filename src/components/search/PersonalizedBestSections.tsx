@@ -33,7 +33,7 @@ function DiscountCard({ discount }: { discount: PersonalizedDiscount }) {
   return (
     <Link
       href={`/search?keyword=${encodeURIComponent(discount.brandName)}`}
-      className="block rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
+      className="sr-user-card block p-4 transition hover:-translate-y-0.5 hover:border-[color:var(--sr-primary)]/35 hover:shadow-[var(--sr-glow-primary)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -44,7 +44,7 @@ function DiscountCard({ discount }: { discount: PersonalizedDiscount }) {
             {discount.title}
           </h3>
         </div>
-        <p className="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-sm font-black text-orange-600">
+        <p className="sr-user-badge shrink-0 px-3 py-1 text-sm font-black text-gray-950">
           {formatDiscountValue(discount.discountValue, discount.discountUnit)}
         </p>
       </div>
@@ -74,7 +74,7 @@ function DiscountSection({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-4 text-sm leading-6 text-gray-500">
+        <div className="sr-user-card rounded-2xl border border-dashed p-4 text-sm leading-6 text-gray-500">
           <p className="font-semibold text-gray-700">아직 매칭되는 할인이 없어요.</p>
           <p className="mt-1">{emptyHint}</p>
         </div>
@@ -88,15 +88,18 @@ export function PersonalizedBestSections({
   hasBenefits,
   telecomDiscounts,
   cardDiscounts,
+  variant = "home",
 }: {
   isAuthenticated: boolean;
   hasBenefits: boolean;
   telecomDiscounts: PersonalizedDiscount[];
   cardDiscounts: PersonalizedDiscount[];
+  variant?: "home" | "mypage";
 }) {
   if (!isAuthenticated) {
     return (
-      <section className="rounded-3xl border border-orange-100 bg-orange-50 p-5">
+      <section className="sr-user-card sr-user-card--best rounded-3xl p-5">
+        <div className="sr-user-best-line mb-3" aria-hidden />
         <h2 className="text-base font-black text-gray-950">맞춤 할인 BEST</h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
           로그인 후 내 혜택을 등록하면, 통신사·카드 기준으로 받을 수 있는 할인을
@@ -104,7 +107,7 @@ export function PersonalizedBestSections({
         </p>
         <Link
           href="/auth/login?redirect=/my-benefits"
-          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-5 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+          className="sr-user-btn-primary mt-4 inline-flex h-12 items-center justify-center rounded-3xl px-5 text-sm font-semibold text-white"
         >
           로그인하고 혜택 등록
         </Link>
@@ -114,15 +117,17 @@ export function PersonalizedBestSections({
 
   if (!hasBenefits) {
     return (
-      <section className="rounded-3xl border border-orange-100 bg-orange-50 p-5">
+      <section className="sr-user-card sr-user-card--best rounded-3xl p-5">
+        <div className="sr-user-best-line mb-3" aria-hidden />
         <h2 className="text-base font-black text-gray-950">맞춤 할인 BEST</h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          보유 통신사·카드를 등록하면 홈과 검색에서 &lsquo;내 할인 가능&rsquo; 할인을
-          먼저 볼 수 있어요.
+          {variant === "mypage"
+            ? "보유 통신사·카드를 등록하면 아래에서 맞춤 할인 BEST를 확인할 수 있어요."
+            : "보유 통신사·카드를 등록하면 홈과 검색에서 ‘내 할인 가능’ 할인을 먼저 볼 수 있어요."}
         </p>
         <Link
           href="/my-benefits"
-          className="mt-4 inline-flex h-12 items-center justify-center rounded-3xl bg-sr-primary px-5 text-sm font-semibold text-white hover:bg-sr-primary-hover"
+          className="sr-user-btn-primary mt-4 inline-flex h-12 items-center justify-center rounded-3xl px-5 text-sm font-semibold text-white"
         >
           내 혜택 등록하기
         </Link>

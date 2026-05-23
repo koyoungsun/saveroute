@@ -1,0 +1,274 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+
+.overlayOpen {
+  pointer-events: auto;
+}
+
+.inkDisc {
+  position: fixed;
+  top: var(--ink-origin-y, 50%);
+  left: var(--ink-origin-x, 50%);
+  width: 240vmax;
+  height: 240vmax;
+  margin: calc(-120vmax) 0 0 calc(-120vmax);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  opacity: 0;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(120, 110, 255, 0.36) 0%,
+      rgba(94, 92, 230, 0.16) 24%,
+      transparent 54%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(10, 12, 30, 0.97) 0%,
+      rgba(6, 8, 22, 0.96) 58%,
+      rgba(4, 6, 16, 0.94) 100%
+    );
+  box-shadow:
+    inset 0 0 120px rgba(94, 92, 230, 0.16),
+    0 0 96px rgba(74, 98, 246, 0.2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition:
+    transform 720ms cubic-bezier(0.16, 1, 0.28, 1),
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.inkDiscVisible {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.menuScene {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(4.5rem + env(safe-area-inset-top, 0px))
+    1.5rem
+    calc(2rem + env(safe-area-inset-bottom, 0px));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.menuSceneVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 480ms ease 200ms;
+}
+
+.menuContent {
+  display: flex;
+  width: min(100%, 22rem);
+  flex-direction: column;
+  align-items: center;
+}
+
+.menuBrand {
+  margin: 0 0 1.75rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgba(240, 244, 255, 0.94);
+  text-align: center;
+}
+
+.menuBrandAccent {
+  color: #7ea2ff;
+}
+
+.menuNav {
+  width: 100%;
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuListItem {
+  width: 100%;
+  max-width: 18rem;
+  margin: 0;
+}
+
+.menuDivider {
+  width: min(100%, 8rem);
+  height: 1px;
+  margin: 0.625rem 0;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(140, 170, 255, 0.28) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menuSceneVisible .menuDivider {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.menuItem {
+  display: inline-flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.125rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(230, 236, 255, 0.9);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.menuSceneVisible .menuItem {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.menuItemIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: rgba(170, 190, 255, 0.58);
+  transition: color 180ms ease;
+}
+
+.menuItemLabel {
+  min-width: 0;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  border-color: rgba(126, 162, 255, 0.32);
+  box-shadow: 0 0 18px rgba(94, 92, 230, 0.14);
+  outline: none;
+}
+
+.menuItem:hover .menuItemIcon,
+.menuItem:focus-visible .menuItemIcon {
+  color: rgba(158, 184, 255, 0.82);
+}
+
+.menuItemActive {
+  border-color: rgba(126, 162, 255, 0.45);
+  color: #ffffff;
+  box-shadow:
+    0 0 20px rgba(94, 92, 230, 0.18),
+    inset 0 0 0 1px rgba(126, 162, 255, 0.1);
+}
+
+.menuItemActive .menuItemIcon {
+  color: rgba(126, 162, 255, 0.88);
+}
+
+.menuItemAccount {
+  color: rgba(210, 220, 255, 0.86);
+}
+
+.menuItemLogout {
+  color: rgba(200, 210, 240, 0.78);
+}
+
+.iconButton {
+  position: relative;
+  z-index: 49;
+  display: inline-flex;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(120, 110, 255, 0.55);
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease;
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  border-color: rgba(140, 130, 255, 0.72);
+  box-shadow: 0 0 14px rgba(94, 92, 230, 0.28);
+  outline: none;
+}
+
+.iconButton:active {
+  transform: scale(0.97);
+}
+
+.iconButtonOpen {
+  border-color: rgba(140, 130, 255, 0.68);
+  box-shadow: 0 0 16px rgba(94, 92, 230, 0.34);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inkDisc,
+  .menuScene,
+  .menuItem,
+  .menuDivider {
+    transition-duration: 0.01ms;
+    transition-delay: 0ms;
+  }
+
+  .menuItem,
+  .menuDivider {
+    opacity: 1;
+    transform: none;
+  }
+
+  .inkDiscVisible {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .menuSceneVisible {
+    opacity: 1;
+  }
+}

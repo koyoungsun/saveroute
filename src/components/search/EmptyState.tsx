@@ -4,6 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { UserPage } from "@/components/layout/UserPage";
+import { SearchHubChrome } from "@/components/search/SearchHubChrome";
+
 export type EmptyStateVariant =
   | "default"
   | "no_keyword"
@@ -50,10 +53,12 @@ const COPY: Record<
   },
   search_error: {
     title: "검색 결과를 불러오지 못했어요.",
-    subtitle: "잠시 후 다시 시도해 주세요. 문제가 계속되면 홈에서 다른 브랜드를 검색해 보세요.",
+    subtitle: "잠시 후 다시 시도해 주세요. 문제가 계속되면 다른 브랜드를 검색해 보세요.",
     showRequest: false,
   },
 };
+
+const SHOW_SEARCH_EMPTY_HERO_IMAGE = false;
 
 export function EmptyState({ keyword, variant = "default" }: EmptyStateProps) {
   const [requestCount, setRequestCount] = useState<number | null>(null);
@@ -159,101 +164,113 @@ export function EmptyState({ keyword, variant = "default" }: EmptyStateProps) {
   const highlightPopular = count >= 3;
   const copy = COPY[variant];
   const showRequest = copy.showRequest !== false;
+  const trimmedKeyword = keyword?.trim() ?? "";
 
   return (
-    <div className="flex flex-col items-center px-4 pt-12 pb-16 text-center sm:pt-16">
-      <div className="mb-4 w-[min(500px,88vw)]">
-        <Image
-          src="/icons/icon_noimg.png"
-          alt=""
-          width={500}
-          height={500}
-          className="h-auto w-full object-contain"
-          sizes="(max-width: 500px) 88vw, 500px"
-          aria-hidden
-        />
-      </div>
-      <h1 className="-mt-[30px] text-[1.5rem] font-semibold leading-snug text-[#409A53] sm:text-[1.6875rem]">
-        {copy.title}
-      </h1>
-      <p className="mt-2 max-w-md text-sm leading-relaxed text-gray-500">{copy.subtitle}</p>
+    <UserPage tone="comfortable" className="sr-user-search-results-page">
+      <div className="sr-user-search-results-rail sr-user-content-width">
+        <SearchHubChrome variant="results" defaultValue={trimmedKeyword} />
 
-      {variant === "no_keyword" ? (
-        <Link
-          href="/"
-          className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover"
-        >
-          홈에서 검색하기
-        </Link>
-      ) : null}
+        <div className="sr-user-search-results-list">
+      <div className="sr-user-search-empty sr-user-search-panel sr-user-search-panel--empty text-center">
+        {SHOW_SEARCH_EMPTY_HERO_IMAGE ? (
+          <div className="sr-user-card mb-4 w-[min(500px,88vw)] overflow-hidden p-3">
+            <Image
+              src="/icons/icon_noimg.png"
+              alt=""
+              width={500}
+              height={500}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 500px) 88vw, 500px"
+              aria-hidden
+            />
+          </div>
+        ) : null}
 
-      {variant === "no_registered_benefits" ? (
-        <Link
-          href="/my-benefits"
-          className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover"
-        >
-          내 혜택 추가하기
-        </Link>
-      ) : null}
+        {trimmedKeyword ? (
+          <p className="sr-user-t-body sr-user-search-panel__body">
+            <span className="sr-user-search-results-header__brand">{trimmedKeyword}</span> 검색 결과
+          </p>
+        ) : null}
 
-      {variant === "search_error" ? (
-        <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
-          <Link
-            href="/"
-            className="flex h-12 items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover"
-          >
-            홈으로 돌아가기
+        <h1 className="sr-user-t-page-title sr-user-search-panel__title mt-2 leading-snug">
+          {copy.title}
+        </h1>
+        <p className="sr-user-t-body sr-user-search-panel__body mx-auto mt-2 max-w-md">{copy.subtitle}</p>
+
+        {variant === "no_keyword" ? (
+          <Link href="/" className="sr-user-search-panel__secondary sr-user-btn-secondary sr-user-btn-secondary--block mx-auto mt-6 max-w-xs">
+            홈으로
           </Link>
-          {keyword ? (
-            <Link
-              href={`/search?keyword=${encodeURIComponent(keyword)}`}
-              className="flex h-12 items-center justify-center rounded-3xl border border-gray-200 bg-white font-medium text-gray-800 hover:border-[#409A53]/40"
-            >
-              다시 검색하기
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
+        ) : null}
 
-      {showRequest ? (
-        <>
-          <button
-            type="button"
-            onClick={() => void handleRequest()}
-            disabled={submitting}
-            className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-3xl bg-sr-primary font-medium text-white hover:bg-sr-primary-hover disabled:opacity-50"
+        {variant === "no_registered_benefits" ? (
+          <Link
+            href="/my-benefits"
+            className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block mx-auto mt-6 max-w-xs"
           >
-            업데이트 요청하기
-          </button>
-          {feedback === "unauthenticated" ? (
-            <Link
-              href={`/auth/login?redirect=${encodeURIComponent(`/search?keyword=${encodeURIComponent(keyword ?? "")}`)}`}
-              className="mt-3 text-sm font-semibold text-[#409A53] underline-offset-2 hover:underline"
-            >
-              로그인하고 요청하기
+            내 혜택 추가하기
+          </Link>
+        ) : null}
+
+        {variant === "search_error" ? (
+          <div className="mx-auto mt-6 flex w-full max-w-xs flex-col gap-2">
+            {trimmedKeyword ? (
+              <Link
+                href={`/search?keyword=${encodeURIComponent(trimmedKeyword)}`}
+                className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block"
+              >
+                다시 검색하기
+              </Link>
+            ) : null}
+            <Link href="/" className="sr-user-search-panel__secondary sr-user-btn-secondary sr-user-btn-secondary--block">
+              홈으로
             </Link>
-          ) : null}
-        </>
-      ) : null}
+          </div>
+        ) : null}
 
-      {feedbackText ? (
-        <p className="mt-3 text-sm text-gray-600" role="status" aria-live="polite">
-          {feedbackText}
-        </p>
-      ) : null}
+        {showRequest ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void handleRequest()}
+              disabled={submitting}
+              className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block mx-auto mt-6 max-w-xs disabled:opacity-50"
+            >
+              업데이트 요청하기
+            </button>
+            {feedback === "unauthenticated" ? (
+              <Link
+                href={`/auth/login?redirect=${encodeURIComponent(`/search?keyword=${encodeURIComponent(keyword ?? "")}`)}`}
+                className="sr-user-link sr-user-t-body mt-3 inline-block font-semibold underline-offset-2 hover:underline"
+              >
+                로그인하고 요청하기
+              </Link>
+            ) : null}
+          </>
+        ) : null}
 
-      {showRequest ? (
-        <p
-          className={
-            highlightPopular
-              ? "mt-3 text-xs font-semibold text-orange-600"
-              : "mt-3 text-xs text-gray-400"
-          }
-        >
-          요청 수가 많은 업체부터 먼저 확인합니다.
-          {count > 0 ? ` (현재 요청 ${count}회)` : null}
-        </p>
-      ) : null}
-    </div>
+        {feedbackText ? (
+          <p className="sr-user-t-body sr-user-canvas-text-secondary mt-3" role="status" aria-live="polite">
+            {feedbackText}
+          </p>
+        ) : null}
+
+        {showRequest ? (
+          <p
+            className={
+              highlightPopular
+                ? "sr-user-accent-text sr-user-t-muted mt-3 font-semibold"
+                : "sr-user-t-muted sr-user-canvas-text-muted mt-3"
+            }
+          >
+            요청 수가 많은 업체부터 먼저 확인합니다.
+            {count > 0 ? ` (현재 요청 ${count}회)` : null}
+          </p>
+        ) : null}
+      </div>
+        </div>
+      </div>
+    </UserPage>
   );
 }
