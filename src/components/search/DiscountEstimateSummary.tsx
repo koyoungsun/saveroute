@@ -55,22 +55,24 @@ export function DiscountEstimateSummary({
   }
 
   return (
-    <div className="sr-user-discount-estimate-summary">
-      <div className="sr-user-discount-estimate-summary__row">
-        <span className="sr-user-discount-estimate-summary__label">
-          - 할인 예상금액
-        </span>
-        <strong className="sr-user-discount-estimate-summary__value">
-          <WonDisplay value={estimate.discountAmount} variant="discount" />
-        </strong>
-      </div>
-      <div className="sr-user-discount-estimate-summary__row">
-        <span className="sr-user-discount-estimate-summary__label">
-          - 예상 결제금액
-        </span>
-        <strong className="sr-user-discount-estimate-summary__value">
-          <WonDisplay value={estimate.paymentAmount} variant="payment" />
-        </strong>
+    <div className="sr-user-discount-estimate-summary-box">
+      <div className="sr-user-discount-estimate-summary">
+        <div className="sr-user-discount-estimate-summary__row">
+          <span className="sr-user-discount-estimate-summary__label">
+            - 할인 예상금액
+          </span>
+          <strong className="sr-user-discount-estimate-summary__value">
+            <WonDisplay value={estimate.discountAmount} variant="discount" />
+          </strong>
+        </div>
+        <div className="sr-user-discount-estimate-summary__row">
+          <span className="sr-user-discount-estimate-summary__label">
+            - 예상 결제금액
+          </span>
+          <strong className="sr-user-discount-estimate-summary__value">
+            <WonDisplay value={estimate.paymentAmount} variant="payment" />
+          </strong>
+        </div>
       </div>
     </div>
   );

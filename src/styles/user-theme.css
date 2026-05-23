@@ -842,6 +842,18 @@
   border-top: 1px solid var(--sr-border-card);
 }
 
+.sr-user-app .sr-user-search-result-card__divider--before-summary,
+.sr-user-app .sr-user-search-result-card__divider--after-summary {
+  margin: 0;
+}
+
+.sr-user-app
+  .sr-user-search-result-card:has(.sr-user-discount-estimate-summary-box)
+  .sr-user-search-result-card__footer {
+  margin-top: 0;
+  border-top: 0;
+}
+
 .sr-user-app .sr-user-search-result-card__footer {
   position: relative;
   z-index: 2;
@@ -856,6 +868,8 @@
 .sr-user-app .sr-user-search-result-card__expand-panel {
   display: grid;
   grid-template-rows: 0fr;
+  margin: 0;
+  min-height: 0;
   opacity: 0;
   transition:
     grid-template-rows 0.28s ease,
@@ -867,6 +881,14 @@
   grid-template-rows: 1fr;
   opacity: 1;
   margin-top: 0;
+}
+
+.sr-user-app
+  .sr-user-search-result-card__expand-panel:not(.sr-user-search-result-card__expand-panel--open)
+  .sr-user-search-result-card__details {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .sr-user-app .sr-user-search-result-card__expand-panel > .sr-user-search-result-card__details {
@@ -950,11 +972,24 @@
   font-weight: var(--sr-font-discount-value-weight);
 }
 
+.sr-user-app .sr-user-discount-estimate-summary-box {
+  margin: 16px 0 8px;
+  padding: 16px 18px;
+  border: 1px solid rgba(120, 140, 255, 0.18);
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(77, 124, 254, 0.14),
+    rgba(40, 48, 88, 0.24)
+  );
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
 .sr-user-app .sr-user-discount-estimate-summary {
-  margin: 0.75rem 0 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .sr-user-app .sr-user-discount-estimate-summary__row {
@@ -1007,7 +1042,7 @@
 }
 
 .sr-user-app .sr-user-discount-estimate-summary__payment-value .sr-user-won-display__number {
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   font-weight: 800;
   line-height: 1.15;
   color: #ea580c;
@@ -3137,11 +3172,25 @@
   color: #111827;
 }
 
+.sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary-box {
+  border-color: rgba(120, 140, 255, 0.18);
+  background: linear-gradient(
+    135deg,
+    rgba(240, 245, 255, 0.95),
+    rgba(228, 236, 255, 0.88)
+  );
+  box-shadow: 0 2px 10px rgba(77, 124, 254, 0.08);
+}
+
 .sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__label {
   color: #6b7280;
 }
 
-.sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__payment-value .sr-user-won-display__number,
+.sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__payment-value .sr-user-won-display__number {
+  font-size: 1.25rem;
+  color: #ea580c;
+}
+
 .sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__payment-value .sr-user-won-display__unit {
   color: #ea580c;
 }
@@ -3149,6 +3198,11 @@
 .sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__discount-value .sr-user-won-display__number,
 .sr-user-app .sr-user-search-results-page .sr-user-discount-estimate-summary__discount-value .sr-user-won-display__unit {
   color: #2563eb;
+}
+
+.sr-user-app .sr-user-search-results-page .sr-user-search-result-card__divider--before-summary,
+.sr-user-app .sr-user-search-results-page .sr-user-search-result-card__divider--after-summary {
+  border-top-color: rgba(120, 150, 255, 0.18);
 }
 
 .sr-user-app .sr-user-search-results-page .sr-user-shared-payment-input__field--filled {
@@ -3476,6 +3530,601 @@
   border-color: rgba(126, 162, 255, 0.72);
   background: rgba(77, 124, 254, 0.14);
   color: #ffffff;
+}
+
+/* ── My Benefits — Premium white glass modules on dark page ── */
+.sr-user-app .sr-user-benefits-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card {
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(238, 238, 238, 0.82) 45%,
+    rgba(255, 255, 255, 0.68) 100%
+  );
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.45);
+  color: #6366f1;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__title {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #111111;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__description {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #5f6673;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__meta {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #4d7cfe;
+  white-space: nowrap;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__chevron {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition: transform 220ms ease;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__chevron--open {
+  transform: rotate(180deg);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 240ms ease,
+    opacity 220ms ease;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__panel--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__panel-inner {
+  overflow: hidden;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__panel--open .sr-user-benefit-accordion-card__panel-inner {
+  padding-top: 1rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__inner-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sr-user-app .sr-user-benefit-form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sr-user-app .sr-user-benefit-form-step--with-divider {
+  padding-bottom: 1.125rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-benefit-form-step__step {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6366f1;
+}
+
+.sr-user-app .sr-user-benefit-form-step__label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-benefit-form-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sr-user-app .sr-user-benefit-form-action {
+  padding-block: 0.375rem 0.25rem;
+}
+
+.sr-user-app .sr-user-benefit-register-btn {
+  display: inline-flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(139, 92, 246, 0.12)
+  );
+  color: #4f46e5;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.sr-user-app .sr-user-benefit-register-btn:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.38);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.24),
+    rgba(139, 92, 246, 0.16)
+  );
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.14);
+}
+
+.sr-user-app .sr-user-benefit-register-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sr-user-app .sr-user-benefit-registered {
+  margin-top: 0.25rem;
+  padding-top: 1.125rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-benefit-registered__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-benefit-registered__divider {
+  height: 1px;
+  margin: 0.625rem 0 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-benefit-registered__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-chip {
+  max-width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card__placeholder {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #6b7280;
+}
+
+/* Glass module internals — shared (my-benefits + onboarding) */
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-gray-950, .text-gray-900, .text-gray-800) {
+  color: #111111;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-gray-700) {
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-gray-600, .text-gray-500) {
+  color: #6b7280;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-gray-400, .text-gray-300) {
+  color: #9ca3af;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-accent-text {
+  color: #6366f1;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea) {
+  min-height: 3rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+  padding-inline: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):hover:not(:disabled):not(:focus) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):focus {
+  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 3px rgba(99, 102, 241, 0.12);
+  outline: none;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card select option {
+  background: #f8fafc;
+  color: #111111;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-choice {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-choice:hover:not(.sr-user-choice--active) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-choice--active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-callout {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.32);
+  color: #1f2937;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.bg-gray-50, .bg-gray-100) {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.38);
+  color: #111111;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.border-gray-100, .border-gray-200, .border-gray-50) {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.border-amber-100, .border-amber-200, .bg-amber-50, .bg-amber-50\/60, .bg-amber-50\/80) {
+  border-color: rgba(253, 230, 138, 0.72);
+  background: rgba(255, 251, 235, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-amber-700, .text-amber-800, .text-amber-900) {
+  color: #92400e;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.border-red-200, .bg-red-50, .bg-red-50\/60) {
+  border-color: rgba(254, 202, 202, 0.72);
+  background: rgba(254, 242, 242, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card :is(.text-red-600, .text-red-700) {
+  color: #dc2626;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-badge {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+  color: #1f2937;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-badge--match {
+  border-color: rgba(99, 102, 241, 0.22);
+  background: rgba(99, 102, 241, 0.1);
+  color: #4338ca;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-btn-primary {
+  border: 0;
+  border-radius: 14px;
+  background: var(--sr-cta-bg);
+  box-shadow: var(--sr-cta-shadow);
+  color: #ffffff;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-btn-primary:hover:not(:disabled) {
+  background: var(--sr-cta-bg-hover);
+  box-shadow: var(--sr-cta-shadow-hover);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-btn-secondary {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #1f2937;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .sr-user-btn-secondary:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .hover\:bg-red-50:hover {
+  background: rgba(254, 242, 242, 0.72);
+  color: #dc2626;
+}
+
+.sr-user-app .sr-user-benefit-accordion-card .shadow-sm {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Account page dark overrides — reset inside glass benefit modules only */
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-gray-950, .text-gray-900, .text-gray-800) {
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-gray-700) {
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-gray-600, .text-gray-500) {
+  color: #6b7280;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-gray-400, .text-gray-300) {
+  color: #9ca3af;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-accent-text {
+  color: #6366f1;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea) {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+  padding-inline: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):hover:not(:disabled):not(:focus) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):focus {
+  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 3px rgba(99, 102, 241, 0.12);
+  outline: none;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card select option {
+  background: #f8fafc;
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-choice {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-choice:hover:not(.sr-user-choice--active) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-choice--active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-callout {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.32);
+  color: #1f2937;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.bg-gray-50, .bg-gray-100) {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.38);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.border-gray-100, .border-gray-50, .divide-gray-100 > *) {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-chip {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-benefit-register-btn {
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(139, 92, 246, 0.12)
+  );
+  color: #4f46e5;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.border-amber-200, .border-amber-100, .bg-amber-50, .bg-amber-50\/60, .bg-amber-50\/80) {
+  border-color: rgba(253, 230, 138, 0.72);
+  background: rgba(255, 251, 235, 0.62);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-amber-700, .text-amber-800, .text-amber-900) {
+  color: #92400e;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.border-red-200, .bg-red-50, .bg-red-50\/60) {
+  border-color: rgba(254, 202, 202, 0.72);
+  background: rgba(254, 242, 242, 0.62);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.text-red-600, .text-red-700) {
+  color: #dc2626;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-badge {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-btn-primary {
+  border: 0;
+  background: var(--sr-cta-bg);
+  box-shadow: var(--sr-cta-shadow);
+  color: #ffffff;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-btn-primary:hover:not(:disabled) {
+  background: var(--sr-cta-bg-hover);
+  box-shadow: var(--sr-cta-shadow-hover);
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-btn-secondary {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  color: #1f2937;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .sr-user-btn-secondary:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+  color: #111111;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .hover\:bg-red-50:hover {
+  background: rgba(254, 242, 242, 0.72);
+  color: #dc2626;
+}
+
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card .shadow-sm {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 /* ── Content pages (notices, terms, privacy) ── */

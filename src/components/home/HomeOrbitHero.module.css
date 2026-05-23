@@ -78,11 +78,11 @@
 
 .ringInnerDotted {
   fill: none;
-  stroke: rgba(150, 178, 255, 0.72);
-  stroke-width: 1;
+  stroke: rgba(158, 184, 255, 0.92);
+  stroke-width: 1.15;
   stroke-dasharray: 2 9;
   stroke-linecap: round;
-  opacity: 0.34;
+  opacity: 0.56;
   animation: hud-inner-dash-scan 28s linear infinite;
 }
 

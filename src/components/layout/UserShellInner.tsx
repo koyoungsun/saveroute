@@ -23,6 +23,8 @@ import {
 } from "@/lib/user/home-layout-flags";
 
 import { PwaServiceWorkerRegister } from "@/components/pwa/PwaServiceWorkerRegister";
+import { AnimatedBackground } from "@/components/common/AnimatedBackground";
+import { getAnimatedBackgroundIntensity } from "@/lib/user/animated-background-intensity";
 
 import { UserDesktopFloatingNav } from "./UserDesktopFloatingNav";
 import { UserFooter } from "./UserFooter";
@@ -109,13 +111,16 @@ export function UserShellInner({ children }: UserShellInnerProps) {
     hubKind === "content" ? SHOW_CONTENT_FONT_SIZE_CONTROLS : SHOW_FONT_SIZE_CONTROLS;
 
   const showZoomControl = !showFloatingMenu && showFontSizeControls;
+  const backgroundIntensity = getAnimatedBackgroundIntensity(pathname);
 
   return (
     <ZoomProvider>
       <PwaServiceWorkerRegister />
       <div className="sr-user-app flex min-h-dvh flex-col">
+        <AnimatedBackground intensity={backgroundIntensity} />
         {showHeader ? <UserHeader /> : null}
         {showLegacyDesktopNav ? <UserDesktopFloatingNav /> : null}
+        {showFloatingMenu ? <UserHomeFloatingMenu /> : null}
         <main className="sr-user-app-shell relative z-10 flex min-h-0 flex-1 flex-col overflow-visible">
           <UserZoomContent>
             <Suspense fallback={children}>
@@ -125,7 +130,6 @@ export function UserShellInner({ children }: UserShellInnerProps) {
         </main>
         <div id="sr-user-bottom-dock-root" />
         {showFooter ? <UserFooter /> : null}
-        {showFloatingMenu ? <UserHomeFloatingMenu /> : null}
         {showZoomControl ? <UserZoomControl /> : null}
       </div>
     </ZoomProvider>

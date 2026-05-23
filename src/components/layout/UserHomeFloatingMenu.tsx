@@ -183,6 +183,8 @@ export function UserHomeFloatingMenu() {
     void supabase.auth.getUser().then(({ data }) => {
       setIsAuthenticated(Boolean(data.user));
       setAuthReady(true);
+    }).catch(() => {
+      setAuthReady(true);
     });
 
     const {
@@ -271,11 +273,10 @@ export function UserHomeFloatingMenu() {
     void handleLogout();
   }
 
-  if (!authReady) {
-    return null;
-  }
-
-  const menuItems = isAuthenticated ? getAuthenticatedMenuItems() : getGuestMenuItems();
+  const menuItems =
+    !authReady || !isAuthenticated
+      ? getGuestMenuItems()
+      : getAuthenticatedMenuItems();
   const primaryItems = menuItems.filter(
     (item): item is FloatingMenuLinkItem => "href" in item && !("account" in item),
   );
@@ -467,25 +468,27 @@ export function UserHomeFloatingMenu() {
   return (
     <>
       <div className="sr-user-floating-menu">
-        <button
-          ref={toggleRef}
-          type="button"
-          className={cn(
-            styles.iconButton,
-            isOpen && styles.iconButtonOpen,
-          )}
-          aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
-          aria-expanded={isOpen}
-          aria-controls={menuId}
-          aria-haspopup="dialog"
-          onClick={toggleMenu}
-        >
-          {isOpen ? (
-            <X aria-hidden="true" strokeWidth={2.25} />
-          ) : (
-            <Menu aria-hidden="true" strokeWidth={2.25} />
-          )}
-        </button>
+        <div className="sr-user-floating-menu__inner sr-user-app-header__inner">
+          <button
+            ref={toggleRef}
+            type="button"
+            className={cn(
+              styles.iconButton,
+              isOpen && styles.iconButtonOpen,
+            )}
+            aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={isOpen}
+            aria-controls={menuId}
+            aria-haspopup="dialog"
+            onClick={toggleMenu}
+          >
+            {isOpen ? (
+              <X aria-hidden="true" size={26} strokeWidth={2.2} />
+            ) : (
+              <Menu aria-hidden="true" size={26} strokeWidth={2.2} />
+            )}
+          </button>
+        </div>
       </div>
       {overlay}
     </>

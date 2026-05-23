@@ -1,11 +1,16 @@
 "use client";
 
-import { Check, CreditCard, Plus, Smartphone, Star, X } from "lucide-react";
+import { Check, CreditCard, Plus, Smartphone, Star, TicketPercent, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { UserBottomDock } from "@/components/layout/UserBottomDock";
+import {
+  BenefitAccordionCard,
+  BenefitFormStep,
+  RegisteredBenefitsBlock,
+} from "@/components/benefits/BenefitAccordionCard";
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
@@ -99,6 +104,11 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
   const [mvnoRequestFeedback, setMvnoRequestFeedback] = useState<string | null>(null);
   const [mvnoRequestError, setMvnoRequestError] = useState<string | null>(null);
   const [mvnoRequestSubmitting, setMvnoRequestSubmitting] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  function toggleBenefitSection(sectionId: string) {
+    setExpandedSection((current) => (current === sectionId ? null : sectionId));
+  }
 
   const featuredMvnoOptions = useMemo(
     () => filterFeaturedMvnoBrandOptions(payload.mvnoBrandOptions),
@@ -507,7 +517,10 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     !pendingCatalogRequest;
 
   return (
-    <div className="sr-user-stack sr-user-stack--tight">
+    <div
+      className="sr-user-benefits-hub sr-user-stack sr-user-stack--tight"
+      id="benefits-hub"
+    >
       {telecomErr ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {telecomErr}
@@ -534,7 +547,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           <p className="text-sm font-semibold text-gray-900">아직 등록된 혜택이 없어요.</p>
           <div className="mt-5 flex flex-col gap-2.5">
             <a
-              href="#benefits-register"
+              href="#benefits-hub"
               className="sr-user-btn-primary inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-bold text-white"
             >
               내 혜택 등록하기
@@ -549,54 +562,43 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         </div>
       ) : null}
 
-      <section
-        id="benefits-register"
-        className="scroll-mt-6 rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5"
+      <BenefitAccordionCard
+        icon={Smartphone}
+        title="통신사 혜택"
+        description="통신사 할인 및 제휴 혜택"
+        count={telecomAndMvnoBenefits.length}
+        expanded={expandedSection === "telecom"}
+        onToggle={() => toggleBenefitSection("telecom")}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
-              통신사
-            </p>
-            <h2 className="mt-1 text-lg font-extrabold text-gray-950">통신 혜택 등록</h2>
-            <p className="mt-1 text-xs leading-relaxed text-gray-600">
-              통신사 또는 알뜰폰을 선택해 주세요.
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500">
-              알뜰폰은 브랜드 단위로 먼저 등록할 수 있어요.
-            </p>
+        <BenefitFormStep step={1} label="보유 통신사 선택">
+          <div className="grid grid-cols-2 gap-2">
+            {TELECOM_FIRST_CHOICES.map((choice) => {
+              const active = telecomFirst === choice.id;
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  onClick={() => selectTelecomFirst(choice.id)}
+                  className={`sr-user-choice ${active ? "sr-user-choice--active" : ""}`}
+                >
+                  {active ? (
+                    <Check className="sr-user-accent-text absolute right-2 top-2 size-5" aria-hidden />
+                  ) : null}
+                  <span className="text-sm font-bold text-gray-900">{choice.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <Smartphone className="size-9 shrink-0 text-gray-300" aria-hidden />
-        </div>
-
-        <p className="mt-3 text-xs font-medium text-gray-700">1단계: 통신사 또는 알뜰폰</p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {TELECOM_FIRST_CHOICES.map((choice) => {
-            const active = telecomFirst === choice.id;
-            return (
-              <button
-                key={choice.id}
-                type="button"
-                onClick={() => selectTelecomFirst(choice.id)}
-                className={`sr-user-choice ${active ? "sr-user-choice--active" : ""}`}
-              >
-                {active ? (
-                  <Check className="sr-user-accent-text absolute right-2 top-2 size-5" aria-hidden />
-                ) : null}
-                <span className="text-sm font-bold text-gray-900">{choice.label}</span>
-              </button>
-            );
-          })}
-        </div>
+          <p className="text-xs leading-relaxed text-gray-500">
+            알뜰폰은 브랜드 단위로 먼저 등록할 수 있어요.
+          </p>
+        </BenefitFormStep>
 
         {telecomFirst && telecomFirst !== "mvno" ? (
-          <div className="mt-5 space-y-2">
+          <BenefitFormStep step={2} label="멤버십 등급 선택">
             <p className="text-xs leading-relaxed text-gray-600">
               통신사 멤버십 등급은 실제 할인 매칭에 사용됩니다.
             </p>
-            <label htmlFor="telecom-membership-grade" className="text-xs font-bold text-gray-700">
-              2단계: 멤버십 등급
-            </label>
             <select
               id="telecom-membership-grade"
               value={telecomMembershipProductId}
@@ -605,7 +607,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
+              className="sr-user-input px-3 py-3 text-sm font-semibold"
             >
               <option value="">등급을 선택해 주세요</option>
               {membershipOptionsForCarrier.map((opt) => (
@@ -621,14 +623,11 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             {membershipOptionsForCarrier.length === 0 ? (
               <p className="text-xs text-amber-700">이 통신사의 멤버십 상품 데이터를 불러오지 못했습니다.</p>
             ) : null}
-          </div>
+          </BenefitFormStep>
         ) : null}
 
         {telecomFirst === "mvno" ? (
-          <div className="mt-5 space-y-2">
-            <label htmlFor="telecom-mvno-brand" className="text-xs font-bold text-gray-700">
-              2단계: 알뜰폰 브랜드
-            </label>
+          <BenefitFormStep step={2} label="알뜰폰 브랜드 선택">
             <select
               id="telecom-mvno-brand"
               value={mvnoProviderId}
@@ -637,7 +636,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
+              className="sr-user-input px-3 py-3 text-sm font-semibold"
             >
               <option value="">브랜드를 선택해 주세요</option>
               {featuredMvnoOptions.map((opt) => (
@@ -650,7 +649,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               <p className="text-xs text-gray-500">등록 가능한 알뜰폰 브랜드가 없습니다.</p>
             ) : null}
 
-            <div className="mt-4 border-t border-gray-100 pt-4">
+            <div className="border-t border-gray-100 pt-4">
               <p className="text-xs text-gray-600">찾는 알뜰폰 브랜드가 없나요?</p>
               {showMvnoRequestForm ? (
                 <div className="mt-3 space-y-2">
@@ -717,40 +716,397 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 </p>
               ) : null}
             </div>
-          </div>
+          </BenefitFormStep>
         ) : null}
 
-        <button
-          type="button"
-          disabled={!canRegisterTelecom}
-          onClick={handleRegisterTelecom}
-          className="sr-user-btn-primary mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
-        >
-          <Plus className="size-4" aria-hidden />
-          {pendingTelecom ? "등록 중..." : "통신 혜택 등록"}
-        </button>
+        <div className="sr-user-benefit-form-action">
+          <button
+            type="button"
+            disabled={!canRegisterTelecom}
+            onClick={handleRegisterTelecom}
+            className="sr-user-benefit-register-btn flex h-12 w-full items-center justify-center gap-2 text-sm font-extrabold"
+          >
+            <Plus className="size-4" aria-hidden />
+            {pendingTelecom ? "등록 중..." : "통신 혜택 등록"}
+          </button>
+        </div>
 
         {telecomAndMvnoBenefits.length > 0 ? (
-          <div className="mt-5">
-            <p className="text-xs font-bold text-gray-700">등록한 통신·알뜰폰</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {telecomAndMvnoBenefits.map((b) => {
-                const productName = relationOne(b.benefit_product)?.name ?? "회선";
-                const providerName = relationOne(b.provider)?.name ?? "";
-                return (
-                  <div
-                    key={b.id}
-                    className="sr-user-chip"
-                  >
-                    <span className="min-w-0 truncate">
+          <RegisteredBenefitsBlock>
+            {telecomAndMvnoBenefits.map((b) => {
+              const productName = relationOne(b.benefit_product)?.name ?? "회선";
+              const providerName = relationOne(b.provider)?.name ?? "";
+              return (
+                <div key={b.id} className="sr-user-chip">
+                  <span className="min-w-0 truncate">
+                    {providerName ? `${providerName} · ` : ""}
+                    {productName}
+                  </span>
+                  <form action={deactivateUserBenefitAction}>
+                    <input type="hidden" name="user_benefit_id" value={b.id} />
+                    <button
+                      type="submit"
+                      aria-label={`${productName} 삭제`}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </RegisteredBenefitsBlock>
+        ) : null}
+      </BenefitAccordionCard>
+
+      <BenefitAccordionCard
+        icon={CreditCard}
+        title="카드 혜택"
+        description="보유 카드 할인 및 제휴 혜택"
+        count={cardBenefits.length}
+        expanded={expandedSection === "card"}
+        onToggle={() => toggleBenefitSection("card")}
+      >
+        <p className="sr-user-callout text-xs leading-relaxed">
+          아직 혜택 정보가 없는 카드도 보유카드로 등록할 수 있어요.
+          세이브루트가 확인한 할인 혜택과 자동으로 연결됩니다.
+        </p>
+
+        <BenefitFormStep step={1} label="카드사 선택">
+          <select
+            id="card-provider"
+            value={selectedCardProviderId}
+            onChange={(event) => {
+              setSelectedCardProviderId(event.target.value);
+              setSelectedCardProductId("");
+              setCardSearchQuery("");
+              setCardMsg(null);
+            }}
+            className="sr-user-input px-3 py-3 text-sm font-semibold"
+          >
+            <option value="">카드사를 선택해 주세요</option>
+            {payload.cardProviders.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name}
+              </option>
+            ))}
+          </select>
+          {!selectedCardProviderId ? (
+            <p className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm font-medium text-amber-900">
+              카드사를 먼저 선택하세요.
+            </p>
+          ) : null}
+        </BenefitFormStep>
+
+        {selectedCardProviderId ? (
+          <>
+            <BenefitFormStep step={2} label="카드명 검색">
+              <input
+                id="card-search"
+                type="search"
+                value={cardSearchQuery}
+                onChange={(event) => setCardSearchQuery(event.target.value)}
+                placeholder="예: 트래블, The Pink, 전체"
+                autoComplete="off"
+                className="sr-user-input px-3 py-3 text-sm font-semibold placeholder:font-normal"
+              />
+            </BenefitFormStep>
+
+            <BenefitFormStep step={3} label="카드 선택">
+              <select
+                id="card-product"
+                value={selectedCardProductId}
+                onChange={(event) => {
+                  setSelectedCardProductId(event.target.value);
+                  setCardMsg(null);
+                }}
+                className="sr-user-input px-3 py-3 text-sm font-semibold"
+              >
+                <option value="">목록에서 카드를 선택해 주세요</option>
+                {filteredCardProducts.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+
+              {showManualCatalogRequest ? (
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
+                  <p className="sr-user-accent-text text-xs font-bold">직접 카드명 입력하기</p>
+                  <p className="mt-1 text-xs font-medium text-gray-700">
+                    {cardProductsForProvider.length === 0
+                      ? "등록 가능한 카드가 없습니다. 카드명을 직접 입력해 요청할 수 있어요."
+                      : "검색 결과가 없습니다. 보유 중인 카드명을 직접 입력해 요청할 수 있어요."}
+                  </p>
+                  <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                    <div>
+                      <p className="text-xs font-bold text-gray-700">카드사</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900">
+                        {selectedCardProvider?.name ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <label htmlFor="manual-catalog-card-name" className="text-xs font-bold text-gray-700">
+                        카드명 (검색어가 기본으로 채워집니다)
+                      </label>
+                      <input
+                        id="manual-catalog-card-name"
+                        type="text"
+                        value={manualCatalogCardName}
+                        onChange={(e) => {
+                          manualCatalogNameEditedRef.current = true;
+                          setManualCatalogCardName(e.target.value);
+                          setManualCatalogMsg(null);
+                        }}
+                        maxLength={200}
+                        autoComplete="off"
+                        className="sr-user-input mt-1 px-3 py-2.5 text-sm font-semibold"
+                        placeholder="예: 나만의 체크카드"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-700">카드 유형</p>
+                      <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1">
+                        {REQUEST_KIND_UI.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setManualCatalogKind(item.id);
+                              setManualCatalogMsg(null);
+                            }}
+                            className={`h-9 rounded-xl text-xs font-extrabold transition min-[431px]:text-sm ${
+                              manualCatalogKind === item.id
+                                ? "bg-white sr-user-accent-text shadow-sm"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      요청 후 내 혜택에 «검토중»으로 등록됩니다. 승인 전까지 할인 매칭이
+                      제한될 수 있어요.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={!canSubmitManualCatalog}
+                      onClick={handleSubmitCatalogRequest}
+                      className="sr-user-btn-primary flex h-11 w-full items-center justify-center rounded-xl text-sm font-extrabold"
+                    >
+                      {pendingCatalogRequest ? "등록 중..." : "카드 요청 등록"}
+                    </button>
+                    {manualCatalogMsg ? (
+                      <p className="text-xs font-medium text-gray-600">{manualCatalogMsg}</p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </BenefitFormStep>
+
+            {selectedCardProduct && selectableKinds.length > 0 && selectableKinds[0] !== "all" ? (
+              <BenefitFormStep step={4} label="카드 유형">
+                <div
+                  className={`grid gap-1 rounded-2xl bg-gray-100 p-1 ${
+                    selectableKinds.length <= 2 ? "grid-cols-2" : "grid-cols-3"
+                  }`}
+                >
+                  {selectableKinds.map((kind) => {
+                    const active = selectedCardType === kind;
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCardType(kind);
+                          setCardMsg(null);
+                        }}
+                        className={`h-10 rounded-xl text-sm font-extrabold transition ${
+                          active ? "bg-white sr-user-accent-text shadow-sm" : "text-gray-500"
+                        }`}
+                      >
+                        {CARD_KIND_LABEL[kind]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectableKinds.length === 1 ? (
+                  <p className="text-xs text-gray-500">
+                    이 카드는 마스터 데이터 기준 {CARD_KIND_LABEL[selectableKinds[0]]}예요.
+                  </p>
+                ) : selectableKinds.length > 1 ? (
+                  <p className="text-xs text-gray-500">보유하신 결제 방식을 선택해 주세요.</p>
+                ) : null}
+              </BenefitFormStep>
+            ) : selectedCardProduct?.isAllProduct ? (
+              <p className="text-xs text-gray-500">이 상품은 해당 카드사 전체 할인에 매칭됩니다.</p>
+            ) : selectedCardProviderId &&
+              cardProductsForProvider.length > 0 &&
+              filteredCardProducts.length > 0 ? (
+              <p className="text-xs text-gray-400">카드를 선택하면 카드 유형을 고를 수 있어요.</p>
+            ) : null}
+
+            <div className="sr-user-benefit-form-action">
+              <button
+                type="button"
+                disabled={!canAddCard}
+                onClick={handleAddCard}
+                className="sr-user-benefit-register-btn flex h-12 w-full items-center justify-center gap-2 text-sm font-extrabold"
+              >
+                <Plus className="size-4" aria-hidden />
+                {pendingCard ? "등록 중..." : "보유카드에 추가"}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {cardMsg ? <p className="text-xs font-medium text-gray-600">{cardMsg}</p> : null}
+
+        {cardBenefits.length > 0 ? (
+          <RegisteredBenefitsBlock>
+            {cardBenefits.map((b) => {
+              const requestRow = relationOne(b.benefit_product_request);
+              const productName =
+                relationOne(b.benefit_product)?.name ??
+                b.custom_name ??
+                requestRow?.requested_name ??
+                "카드";
+              const providerName = relationOne(b.provider)?.name ?? "";
+              const benefitTypeLabel = formatUserBenefitTypeLabel(b.benefit_type);
+              const hasConnectedDiscounts = b.connectedDiscountCount > 0;
+              const approvalStatus = b.approval_status ?? requestRow?.status ?? null;
+              const isPending = approvalStatus === "pending";
+              const isRejected = approvalStatus === "rejected";
+              const rejectMemo = isRejected ? requestRow?.admin_memo?.trim() : "";
+
+              let statusLabel = hasConnectedDiscounts
+                ? `연결된 할인 ${b.connectedDiscountCount}개`
+                : "혜택 확인중";
+              let statusClass = hasConnectedDiscounts
+                ? "sr-user-badge sr-user-badge--match px-2 py-0.5"
+                : "sr-user-badge px-2 py-0.5 text-gray-500";
+
+              if (isPending) {
+                statusLabel = "검토중";
+                statusClass = "bg-amber-50 text-amber-800";
+              } else if (isRejected) {
+                statusLabel = "승인 반려";
+                statusClass = "bg-red-50 text-red-700";
+              }
+
+              return (
+                <div
+                  key={b.id}
+                  className={`inline-flex max-w-full items-center gap-1 rounded-2xl border py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900 ${
+                    isRejected
+                      ? "border-red-200 bg-red-50/60"
+                      : isPending
+                        ? "border-amber-200 bg-amber-50/60"
+                        : "sr-user-chip border-[color:var(--sr-border-card)]"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate">
                       {providerName ? `${providerName} · ` : ""}
                       {productName}
+                      {benefitTypeLabel ? ` · ${benefitTypeLabel}` : ""}
                     </span>
+                    <span
+                      className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${statusClass}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    {isPending ? (
+                      <span className="mt-1 block text-[11px] font-normal leading-snug text-amber-800/90">
+                        승인 전까지 할인 매칭이 제한될 수 있습니다.
+                      </span>
+                    ) : null}
+                    {rejectMemo ? (
+                      <span className="mt-1 block text-[11px] font-normal leading-snug text-red-700">
+                        사유: {rejectMemo}
+                      </span>
+                    ) : null}
+                  </span>
+                  <form action={deactivateUserBenefitAction}>
+                    <input type="hidden" name="user_benefit_id" value={b.id} />
+                    <button
+                      type="submit"
+                      aria-label={`${productName} 삭제`}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </RegisteredBenefitsBlock>
+        ) : null}
+      </BenefitAccordionCard>
+
+      {payload.externalMembershipProducts.length > 0 ? (
+        <BenefitAccordionCard
+          icon={Star}
+          title="멤버십/포인트 혜택"
+          description="제휴 멤버십 및 포인트 할인"
+          count={externalMembershipBenefits.length}
+          expanded={expandedSection === "membership"}
+          onToggle={() => toggleBenefitSection("membership")}
+        >
+          <BenefitFormStep step={1} label="멤버십/포인트 선택" withDivider={false}>
+            <select
+              id="external-membership-product"
+              value={externalMembershipProductId}
+              onChange={(event) => {
+                setExternalMembershipProductId(event.target.value);
+                setMembershipErr(null);
+                setMembershipOk(null);
+              }}
+              className="sr-user-input px-3 py-3 text-sm font-semibold"
+            >
+              <option value="">멤버십 또는 포인트를 선택해 주세요.</option>
+              {payload.externalMembershipProducts.map((product) => (
+                <option key={product.id} value={String(product.id)}>
+                  {formatExternalMembershipOptionLabel({
+                    providerName: product.providerName,
+                    name: product.name,
+                  })}
+                </option>
+              ))}
+            </select>
+          </BenefitFormStep>
+
+          <div className="sr-user-benefit-form-action">
+            <button
+              type="button"
+              disabled={!canRegisterExternalMembership}
+              onClick={handleRegisterExternalMembership}
+              className="sr-user-benefit-register-btn flex h-12 w-full items-center justify-center gap-2 text-sm font-extrabold"
+            >
+              <Plus className="size-4" aria-hidden />
+              {pendingMembership ? "등록 중..." : "멤버십/포인트 등록"}
+            </button>
+          </div>
+
+          {externalMembershipBenefits.length > 0 ? (
+            <RegisteredBenefitsBlock>
+              {externalMembershipBenefits.map((benefit) => {
+                const productName = relationOne(benefit.benefit_product)?.name ?? "멤버십/포인트";
+                const providerName = relationOne(benefit.provider)?.name ?? "";
+                const displayLabel = formatExternalMembershipOptionLabel({
+                  providerName,
+                  name: productName,
+                });
+                return (
+                  <div key={benefit.id} className="sr-user-chip">
+                    <span className="min-w-0 truncate">{displayLabel}</span>
                     <form action={deactivateUserBenefitAction}>
-                      <input type="hidden" name="user_benefit_id" value={b.id} />
+                      <input type="hidden" name="user_benefit_id" value={benefit.id} />
                       <button
                         type="submit"
-                        aria-label={`${productName} 삭제`}
+                        aria-label={`${displayLabel} 삭제`}
                         className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
                       >
                         <X className="size-3.5" aria-hidden />
@@ -759,434 +1115,24 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   </div>
                 );
               })}
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      {payload.externalMembershipProducts.length > 0 ? (
-        <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
-                멤버십/포인트
-              </p>
-              <h2 className="mt-1 text-lg font-extrabold text-gray-950">제휴 멤버십/포인트 등록</h2>
-              <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                보유 중인 제휴 멤버십 또는 포인트를 선택해 등록해 주세요.
-              </p>
-            </div>
-            <Star className="size-9 shrink-0 text-gray-300" aria-hidden />
-          </div>
-
-          <label htmlFor="external-membership-product" className="mt-4 text-xs font-bold text-gray-700">
-            멤버십/포인트 선택
-          </label>
-          <select
-            id="external-membership-product"
-            value={externalMembershipProductId}
-            onChange={(event) => {
-              setExternalMembershipProductId(event.target.value);
-              setMembershipErr(null);
-              setMembershipOk(null);
-            }}
-            className="sr-user-input mt-1 px-3 py-3 text-sm font-semibold"
-          >
-            <option value="">멤버십 또는 포인트를 선택해 주세요.</option>
-            {payload.externalMembershipProducts.map((product) => (
-              <option key={product.id} value={String(product.id)}>
-                {formatExternalMembershipOptionLabel({
-                  providerName: product.providerName,
-                  name: product.name,
-                })}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            disabled={!canRegisterExternalMembership}
-            onClick={handleRegisterExternalMembership}
-            className="sr-user-btn-primary mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
-          >
-            <Plus className="size-4" aria-hidden />
-            {pendingMembership ? "등록 중..." : "멤버십/포인트 등록"}
-          </button>
-
-          {externalMembershipBenefits.length > 0 ? (
-            <div className="mt-5">
-              <p className="text-xs font-bold text-gray-700">등록한 멤버십/포인트</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {externalMembershipBenefits.map((benefit) => {
-                  const productName = relationOne(benefit.benefit_product)?.name ?? "멤버십/포인트";
-                  const providerName = relationOne(benefit.provider)?.name ?? "";
-                  const displayLabel = formatExternalMembershipOptionLabel({
-                    providerName,
-                    name: productName,
-                  });
-                  return (
-                    <div
-                      key={benefit.id}
-                      className="sr-user-chip"
-                    >
-                      <span className="min-w-0 truncate">
-                        {displayLabel}
-                      </span>
-                      <form action={deactivateUserBenefitAction}>
-                        <input type="hidden" name="user_benefit_id" value={benefit.id} />
-                        <button
-                          type="submit"
-                          aria-label={`${displayLabel} 삭제`}
-                          className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
-                        >
-                          <X className="size-3.5" aria-hidden />
-                        </button>
-                      </form>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            </RegisteredBenefitsBlock>
           ) : null}
-        </section>
+        </BenefitAccordionCard>
       ) : null}
 
-      <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
-        <p className="sr-user-accent-text text-xs font-bold uppercase tracking-[0.16em]">
-          카드
+      <BenefitAccordionCard
+        icon={TicketPercent}
+        title="쿠폰/기타 혜택"
+        description="쿠폰 및 기타 할인 혜택"
+        count={0}
+        countLabel="준비 중"
+        expanded={expandedSection === "coupon"}
+        onToggle={() => toggleBenefitSection("coupon")}
+      >
+        <p className="sr-user-benefit-accordion-card__placeholder">
+          쿠폰과 기타 혜택 등록 기능을 준비 중이에요. 곧 이곳에서 관리할 수 있습니다.
         </p>
-        <h2 className="mt-1 text-lg font-extrabold text-gray-950">보유 카드</h2>
-        <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          카드사와 카드를 차례로 선택해서 빠르게 등록할 수 있어요.
-        </p>
-        <p className="sr-user-callout mt-3 text-xs leading-relaxed">
-          아직 혜택 정보가 없는 카드도 보유카드로 등록할 수 있어요.
-          세이브루트가 확인한 할인 혜택과 자동으로 연결됩니다.
-        </p>
-
-        <div className="sr-user-callout mt-4 p-3">
-          <div className="flex items-center gap-2">
-            <CreditCard className="sr-user-accent-text size-5" aria-hidden />
-            <p className="text-sm font-extrabold text-gray-950">
-              빠르게 내 카드 등록
-            </p>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <div>
-              <label htmlFor="card-provider" className="text-xs font-bold text-gray-700">
-                1. 카드사
-              </label>
-              <select
-                id="card-provider"
-                value={selectedCardProviderId}
-                onChange={(event) => {
-                  setSelectedCardProviderId(event.target.value);
-                  setSelectedCardProductId("");
-                  setCardSearchQuery("");
-                  setCardMsg(null);
-                }}
-                className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold"
-              >
-                <option value="">카드사를 선택해 주세요</option>
-                {payload.cardProviders.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {!selectedCardProviderId ? (
-              <p className="mt-4 rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm font-medium text-amber-900">
-                카드사를 먼저 선택하세요.
-              </p>
-            ) : null}
-
-            {selectedCardProviderId ? (
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label htmlFor="card-search" className="text-xs font-bold text-gray-700">
-                    2. 카드명 검색
-                  </label>
-                  <input
-                    id="card-search"
-                    type="search"
-                    value={cardSearchQuery}
-                    onChange={(event) => setCardSearchQuery(event.target.value)}
-                    placeholder="예: 트래블, The Pink, 전체"
-                    autoComplete="off"
-                    className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold placeholder:font-normal"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="card-product" className="text-xs font-bold text-gray-700">
-                    3. 카드 선택
-                  </label>
-                  <select
-                    id="card-product"
-                    value={selectedCardProductId}
-                    onChange={(event) => {
-                      setSelectedCardProductId(event.target.value);
-                      setCardMsg(null);
-                    }}
-                    className="sr-user-input mt-1.5 px-3 py-3 text-sm font-semibold"
-                  >
-                    <option value="">목록에서 카드를 선택해 주세요</option>
-                    {filteredCardProducts.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {showManualCatalogRequest ? (
-                    <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                      <p className="sr-user-accent-text text-xs font-bold">직접 카드명 입력하기</p>
-                      <p className="mt-1 text-xs font-medium text-gray-700">
-                        {cardProductsForProvider.length === 0
-                          ? "등록 가능한 카드가 없습니다. 카드명을 직접 입력해 요청할 수 있어요."
-                          : "검색 결과가 없습니다. 보유 중인 카드명을 직접 입력해 요청할 수 있어요."}
-                      </p>
-                      <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
-                        <div>
-                          <p className="text-xs font-bold text-gray-700">카드사</p>
-                          <p className="mt-1 text-sm font-semibold text-gray-900">
-                            {selectedCardProvider?.name ?? "—"}
-                          </p>
-                        </div>
-                        <div>
-                          <label htmlFor="manual-catalog-card-name" className="text-xs font-bold text-gray-700">
-                            카드명 (검색어가 기본으로 채워집니다)
-                          </label>
-                          <input
-                            id="manual-catalog-card-name"
-                            type="text"
-                            value={manualCatalogCardName}
-                            onChange={(e) => {
-                              manualCatalogNameEditedRef.current = true;
-                              setManualCatalogCardName(e.target.value);
-                              setManualCatalogMsg(null);
-                            }}
-                            maxLength={200}
-                            autoComplete="off"
-                            className="sr-user-input mt-1 px-3 py-2.5 text-sm font-semibold"
-                            placeholder="예: 나만의 체크카드"
-                          />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-700">카드 유형</p>
-                          <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1">
-                            {REQUEST_KIND_UI.map((item) => (
-                              <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                  setManualCatalogKind(item.id);
-                                  setManualCatalogMsg(null);
-                                }}
-                                className={`h-9 rounded-xl text-xs font-extrabold transition min-[431px]:text-sm ${
-                                  manualCatalogKind === item.id
-                                    ? "bg-white sr-user-accent-text shadow-sm"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          요청 후 내 혜택에 «검토중»으로 등록됩니다. 승인 전까지 할인 매칭이
-                          제한될 수 있어요.
-                        </p>
-                        <button
-                          type="button"
-                          disabled={!canSubmitManualCatalog}
-                          onClick={handleSubmitCatalogRequest}
-                          className="sr-user-btn-primary flex h-11 w-full items-center justify-center rounded-xl text-sm font-extrabold"
-                        >
-                          {pendingCatalogRequest ? "등록 중..." : "카드 요청 등록"}
-                        </button>
-                        {manualCatalogMsg ? (
-                          <p className="text-xs font-medium text-gray-600">{manualCatalogMsg}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                {selectedCardProduct && selectableKinds.length > 0 && selectableKinds[0] !== "all" ? (
-                  <div>
-                    <p className="text-xs font-bold text-gray-700">4. 카드 유형</p>
-                    <div
-                      className={`mt-1.5 grid gap-1 rounded-2xl bg-gray-100 p-1 ${
-                        selectableKinds.length <= 2 ? "grid-cols-2" : "grid-cols-3"
-                      }`}
-                    >
-                      {selectableKinds.map((kind) => {
-                        const active = selectedCardType === kind;
-                        return (
-                          <button
-                            key={kind}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCardType(kind);
-                              setCardMsg(null);
-                            }}
-                            className={`h-10 rounded-xl text-sm font-extrabold transition ${
-                              active ? "bg-white sr-user-accent-text shadow-sm" : "text-gray-500"
-                            }`}
-                          >
-                            {CARD_KIND_LABEL[kind]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {selectableKinds.length === 1 ? (
-                      <p className="mt-1.5 text-xs text-gray-500">
-                        이 카드는 마스터 데이터 기준 {CARD_KIND_LABEL[selectableKinds[0]]}예요.
-                      </p>
-                    ) : selectableKinds.length > 1 ? (
-                      <p className="mt-1.5 text-xs text-gray-500">
-                        보유하신 결제 방식을 선택해 주세요.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : selectedCardProduct?.isAllProduct ? (
-                  <p className="text-xs text-gray-500">
-                    이 상품은 해당 카드사 전체 할인에 매칭됩니다.
-                  </p>
-                ) : selectedCardProviderId &&
-                  cardProductsForProvider.length > 0 &&
-                  filteredCardProducts.length > 0 ? (
-                  <p className="text-xs text-gray-400">카드를 선택하면 카드 유형을 고를 수 있어요.</p>
-                ) : null}
-
-                <button
-                  type="button"
-                  disabled={!canAddCard}
-                  onClick={handleAddCard}
-                  className="sr-user-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold"
-                >
-                  <Plus className="size-4" aria-hidden />
-                  {pendingCard ? "등록 중..." : "보유카드에 추가"}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {cardMsg ? (
-          <p className="mt-3 text-xs font-medium text-gray-600">{cardMsg}</p>
-        ) : null}
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {cardBenefits.map((b) => {
-            const requestRow = relationOne(b.benefit_product_request);
-            const productName =
-              relationOne(b.benefit_product)?.name ??
-              b.custom_name ??
-              requestRow?.requested_name ??
-              "카드";
-            const providerName = relationOne(b.provider)?.name ?? "";
-            const benefitTypeLabel = formatUserBenefitTypeLabel(b.benefit_type);
-            const hasConnectedDiscounts = b.connectedDiscountCount > 0;
-            const approvalStatus = b.approval_status ?? requestRow?.status ?? null;
-            const isPending = approvalStatus === "pending";
-            const isRejected = approvalStatus === "rejected";
-            const rejectMemo = isRejected ? requestRow?.admin_memo?.trim() : "";
-
-            let statusLabel = hasConnectedDiscounts
-              ? `연결된 할인 ${b.connectedDiscountCount}개`
-              : "혜택 확인중";
-            let statusClass = hasConnectedDiscounts
-              ? "sr-user-badge sr-user-badge--match px-2 py-0.5"
-              : "sr-user-badge px-2 py-0.5 text-gray-500";
-
-            if (isPending) {
-              statusLabel = "검토중";
-              statusClass = "bg-amber-50 text-amber-800";
-            } else if (isRejected) {
-              statusLabel = "승인 반려";
-              statusClass = "bg-red-50 text-red-700";
-            }
-
-            return (
-              <div
-                key={b.id}
-                className={`inline-flex max-w-full items-center gap-1 rounded-2xl border py-1.5 pl-3 pr-1 text-xs font-semibold text-gray-900 ${
-                  isRejected
-                    ? "border-red-200 bg-red-50/60"
-                    : isPending
-                      ? "border-amber-200 bg-amber-50/60"
-                      : "sr-user-chip border-[color:var(--sr-border-card)]"
-                }`}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate">
-                    {providerName ? `${providerName} · ` : ""}
-                    {productName}
-                    {benefitTypeLabel ? ` · ${benefitTypeLabel}` : ""}
-                  </span>
-                  <span
-                    className={`mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${statusClass}`}
-                  >
-                    {statusLabel}
-                  </span>
-                  {isPending ? (
-                    <span className="mt-1 block text-[11px] font-normal leading-snug text-amber-800/90">
-                      승인 전까지 할인 매칭이 제한될 수 있습니다.
-                    </span>
-                  ) : null}
-                  {rejectMemo ? (
-                    <span className="mt-1 block text-[11px] font-normal leading-snug text-red-700">
-                      사유: {rejectMemo}
-                    </span>
-                  ) : null}
-                </span>
-                <form action={deactivateUserBenefitAction}>
-                  <input type="hidden" name="user_benefit_id" value={b.id} />
-                  <button
-                    type="submit"
-                    aria-label={`${productName} 삭제`}
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                </form>
-              </div>
-            );
-          })}
-          {cardBenefits.length === 0 ? (
-            <p className="text-xs text-gray-500">등록된 카드가 없습니다.</p>
-          ) : null}
-        </div>
-
-      </section>
-
-      <section className="rounded-2xl sr-user-card p-4 shadow-sm min-[431px]:p-5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-bold text-gray-900">등록 요약</h3>
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
-            총 {registeredCount}개
-          </span>
-        </div>
-        <ul className="mt-3 space-y-2 text-xs text-gray-600">
-          {payload.userBenefits.map((b) => (
-            <li key={b.id} className="flex justify-between gap-2 border-b border-gray-50 pb-2 last:border-0">
-              <span className="truncate">
-                {relationOne(b.benefit_category)?.name ?? ""} ·{" "}
-                {relationOne(b.benefit_product)?.name ?? relationOne(b.provider)?.name ?? "-"}
-              </span>
-            </li>
-          ))}
-          {payload.userBenefits.length === 0 ? (
-            <li className="text-gray-500">아직 등록된 혜택이 없어요.</li>
-          ) : null}
-        </ul>
-      </section>
+      </BenefitAccordionCard>
 
       {mode === "onboarding" ? (
         <UserBottomDock>

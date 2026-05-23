@@ -317,10 +317,17 @@ export function SearchResultCard({
 
         {showSharedEstimate ? (
           <>
-            <div className="sr-user-search-result-card__divider" aria-hidden="true" />
+            <div
+              className="sr-user-search-result-card__divider sr-user-search-result-card__divider--before-summary"
+              aria-hidden="true"
+            />
             <DiscountEstimateSummary
               discount={discount}
               paymentAmount={sharedPaymentAmount}
+            />
+            <div
+              className="sr-user-search-result-card__divider sr-user-search-result-card__divider--after-summary"
+              aria-hidden="true"
             />
           </>
         ) : null}
