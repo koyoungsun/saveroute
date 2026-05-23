@@ -1336,6 +1336,8 @@
 }
 
 .sr-user-app .sr-user-search-form {
+  position: relative;
+  z-index: 20;
   width: 100%;
   max-width: 100%;
   padding-left: 24px;
@@ -1358,7 +1360,10 @@
   border-radius: 16px;
   background: #4d7cfe;
   box-shadow: 0 4px 14px rgba(77, 124, 254, 0.22);
-  z-index: 0;
+  z-index: 22;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sr-user-app .sr-user-search-form__submit-text {
@@ -1465,7 +1470,18 @@
   z-index: 2;
 }
 
+.sr-user-app .sr-user-search-bar-anchor {
+  position: relative;
+  z-index: 21;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
 .sr-user-app .sr-user-search-bar {
+  position: relative;
+  z-index: 21;
   width: 100%;
 }
 
@@ -1540,7 +1556,7 @@
 
 .sr-user-app .sr-user-search-bar__input {
   position: relative;
-  z-index: 1;
+  z-index: 4;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -1557,6 +1573,9 @@
   outline: none;
   box-shadow: none;
   transition: font-size 200ms ease;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sr-user-app .sr-user-search-bar--active .sr-user-search-bar__input,
@@ -1874,14 +1893,6 @@
 }
 
 /* ── Search autocomplete (dark glass) ── */
-.sr-user-app .sr-user-search-bar-anchor {
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  overflow: visible;
-}
-
 .sr-user-app .sr-user-search-suggestions {
   position: absolute;
   top: calc(100% + 0.5rem);

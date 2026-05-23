@@ -268,7 +268,7 @@
 
 .searchWrap {
   position: relative;
-  z-index: 1;
+  z-index: 20;
   box-sizing: border-box;
   width: calc(100% - 2rem);
   max-width: 100%;

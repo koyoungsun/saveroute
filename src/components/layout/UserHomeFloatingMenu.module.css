@@ -213,7 +213,7 @@
 
 .iconButton {
   position: relative;
-  z-index: 52;
+  z-index: 61;
   display: flex;
   width: 44px;
   height: 44px;
@@ -227,6 +227,9 @@
   box-shadow: none;
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     color 180ms ease,
     background-color 180ms ease,
@@ -244,7 +247,10 @@
 }
 
 .iconButtonOpen {
-  z-index: 53;
+  z-index: 63;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 14px rgba(126, 162, 255, 0.24);
 }
 
 .iconButton:disabled {
@@ -262,12 +268,6 @@
 
 .iconButton:active {
   transform: scale(0.97);
-}
-
-.iconButtonOpen {
-  border: none;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 0 14px rgba(126, 162, 255, 0.24);
 }
 
 @media (prefers-reduced-motion: reduce) {

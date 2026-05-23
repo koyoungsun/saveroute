@@ -663,6 +663,8 @@
 }
 
 .sr-user-app .sr-user-search-hub__form {
+  position: relative;
+  z-index: 20;
   overflow: visible;
   transition:
     opacity 360ms ease,
@@ -1089,18 +1091,18 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 51;
+  z-index: 60;
   width: 100%;
   padding-top: env(safe-area-inset-top, 0px);
   background: transparent;
   border-bottom: none;
   box-shadow: none;
-  pointer-events: auto;
+  pointer-events: none;
   isolation: isolate;
 }
 
 .sr-user-floating-menu:has(button[aria-expanded="true"]) {
-  z-index: 53;
+  z-index: 62;
 }
 
 .sr-user-floating-menu__inner {
@@ -1111,7 +1113,7 @@
   justify-content: flex-start;
   padding-block: 0.375rem;
   padding-inline: 20px var(--sr-user-page-px);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .sr-user-floating-menu__inner.sr-user-app-header__inner {
@@ -1122,7 +1124,7 @@
 
 .sr-user-floating-menu button {
   position: relative;
-  z-index: 52;
+  z-index: 61;
   display: flex;
   width: 44px;
   height: 44px;
@@ -1134,6 +1136,9 @@
   box-shadow: none;
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sr-user-floating-menu button svg {
@@ -1145,10 +1150,12 @@
 }
 
 .sr-user-floating-menu button[aria-expanded="true"] {
-  z-index: 54;
+  z-index: 63;
 }
 
 .sr-user-floating-menu + .sr-user-app-shell {
+  position: relative;
+  z-index: 10;
   padding-top: calc(3.25rem + env(safe-area-inset-top, 0px) + 0.375rem);
 }
 
@@ -1165,6 +1172,7 @@
 .sr-animated-bg__grid {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .sr-animated-bg__gradient {
