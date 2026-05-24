@@ -12,6 +12,7 @@ import {
   RegisteredBenefitItem,
   RegisteredBenefitsBlock,
 } from "@/components/benefits/BenefitAccordionCard";
+import { BenefitSelect } from "@/components/benefits/BenefitSelect";
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
@@ -591,9 +592,6 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               );
             })}
           </div>
-          <p className="text-xs leading-relaxed text-gray-500">
-            알뜰폰은 브랜드 단위로 먼저 등록할 수 있어요.
-          </p>
         </BenefitFormStep>
 
         {telecomFirst && telecomFirst !== "mvno" ? (
@@ -601,27 +599,25 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             <p className="text-xs leading-relaxed text-gray-600">
               통신사 멤버십 등급은 실제 할인 매칭에 사용됩니다.
             </p>
-            <select
+            <BenefitSelect
               id="telecom-membership-grade"
               value={telecomMembershipProductId}
-              onChange={(event) => {
-                setTelecomMembershipProductId(event.target.value);
+              onChange={(nextValue) => {
+                setTelecomMembershipProductId(nextValue);
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="sr-user-input px-3 py-3 text-sm font-semibold"
-            >
-              <option value="">등급을 선택해 주세요</option>
-              {membershipOptionsForCarrier.map((opt) => (
-                <option key={opt.id} value={String(opt.id)}>
-                  {opt.isAllProduct || opt.benefit_type === "all"
+              placeholder="등급을 선택해 주세요"
+              options={membershipOptionsForCarrier.map((opt) => ({
+                value: String(opt.id),
+                label:
+                  opt.isAllProduct || opt.benefit_type === "all"
                     ? `전체 — ${opt.name} (등급 무관)`
                     : opt.grade
                       ? `${opt.grade} — ${opt.name}`
-                      : opt.name}
-                </option>
-              ))}
-            </select>
+                      : opt.name,
+              }))}
+            />
             {membershipOptionsForCarrier.length === 0 ? (
               <p className="text-xs text-amber-700">이 통신사의 멤버십 상품 데이터를 불러오지 못했습니다.</p>
             ) : null}
@@ -630,23 +626,20 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
         {telecomFirst === "mvno" ? (
           <BenefitFormStep step={2} label="알뜰폰 브랜드 선택">
-            <select
+            <BenefitSelect
               id="telecom-mvno-brand"
               value={mvnoProviderId}
-              onChange={(event) => {
-                setMvnoProviderId(event.target.value);
+              onChange={(nextValue) => {
+                setMvnoProviderId(nextValue);
                 setTelecomErr(null);
                 setTelecomOk(null);
               }}
-              className="sr-user-input px-3 py-3 text-sm font-semibold"
-            >
-              <option value="">브랜드를 선택해 주세요</option>
-              {featuredMvnoOptions.map((opt) => (
-                <option key={opt.providerId} value={String(opt.providerId)}>
-                  {getFeaturedMvnoDisplayName(opt)}
-                </option>
-              ))}
-            </select>
+              placeholder="브랜드를 선택해 주세요"
+              options={featuredMvnoOptions.map((opt) => ({
+                value: String(opt.providerId),
+                label: getFeaturedMvnoDisplayName(opt),
+              }))}
+            />
             {featuredMvnoOptions.length === 0 ? (
               <p className="text-xs text-gray-500">등록 가능한 알뜰폰 브랜드가 없습니다.</p>
             ) : null}
@@ -776,24 +769,21 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         </p>
 
         <BenefitFormStep step={1} label="카드사 선택">
-          <select
+          <BenefitSelect
             id="card-provider"
             value={selectedCardProviderId}
-            onChange={(event) => {
-              setSelectedCardProviderId(event.target.value);
+            onChange={(nextValue) => {
+              setSelectedCardProviderId(nextValue);
               setSelectedCardProductId("");
               setCardSearchQuery("");
               setCardMsg(null);
             }}
-            className="sr-user-input px-3 py-3 text-sm font-semibold"
-          >
-            <option value="">카드사를 선택해 주세요</option>
-            {payload.cardProviders.map((provider) => (
-              <option key={provider.id} value={provider.id}>
-                {provider.name}
-              </option>
-            ))}
-          </select>
+            placeholder="카드사를 선택해 주세요"
+            options={payload.cardProviders.map((provider) => ({
+              value: String(provider.id),
+              label: provider.name,
+            }))}
+          />
           {!selectedCardProviderId ? (
             <p className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm font-medium text-amber-900">
               카드사를 먼저 선택하세요.
@@ -816,22 +806,19 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
             </BenefitFormStep>
 
             <BenefitFormStep step={3} label="카드 선택">
-              <select
+              <BenefitSelect
                 id="card-product"
                 value={selectedCardProductId}
-                onChange={(event) => {
-                  setSelectedCardProductId(event.target.value);
+                onChange={(nextValue) => {
+                  setSelectedCardProductId(nextValue);
                   setCardMsg(null);
                 }}
-                className="sr-user-input px-3 py-3 text-sm font-semibold"
-              >
-                <option value="">목록에서 카드를 선택해 주세요</option>
-                {filteredCardProducts.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="목록에서 카드를 선택해 주세요"
+                options={filteredCardProducts.map((product) => ({
+                  value: String(product.id),
+                  label: product.name,
+                }))}
+              />
 
               {showManualCatalogRequest ? (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
@@ -911,30 +898,19 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
             {selectedCardProduct && selectableKinds.length > 0 && selectableKinds[0] !== "all" ? (
               <BenefitFormStep step={4} label="카드 유형">
-                <div
-                  className={`grid gap-1 rounded-2xl bg-gray-100 p-1 ${
-                    selectableKinds.length <= 2 ? "grid-cols-2" : "grid-cols-3"
-                  }`}
-                >
-                  {selectableKinds.map((kind) => {
-                    const active = selectedCardType === kind;
-                    return (
-                      <button
-                        key={kind}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCardType(kind);
-                          setCardMsg(null);
-                        }}
-                        className={`h-10 rounded-xl text-sm font-extrabold transition ${
-                          active ? "bg-white sr-user-accent-text shadow-sm" : "text-gray-500"
-                        }`}
-                      >
-                        {CARD_KIND_LABEL[kind]}
-                      </button>
-                    );
-                  })}
-                </div>
+                <BenefitSelect
+                  id="card-type"
+                  value={selectedCardType}
+                  onChange={(nextValue) => {
+                    setSelectedCardType(nextValue as CardBenefitKind | "");
+                    setCardMsg(null);
+                  }}
+                  placeholder="카드 유형을 선택해 주세요"
+                  options={selectableKinds.map((kind) => ({
+                    value: kind,
+                    label: CARD_KIND_LABEL[kind],
+                  }))}
+                />
                 {selectableKinds.length === 1 ? (
                   <p className="text-xs text-gray-500">
                     이 카드는 마스터 데이터 기준 {CARD_KIND_LABEL[selectableKinds[0]]}예요.
@@ -1055,26 +1031,23 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           onToggle={() => toggleBenefitSection("membership")}
         >
           <BenefitFormStep step={1} label="멤버십/포인트 선택" withDivider={false}>
-            <select
+            <BenefitSelect
               id="external-membership-product"
               value={externalMembershipProductId}
-              onChange={(event) => {
-                setExternalMembershipProductId(event.target.value);
+              onChange={(nextValue) => {
+                setExternalMembershipProductId(nextValue);
                 setMembershipErr(null);
                 setMembershipOk(null);
               }}
-              className="sr-user-input px-3 py-3 text-sm font-semibold"
-            >
-              <option value="">멤버십 또는 포인트를 선택해 주세요.</option>
-              {payload.externalMembershipProducts.map((product) => (
-                <option key={product.id} value={String(product.id)}>
-                  {formatExternalMembershipOptionLabel({
-                    providerName: product.providerName,
-                    name: product.name,
-                  })}
-                </option>
-              ))}
-            </select>
+              placeholder="멤버십 또는 포인트를 선택해 주세요."
+              options={payload.externalMembershipProducts.map((product) => ({
+                value: String(product.id),
+                label: formatExternalMembershipOptionLabel({
+                  providerName: product.providerName,
+                  name: product.name,
+                }),
+              }))}
+            />
           </BenefitFormStep>
 
           <div className="sr-user-benefit-form-action">

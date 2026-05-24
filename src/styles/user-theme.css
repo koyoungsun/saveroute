@@ -3458,7 +3458,7 @@
 }
 
 .sr-user-app .sr-user-account-page .sr-user-input,
-.sr-user-app .sr-user-account-page select,
+.sr-user-app .sr-user-account-page select:not(.sr-user-benefit-select__native),
 .sr-user-app .sr-user-account-page textarea,
 .sr-user-app .sr-user-account-page .sr-user-card :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
   min-height: 3rem;
@@ -3472,14 +3472,14 @@
 }
 
 .sr-user-app .sr-user-account-page .sr-user-input:hover:not(:disabled):not(:focus),
-.sr-user-app .sr-user-account-page select:hover:not(:disabled):not(:focus),
+.sr-user-app .sr-user-account-page select:not(.sr-user-benefit-select__native):hover:not(:disabled):not(:focus),
 .sr-user-app .sr-user-account-page textarea:hover:not(:disabled):not(:focus) {
   border-bottom-color: rgba(77, 124, 254, 0.55);
   background: transparent;
 }
 
 .sr-user-app .sr-user-account-page .sr-user-input:focus,
-.sr-user-app .sr-user-account-page select:focus,
+.sr-user-app .sr-user-account-page select:not(.sr-user-benefit-select__native):focus,
 .sr-user-app .sr-user-account-page textarea:focus,
 .sr-user-app .sr-user-account-page .sr-user-card :is(input, select, textarea):focus {
   border-bottom-color: #7ea2ff;
@@ -3488,7 +3488,7 @@
   outline: none;
 }
 
-.sr-user-app .sr-user-account-page select option {
+.sr-user-app .sr-user-account-page select:not(.sr-user-benefit-select__native) option {
   background: #10172b;
   color: #ffffff;
 }
@@ -4069,7 +4069,7 @@
   color: #6366f1;
 }
 
-.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea) {
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea) {
   min-height: 3rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
@@ -4081,12 +4081,12 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
-.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):hover:not(:disabled):not(:focus) {
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea):hover:not(:disabled):not(:focus) {
   border-color: rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.62);
 }
 
-.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):focus {
+.sr-user-app .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea):focus {
   border-color: rgba(99, 102, 241, 0.45);
   background: rgba(255, 255, 255, 0.68);
   box-shadow:
@@ -4095,7 +4095,7 @@
   outline: none;
 }
 
-.sr-user-app .sr-user-benefit-accordion-card select option {
+.sr-user-app .sr-user-benefit-accordion-card select:not(.sr-user-benefit-select__native) option {
   background: #f8fafc;
   color: #111111;
 }
@@ -4124,6 +4124,82 @@
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Benefit registration — custom select (SaveRoute card style) */
+.sr-user-app .sr-user-benefit-select {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.sr-user-app .sr-user-benefit-select__native {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 52px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  background-image: none;
+  padding: 0 2.75rem 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #ffffff;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sr-user-app .sr-user-benefit-select--placeholder .sr-user-benefit-select__native {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sr-user-app .sr-user-benefit-select__native:hover:not(:disabled):not(:focus) {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sr-user-app .sr-user-benefit-select__native:focus {
+  border-color: #4d7cfe;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(77, 124, 254, 0.15);
+  outline: none;
+}
+
+.sr-user-app .sr-user-benefit-select__native:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sr-user-app .sr-user-benefit-select__native option {
+  background: #10172b;
+  color: #ffffff;
+}
+
+.sr-user-app .sr-user-benefit-select__chevron {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 1rem;
+  height: 1rem;
+  color: #ffffff;
+  opacity: 0.6;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 430px) {
+  .sr-user-app .sr-user-benefit-select__native {
+    font-size: 16px;
+  }
 }
 
 /* Telecom carrier picker — always 4 columns in one row */
@@ -4306,7 +4382,7 @@
   color: #6366f1;
 }
 
-.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea) {
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea) {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.55);
@@ -4317,12 +4393,12 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
-.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):hover:not(:disabled):not(:focus) {
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea):hover:not(:disabled):not(:focus) {
   border-color: rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.62);
 }
 
-.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select, textarea):focus {
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card :is(.sr-user-input, select:not(.sr-user-benefit-select__native), textarea):focus {
   border-color: rgba(99, 102, 241, 0.45);
   background: rgba(255, 255, 255, 0.68);
   box-shadow:
@@ -4331,7 +4407,7 @@
   outline: none;
 }
 
-.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card select option {
+.sr-user-app .sr-user-account-page .sr-user-benefit-accordion-card select:not(.sr-user-benefit-select__native) option {
   background: #f8fafc;
   color: #111111;
 }
