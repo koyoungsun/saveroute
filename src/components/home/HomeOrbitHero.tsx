@@ -145,6 +145,21 @@ export function HomeOrbitHero() {
                 <stop offset="92%" stopColor="rgba(220, 232, 255, 0.58)" />
                 <stop offset="100%" stopColor="rgba(235, 242, 255, 0.72)" />
               </linearGradient>
+
+              <linearGradient id="sr-outer-sweep-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(255, 255, 255, 0)" />
+                <stop offset="20%" stopColor="rgba(150, 170, 255, 0.15)" />
+                <stop offset="55%" stopColor="rgba(255, 255, 255, 0.65)" />
+                <stop offset="100%" stopColor="rgba(120, 150, 255, 0.25)" />
+              </linearGradient>
+
+              <filter id="sr-outer-sweep-glow" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="1.6" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
             </defs>
 
             <circle
@@ -153,6 +168,22 @@ export function HomeOrbitHero() {
               cy={ORBIT_CENTER}
               r={RING_OUTER}
             />
+            <g className={styles.outerSweepGroup}>
+              <circle
+                className={styles.outerSweepArcGlow}
+                cx={ORBIT_CENTER}
+                cy={ORBIT_CENTER}
+                r={RING_OUTER}
+                pathLength={100}
+              />
+              <circle
+                className={styles.outerSweepArc}
+                cx={ORBIT_CENTER}
+                cy={ORBIT_CENTER}
+                r={RING_OUTER}
+                pathLength={100}
+              />
+            </g>
             <circle
               className={styles.ringInnerDotted}
               cx={ORBIT_CENTER}
@@ -185,6 +216,17 @@ export function HomeOrbitHero() {
               r={RING_MAIN}
             />
           </svg>
+          </div>
+
+          <div className={styles.innerCometLayer}>
+            <div className={styles.innerCometRunner}>
+              <div className={styles.innerCometAnchor}>
+                <div className={styles.innerCometSprite}>
+                  <span className={styles.innerCometTail} />
+                  <span className={styles.innerCometHead} />
+                </div>
+              </div>
+            </div>
           </div>
 
           {HUD_NODES.map(({ id, label, Icon, angle }) => (

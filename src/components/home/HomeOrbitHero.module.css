@@ -1,9 +1,12 @@
 .root {
   --hud-size: min(88vw, 390px);
   --track-radius: calc(var(--hud-size) * 0.445);
-  --comet-speed: 18s;
+  --inner-track-radius: calc(var(--hud-size) * 0.34);
+  --comet-speed: 14s;
+  --inner-comet-speed: 18s;
   --comet-phase: 52deg;
-  --arc-speed: 12s;
+  --inner-comet-phase: 218deg;
+  --outer-sweep-speed: 24s;
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -76,6 +79,31 @@
   opacity: 0.18;
 }
 
+.outerSweepGroup {
+  transform-origin: 200px 200px;
+  animation: hud-rotate var(--outer-sweep-speed) linear infinite;
+  opacity: 0.82;
+}
+
+.outerSweepArc {
+  fill: none;
+  stroke: url(#sr-outer-sweep-gradient);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 15 85;
+  opacity: 0.72;
+  filter: url(#sr-outer-sweep-glow);
+}
+
+.outerSweepArcGlow {
+  fill: none;
+  stroke: rgba(120, 150, 255, 0.28);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 15 85;
+  opacity: 0.42;
+}
+
 .ringInnerDotted {
   fill: none;
   stroke: rgba(158, 184, 255, 0.92);
@@ -95,7 +123,6 @@
 
 .energyArcGroup {
   transform-origin: 200px 200px;
-  animation: hud-rotate var(--arc-speed) linear infinite;
   opacity: 0.88;
 }
 
@@ -128,7 +155,7 @@
   position: absolute;
   inset: 0;
   transform-origin: 50% 50%;
-  animation: hud-comet-orbit var(--comet-speed) linear infinite;
+  animation: hud-comet-orbit-ccw var(--comet-speed) linear infinite;
 }
 
 .cometAnchor {
@@ -146,6 +173,7 @@
   left: 0;
   width: 0;
   height: 0;
+  transform: scaleX(-1);
 }
 
 /* Head sits on orbit point; tail extends backward along path tangent (────●) */
@@ -187,7 +215,74 @@
   opacity: 0.85;
 }
 
-/* Layer F — HUD nodes (below comet) */
+/* Layer D — inner dotted ring comet (clockwise, subtle) */
+.innerCometLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.innerCometRunner {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  animation: hud-comet-orbit-cw var(--inner-comet-speed) linear infinite;
+}
+
+.innerCometAnchor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateY(calc(-1 * var(--inner-track-radius)));
+}
+
+.innerCometSprite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0.75;
+}
+
+.innerCometHead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.7),
+    0 0 14px rgba(90, 130, 255, 0.45);
+}
+
+.innerCometTail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.125rem;
+  height: 1.5px;
+  transform: translateY(-50%);
+  transform-origin: right center;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(90, 130, 255, 0.12) 42%,
+    rgba(200, 220, 255, 0.55) 86%,
+    rgba(255, 255, 255, 0.72) 100%
+  );
+  opacity: 0.72;
+}
+
+/* Layer F — HUD nodes */
 .hudNodeSlot {
   position: absolute;
   top: 50%;
@@ -291,8 +386,9 @@
 }
 
 .isSearching {
-  --comet-speed: 9s;
-  --arc-speed: 6s;
+  --comet-speed: 10s;
+  --inner-comet-speed: 13s;
+  --outer-sweep-speed: 20s;
 }
 
 .isSearching .ringMain {
@@ -304,8 +400,9 @@
 }
 
 .menuActive {
-  --comet-speed: 11s;
-  --arc-speed: 7s;
+  --comet-speed: 12s;
+  --inner-comet-speed: 15s;
+  --outer-sweep-speed: 22s;
 }
 
 .menuActive .ringMain {
@@ -332,13 +429,23 @@
   }
 }
 
-@keyframes hud-comet-orbit {
+@keyframes hud-comet-orbit-ccw {
   from {
     transform: rotate(var(--comet-phase));
   }
 
   to {
-    transform: rotate(calc(var(--comet-phase) + 360deg));
+    transform: rotate(calc(var(--comet-phase) - 360deg));
+  }
+}
+
+@keyframes hud-comet-orbit-cw {
+  from {
+    transform: rotate(var(--inner-comet-phase));
+  }
+
+  to {
+    transform: rotate(calc(var(--inner-comet-phase) + 360deg));
   }
 }
 
@@ -388,13 +495,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .innerCometRunner,
   .cometRunner,
-  .energyArcGroup,
+  .outerSweepGroup,
   .ringInnerDotted {
     animation: none;
     transform: none;
   }
 
+  .innerCometLayer,
   .cometLayer {
     opacity: 0.85;
   }

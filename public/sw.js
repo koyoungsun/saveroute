@@ -1,19 +1,21 @@
-/* SaveRoute minimal service worker — installability only */
+/* SaveRoute service worker — installability only (no asset caching). */
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+      await self.clients.claim();
+    })(),
+  );
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") {
-    return;
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
-
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request)),
-  );
 });

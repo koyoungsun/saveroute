@@ -22,6 +22,7 @@ import {
   SHOW_USER_HOME_HEADER,
 } from "@/lib/user/home-layout-flags";
 
+import { BuildVersionStamp } from "@/components/pwa/BuildVersionStamp";
 import { PwaServiceWorkerRegister } from "@/components/pwa/PwaServiceWorkerRegister";
 import { AnimatedBackground } from "@/components/common/AnimatedBackground";
 import { getAnimatedBackgroundIntensity } from "@/lib/user/animated-background-intensity";
@@ -131,6 +132,7 @@ export function UserShellInner({ children }: UserShellInnerProps) {
         <div id="sr-user-bottom-dock-root" />
         {showFooter ? <UserFooter /> : null}
         {showZoomControl ? <UserZoomControl /> : null}
+        <BuildVersionStamp />
       </div>
     </ZoomProvider>
   );
