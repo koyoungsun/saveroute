@@ -838,6 +838,25 @@
   line-height: 1.45;
 }
 
+.sr-user-app .sr-user-mypage-page .sr-user-account-page__title {
+  font-size: 1.4375rem;
+}
+
+.sr-user-app .sr-user-mypage-page__description {
+  margin: 0.375rem 0 0;
+  max-width: 28rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  letter-spacing: -0.4px;
+}
+
+@media (max-width: 480px) {
+  .sr-user-app .sr-user-mypage-page .sr-user-account-page__body {
+    padding-inline: 16px;
+  }
+}
+
 .sr-user-app .sr-user-search-results-page {
   display: flex;
   flex-direction: column;

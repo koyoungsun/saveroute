@@ -52,15 +52,58 @@ function DiscountCard({ discount }: { discount: PersonalizedDiscount }) {
   );
 }
 
+function MyPageBestItem({ discount }: { discount: PersonalizedDiscount }) {
+  return (
+    <li className="sr-user-mypage-best-item">
+      <Link
+        href={`/search?keyword=${encodeURIComponent(discount.brandName)}`}
+        className="sr-user-mypage-best-link"
+      >
+        <span className="sr-user-mypage-best-link__brand">
+          {discount.brandName}
+        </span>
+        <span className="sr-user-mypage-best-link__title">{discount.title}</span>
+      </Link>
+      <span className="sr-user-mypage-best-badge">
+        {formatDiscountValue(discount.discountValue, discount.discountUnit)}
+      </span>
+    </li>
+  );
+}
+
 function DiscountSection({
   title,
   discounts,
   emptyHint,
+  variant,
 }: {
   title: string;
   discounts: PersonalizedDiscount[];
   emptyHint: string;
+  variant: "home" | "mypage";
 }) {
+  if (variant === "mypage") {
+    return (
+      <section className="sr-user-benefit-accordion-card sr-user-mypage-card sr-user-mypage-best-card">
+        <div className="sr-user-mypage-best-head">
+          <h2 className="sr-user-benefit-accordion-card__title sr-user-mypage-accent-title sr-user-mypage-best-title">
+            {title}
+          </h2>
+          <span className="sr-user-mypage-best-meta">최대 3개</span>
+        </div>
+        {discounts.length > 0 ? (
+          <ul className="sr-user-mypage-best-list">
+            {discounts.map((discount) => (
+              <MyPageBestItem key={discount.id} discount={discount} />
+            ))}
+          </ul>
+        ) : (
+          <p className="sr-user-mypage-best-empty">{emptyHint}</p>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section>
       <div className="mb-3 flex items-end justify-between gap-3">
@@ -83,6 +126,30 @@ function DiscountSection({
   );
 }
 
+function MyPageBestPlaceholder({
+  title,
+  ctaHref,
+  ctaLabel,
+}: {
+  title: string;
+  ctaHref: string;
+  ctaLabel: string;
+}) {
+  return (
+    <section className="sr-user-benefit-accordion-card sr-user-mypage-card sr-user-mypage-best-card">
+      <h2 className="sr-user-benefit-accordion-card__title sr-user-mypage-accent-title sr-user-mypage-best-title">
+        {title}
+      </h2>
+      <Link
+        href={ctaHref}
+        className="sr-user-btn-primary inline-flex h-12 w-full items-center justify-center rounded-2xl text-sm font-semibold text-white"
+      >
+        {ctaLabel}
+      </Link>
+    </section>
+  );
+}
+
 export function PersonalizedBestSections({
   isAuthenticated,
   hasBenefits,
@@ -97,6 +164,16 @@ export function PersonalizedBestSections({
   variant?: "home" | "mypage";
 }) {
   if (!isAuthenticated) {
+    if (variant === "mypage") {
+      return (
+        <MyPageBestPlaceholder
+          title="맞춤 할인 BEST"
+          ctaHref="/auth/login?redirect=/my-benefits"
+          ctaLabel="로그인하고 혜택 등록"
+        />
+      );
+    }
+
     return (
       <section className="sr-user-card sr-user-card--best rounded-3xl p-5">
         <div className="sr-user-best-line mb-3" aria-hidden />
@@ -116,14 +193,22 @@ export function PersonalizedBestSections({
   }
 
   if (!hasBenefits) {
+    if (variant === "mypage") {
+      return (
+        <MyPageBestPlaceholder
+          title="맞춤 할인 BEST"
+          ctaHref="/my-benefits"
+          ctaLabel="내 혜택 등록하기"
+        />
+      );
+    }
+
     return (
       <section className="sr-user-card sr-user-card--best rounded-3xl p-5">
         <div className="sr-user-best-line mb-3" aria-hidden />
         <h2 className="text-base font-black text-gray-950">맞춤 할인 BEST</h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          {variant === "mypage"
-            ? "보유 통신사·카드를 등록하면 아래에서 맞춤 할인 BEST를 확인할 수 있어요."
-            : "보유 통신사·카드를 등록하면 홈과 검색에서 ‘내 할인 가능’ 할인을 먼저 볼 수 있어요."}
+          보유 통신사·카드를 등록하면 홈과 검색에서 ‘내 할인 가능’ 할인을 먼저 볼 수 있어요.
         </p>
         <Link
           href="/my-benefits"
@@ -135,17 +220,22 @@ export function PersonalizedBestSections({
     );
   }
 
+  const stackClass =
+    variant === "mypage" ? "sr-user-mypage-best-stack" : "space-y-6";
+
   return (
-    <div className="space-y-6">
+    <div className={stackClass}>
       <DiscountSection
+        variant={variant}
         title="내 통신사 할인 BEST"
         discounts={telecomDiscounts}
-        emptyHint="등록한 통신사 혜택과 연결된 할인이 생기면 여기에 표시됩니다."
+        emptyHint="등록한 통신사 혜택과 연결된 할인이 표시됩니다."
       />
       <DiscountSection
+        variant={variant}
         title="내 카드 할인 BEST"
         discounts={cardDiscounts}
-        emptyHint="등록한 카드·카드사 전체 혜택과 연결된 할인이 생기면 여기에 표시됩니다."
+        emptyHint="등록한 카드 혜택과 연결된 할인이 표시됩니다."
       />
     </div>
   );

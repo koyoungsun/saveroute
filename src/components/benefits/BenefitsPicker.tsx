@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CreditCard, Plus, Smartphone, Star, TicketPercent, X } from "lucide-react";
+import { CreditCard, Plus, Smartphone, Star, TicketPercent, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,8 @@ import {
   RegisteredBenefitsBlock,
 } from "@/components/benefits/BenefitAccordionCard";
 import { BenefitSelect } from "@/components/benefits/BenefitSelect";
+import { BenefitToast } from "@/components/benefits/BenefitToast";
+import { useBenefitToast } from "@/components/benefits/useBenefitToast";
 import {
   addCardBenefitAction,
   deactivateUserBenefitAction,
@@ -79,21 +81,20 @@ const PROVIDER_BY_FIRST: Record<Exclude<TelecomFirstChoiceId, "mvno">, string> =
 
 export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPickerProps) {
   const router = useRouter();
+  const { toast, showBenefitToast } = useBenefitToast();
   const [telecomFirst, setTelecomFirst] = useState<TelecomFirstChoiceId | null>(null);
   const [telecomMembershipProductId, setTelecomMembershipProductId] = useState("");
   const [mvnoProviderId, setMvnoProviderId] = useState("");
-  const [telecomOk, setTelecomOk] = useState<string | null>(null);
   const [telecomErr, setTelecomErr] = useState<string | null>(null);
   const [pendingTelecom, startTelecomTransition] = useTransition();
   const [externalMembershipProductId, setExternalMembershipProductId] = useState("");
-  const [membershipOk, setMembershipOk] = useState<string | null>(null);
   const [membershipErr, setMembershipErr] = useState<string | null>(null);
   const [pendingMembership, startMembershipTransition] = useTransition();
   const [selectedCardProviderId, setSelectedCardProviderId] = useState("");
   const [selectedCardProductId, setSelectedCardProductId] = useState("");
   const [selectedCardType, setSelectedCardType] = useState<CardBenefitKind | "">("");
   const [cardSearchQuery, setCardSearchQuery] = useState("");
-  const [cardMsg, setCardMsg] = useState<string | null>(null);
+  const [cardErr, setCardErr] = useState<string | null>(null);
   const [pendingCard, startCardTransition] = useTransition();
   const [manualCatalogCardName, setManualCatalogCardName] = useState("");
   const [manualCatalogKind, setManualCatalogKind] =
@@ -223,7 +224,6 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     setTelecomMembershipProductId("");
     setMvnoProviderId("");
     setTelecomErr(null);
-    setTelecomOk(null);
     setShowMvnoRequestForm(false);
     setMvnoRequestBrand("");
     setMvnoRequestFeedback(null);
@@ -238,15 +238,13 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     }
 
     setTelecomErr(null);
-    setTelecomOk(null);
     startTelecomTransition(() => {
       void registerTelecomBenefitAction(pid).then((r: BenefitActionState) => {
         if (r.error) {
           setTelecomErr(r.error);
-          setTelecomOk(null);
         } else {
           setTelecomErr(null);
-          setTelecomOk(r.message ?? "통신 혜택을 등록했습니다.");
+          showBenefitToast("telecom");
           setTelecomMembershipProductId("");
           setMvnoProviderId("");
           setTelecomFirst(null);
@@ -311,15 +309,13 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
     }
 
     setMembershipErr(null);
-    setMembershipOk(null);
     startMembershipTransition(() => {
       void registerMembershipBenefitAction(productId).then((r: BenefitActionState) => {
         if (r.error) {
           setMembershipErr(r.error);
-          setMembershipOk(null);
         } else {
           setMembershipErr(null);
-          setMembershipOk(r.message ?? "멤버십/포인트를 등록했습니다.");
+          showBenefitToast("membership");
           setExternalMembershipProductId("");
         }
         router.refresh();
@@ -467,20 +463,21 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
   function handleAddCard() {
     const productId = Number(selectedCardProductId);
     if (!Number.isInteger(productId) || productId <= 0 || !selectedCardType) {
-      setCardMsg("카드사, 카드, 카드 유형을 모두 선택해 주세요.");
+      setCardErr("카드사, 카드, 카드 유형을 모두 선택해 주세요.");
       return;
     }
 
-    setCardMsg(null);
+    setCardErr(null);
     startCardTransition(() => {
       void addCardBenefitAction(productId, selectedCardType as CardBenefitKind).then((r) => {
         if (r.error) {
-          setCardMsg(r.error);
+          setCardErr(r.error);
         } else {
           setSelectedCardProviderId("");
           setSelectedCardProductId("");
           setSelectedCardType("");
-          setCardMsg(r.message ?? "보유카드에 추가되었습니다.");
+          setCardErr(null);
+          showBenefitToast("card");
         }
         router.refresh();
       });
@@ -528,21 +525,20 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           {telecomErr}
         </p>
       ) : null}
-      {telecomOk ? (
-        <p className="sr-user-callout sr-user-callout--success">
-          {telecomOk}
-        </p>
-      ) : null}
       {membershipErr ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {membershipErr}
         </p>
       ) : null}
-      {membershipOk ? (
-        <p className="sr-user-callout sr-user-callout--success">
-          {membershipOk}
-        </p>
-      ) : null}
+
+      <BenefitToast
+        toast={toast}
+        bottomOffset={
+          mode === "onboarding"
+            ? "calc(max(1rem, env(safe-area-inset-bottom, 0px)) + 5.5rem)"
+            : undefined
+        }
+      />
 
       {showBenefitsEmptyCta ? (
         <div className="sr-user-callout sr-user-callout--empty px-4 py-6 text-center">
@@ -584,9 +580,6 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   onClick={() => selectTelecomFirst(choice.id)}
                   className={`sr-user-choice sr-user-benefit-telecom-choice ${active ? "sr-user-choice--active" : ""}`}
                 >
-                  {active ? (
-                    <Check className="sr-user-benefit-telecom-choice__check sr-user-accent-text" aria-hidden />
-                  ) : null}
                   <span className="sr-user-benefit-telecom-choice__label">{choice.label}</span>
                 </button>
               );
@@ -605,7 +598,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               onChange={(nextValue) => {
                 setTelecomMembershipProductId(nextValue);
                 setTelecomErr(null);
-                setTelecomOk(null);
+                setTelecomErr(null);
               }}
               placeholder="등급을 선택해 주세요"
               options={membershipOptionsForCarrier.map((opt) => ({
@@ -632,7 +625,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               onChange={(nextValue) => {
                 setMvnoProviderId(nextValue);
                 setTelecomErr(null);
-                setTelecomOk(null);
+                setTelecomErr(null);
               }}
               placeholder="브랜드를 선택해 주세요"
               options={featuredMvnoOptions.map((opt) => ({
@@ -763,9 +756,8 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
         expanded={expandedSection === "card"}
         onToggle={() => toggleBenefitSection("card")}
       >
-        <p className="sr-user-callout text-xs leading-relaxed">
-          아직 혜택 정보가 없는 카드도 보유카드로 등록할 수 있어요.
-          세이브루트가 확인한 할인 혜택과 자동으로 연결됩니다.
+        <p className="sr-user-benefit-card-helper">
+          보유카드 등록 후 할인 혜택이 자동으로 연결됩니다.
         </p>
 
         <BenefitFormStep step={1} label="카드사 선택">
@@ -776,7 +768,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               setSelectedCardProviderId(nextValue);
               setSelectedCardProductId("");
               setCardSearchQuery("");
-              setCardMsg(null);
+              setCardErr(null);
             }}
             placeholder="카드사를 선택해 주세요"
             options={payload.cardProviders.map((provider) => ({
@@ -811,7 +803,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                 value={selectedCardProductId}
                 onChange={(nextValue) => {
                   setSelectedCardProductId(nextValue);
-                  setCardMsg(null);
+                  setCardErr(null);
                 }}
                 placeholder="목록에서 카드를 선택해 주세요"
                 options={filteredCardProducts.map((product) => ({
@@ -903,7 +895,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
                   value={selectedCardType}
                   onChange={(nextValue) => {
                     setSelectedCardType(nextValue as CardBenefitKind | "");
-                    setCardMsg(null);
+                    setCardErr(null);
                   }}
                   placeholder="카드 유형을 선택해 주세요"
                   options={selectableKinds.map((kind) => ({
@@ -941,7 +933,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
           </>
         ) : null}
 
-        {cardMsg ? <p className="text-xs font-medium text-gray-600">{cardMsg}</p> : null}
+        {cardErr ? <p className="text-xs font-medium text-red-600">{cardErr}</p> : null}
 
         {cardBenefits.length > 0 ? (
           <RegisteredBenefitsBlock>
@@ -1037,7 +1029,7 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
               onChange={(nextValue) => {
                 setExternalMembershipProductId(nextValue);
                 setMembershipErr(null);
-                setMembershipOk(null);
+                setMembershipErr(null);
               }}
               placeholder="멤버십 또는 포인트를 선택해 주세요."
               options={payload.externalMembershipProducts.map((product) => ({

@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const CARD_TYPES = new Set(["credit_card", "debit_card", "prepaid_card"]);
 const TELECOM_TYPES = new Set(["telecom_membership", "telecom_mvno_plan"]);
+const MEMBERSHIP_TYPES = new Set(["membership"]);
 
 export default async function MyPage() {
   const supabase = await createServerSupabaseClient();
@@ -72,6 +73,8 @@ export default async function MyPage() {
 
   let registeredCardCount = 0;
   let registeredTelecomCount = 0;
+  let registeredMembershipCount = 0;
+  let registeredOtherCount = 0;
 
   if (productIds.length > 0 && !benefitsResult.error) {
     const { data: products } = await supabase
@@ -89,7 +92,9 @@ export default async function MyPage() {
       const pt = productTypeById.get(pid);
       if (!pt) continue;
       if (CARD_TYPES.has(pt)) registeredCardCount += 1;
-      if (TELECOM_TYPES.has(pt)) registeredTelecomCount += 1;
+      else if (TELECOM_TYPES.has(pt)) registeredTelecomCount += 1;
+      else if (MEMBERSHIP_TYPES.has(pt)) registeredMembershipCount += 1;
+      else registeredOtherCount += 1;
     }
   }
 
@@ -112,6 +117,8 @@ export default async function MyPage() {
     registeredBenefitCount,
     registeredCardCount,
     registeredTelecomCount,
+    registeredMembershipCount,
+    registeredOtherCount,
     recentSearchCount,
     brandRequestParticipationCount,
   };

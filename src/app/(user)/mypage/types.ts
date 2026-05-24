@@ -10,6 +10,8 @@ export type MyPageProfilePayload = {
   registeredBenefitCount: number;
   registeredCardCount: number;
   registeredTelecomCount: number;
+  registeredMembershipCount: number;
+  registeredOtherCount: number;
   recentSearchCount: number;
   brandRequestParticipationCount: number;
 };

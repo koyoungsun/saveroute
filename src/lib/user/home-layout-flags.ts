@@ -58,6 +58,9 @@ export const SHOW_ACCOUNT_SLOGAN = true;
 /** 마이페이지 하단 장식 이미지 노출 */
 export const SHOW_MYPAGE_FOOTER_ART = false;
 
+/** 마이페이지 글자 크기 조절 UI (추후 재노출 가능) */
+export const SHOW_MYPAGE_FONT_SIZE_CONTROL = false;
+
 /** 공지·약관·개인정보 Header 노출 */
 export const SHOW_CONTENT_HEADER = false;
 
