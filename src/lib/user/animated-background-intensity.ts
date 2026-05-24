@@ -4,21 +4,13 @@ function normalizePath(pathname: string) {
   return pathname.split("?")[0]?.split("#")[0] ?? "";
 }
 
-export function getAnimatedBackgroundIntensity(pathname: string): AnimatedBackgroundIntensity {
-  const path = normalizePath(pathname);
-
-  if (path === "/" || path === "/search") {
-    return "normal";
-  }
-
-  if (path === "/about" || path === "/onboarding") {
-    return "normal";
-  }
-
+function usesSubtleTwinkle(path: string) {
   if (
-    path === "/mypage" ||
-    path === "/my-benefits" ||
+    path === "/" ||
+    path === "/search" ||
     path === "/guide" ||
+    path === "/my-benefits" ||
+    path === "/mypage" ||
     path.startsWith("/mypage/") ||
     path === "/terms" ||
     path === "/privacy" ||
@@ -26,10 +18,16 @@ export function getAnimatedBackgroundIntensity(pathname: string): AnimatedBackgr
     path === "/auth/login" ||
     path === "/auth/signup"
   ) {
-    return "subtle";
+    return true;
   }
 
-  if (/^\/notices\/[^/]+$/.test(path)) {
+  return /^\/notices\/[^/]+$/.test(path);
+}
+
+export function getAnimatedBackgroundIntensity(pathname: string): AnimatedBackgroundIntensity {
+  const path = normalizePath(pathname);
+
+  if (usesSubtleTwinkle(path)) {
     return "subtle";
   }
 

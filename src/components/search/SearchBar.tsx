@@ -25,6 +25,7 @@ const SUGGESTION_BLUR_CLOSE_MS = 180;
 interface SearchBarProps {
   defaultValue?: string;
   hideSuggestions?: boolean;
+  hideSubmitButton?: boolean;
 }
 
 type BrandSuggestion = {
@@ -39,7 +40,11 @@ type SuggestionDropdownLayout = {
   width: number;
 };
 
-export function SearchBar({ defaultValue = "", hideSuggestions = false }: SearchBarProps) {
+export function SearchBar({
+  defaultValue = "",
+  hideSuggestions = false,
+  hideSubmitButton = false,
+}: SearchBarProps) {
   const router = useRouter();
   const inputId = useId();
   const listboxId = `${inputId}-suggestions`;
@@ -388,23 +393,25 @@ export function SearchBar({ defaultValue = "", hideSuggestions = false }: Search
           )
         : null}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        onPointerDown={() => {
-          dismissKeyboard();
-        }}
-        className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block sr-user-btn-primary--compact"
-      >
-        {Array.from({ length: SEARCH_SUBMIT_PARTICLE_COUNT }, (_, index) => (
-          <span
-            key={index}
-            className={`sr-user-search-form__particle sr-user-search-form__particle--${index + 1}`}
-            aria-hidden="true"
-          />
-        ))}
-        <span className="sr-user-search-form__submit-text">검색</span>
-      </button>
+      {hideSubmitButton ? null : (
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          onPointerDown={() => {
+            dismissKeyboard();
+          }}
+          className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block sr-user-btn-primary--compact"
+        >
+          {Array.from({ length: SEARCH_SUBMIT_PARTICLE_COUNT }, (_, index) => (
+            <span
+              key={index}
+              className={`sr-user-search-form__particle sr-user-search-form__particle--${index + 1}`}
+              aria-hidden="true"
+            />
+          ))}
+          <span className="sr-user-search-form__submit-text">검색</span>
+        </button>
+      )}
     </form>
   );
 }

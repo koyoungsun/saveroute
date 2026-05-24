@@ -77,12 +77,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           />
         ) : (
           <div className="sr-user-search-panel sr-user-search-panel--empty text-center">
-            <p className="sr-user-t-card-title sr-user-search-panel__title">
+            <p className="sr-user-search-panel__title">
               {result.authenticated
                 ? "등록한 혜택으로 받을 수 있는 할인이 아직 없어요."
                 : "현재 확인된 할인 정보가 없어요."}
             </p>
-            <p className="sr-user-t-muted sr-user-search-panel__body mt-2">
+            <p className="sr-user-search-panel__body">
               {result.authenticated
                 ? "다른 카드나 카드사 전체 혜택을 등록하면 결과가 달라질 수 있어요."
                 : "로그인 후 내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
@@ -90,14 +90,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {result.authenticated ? (
               <Link
                 href="/my-benefits"
-                className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--compact sr-user-btn-primary--block mt-4"
+                className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block"
               >
                 내 혜택 등록·수정
               </Link>
             ) : (
               <Link
                 href={`/auth/login?redirect=${encodeURIComponent("/my-benefits")}`}
-                className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--compact sr-user-btn-primary--block mt-4"
+                className="sr-user-search-form__submit sr-user-btn-primary sr-user-btn-primary--block"
               >
                 로그인하고 혜택 등록
               </Link>

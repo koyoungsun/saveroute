@@ -15,12 +15,14 @@ type SearchHubChromeProps = {
   variant?: "home" | "results";
   defaultValue?: string;
   hideSuggestions?: boolean;
+  hideSubmitButton?: boolean;
 };
 
 export function SearchHubChrome({
   variant = "results",
   defaultValue = "",
   hideSuggestions = false,
+  hideSubmitButton = false,
 }: SearchHubChromeProps) {
   return (
     <div
@@ -62,7 +64,11 @@ export function SearchHubChrome({
           variant === "home" && "sr-user-content-width",
         )}
       >
-        <SearchBar defaultValue={defaultValue} hideSuggestions={hideSuggestions} />
+        <SearchBar
+          defaultValue={defaultValue}
+          hideSuggestions={hideSuggestions}
+          hideSubmitButton={hideSubmitButton}
+        />
       </div>
     </div>
   );

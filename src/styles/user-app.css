@@ -1227,6 +1227,11 @@
 }
 
 .sr-animated-bg__grid::after {
+  content: none;
+}
+
+.sr-animated-bg--normal .sr-animated-bg__grid::after {
+  content: "";
   background-image: radial-gradient(
     circle,
     rgba(150, 170, 255, 0.65) 1.2px,
@@ -1234,51 +1239,108 @@
   );
   background-size: 96px 96px;
   background-position: center top;
-  opacity: 0.12;
-  animation: sr-animated-bg-dot-grid-pulse 10s ease-in-out infinite alternate;
+  opacity: 0.1;
+}
+
+.sr-animated-bg__dots {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: max(100vw, calc(var(--sr-animated-bg-grid-width, 1728px)));
+  height: max(100vh, calc(var(--sr-animated-bg-grid-height, 1344px)));
+  transform: translateX(-50%);
 }
 
 .sr-animated-bg--subtle .sr-animated-bg__grid::before {
   background-image: radial-gradient(
     circle,
-    rgba(135, 160, 255, 0.34) 1px,
+    rgba(90, 125, 255, 0.35) 1px,
     transparent 1.5px
   );
 }
 
-.sr-animated-bg--subtle .sr-animated-bg__grid::after {
-  opacity: 0.08;
-  animation-name: sr-animated-bg-dot-grid-pulse-subtle;
-  animation-duration: 12s;
+.sr-animated-bg__dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(90, 125, 255, 0.35);
+  opacity: 0.18;
+  transform: translate3d(-50%, -50%, 0) scale(1);
+  animation: sr-animated-bg-dot-pulse var(--sr-dot-duration, 5s) ease-in-out infinite;
+  animation-delay: var(--sr-dot-delay, 0s);
+  will-change: opacity, transform, box-shadow;
 }
 
-@keyframes sr-animated-bg-dot-grid-pulse {
-  from {
-    opacity: 0.12;
-  }
-
-  to {
-    opacity: 0.28;
-  }
+.sr-animated-bg__dot--wave {
+  animation-name: sr-animated-bg-dot-pulse-wave;
 }
 
-@keyframes sr-animated-bg-dot-grid-pulse-subtle {
-  from {
-    opacity: 0.08;
-  }
-
-  to {
+@keyframes sr-animated-bg-dot-pulse {
+  0% {
     opacity: 0.18;
+    background: rgba(90, 125, 255, 0.35);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
+  }
+
+  35% {
+    opacity: 0.85;
+    background: rgba(130, 160, 255, 0.95);
+    transform: translate3d(-50%, -50%, 0) scale(1.35);
+    box-shadow: 0 0 7px rgba(79, 124, 255, 0.32);
+  }
+
+  70% {
+    opacity: 0.32;
+    background: rgba(90, 125, 255, 0.45);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
+  }
+
+  100% {
+    opacity: 0.18;
+    background: rgba(90, 125, 255, 0.35);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes sr-animated-bg-dot-pulse-wave {
+  0% {
+    opacity: 0.18;
+    background: rgba(90, 125, 255, 0.35);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
+  }
+
+  35% {
+    opacity: 0.95;
+    background: rgba(130, 160, 255, 0.95);
+    transform: translate3d(-50%, -50%, 0) scale(1.35);
+    box-shadow: 0 0 9px rgba(120, 150, 255, 0.38);
+  }
+
+  70% {
+    opacity: 0.36;
+    background: rgba(90, 125, 255, 0.48);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
+  }
+
+  100% {
+    opacity: 0.18;
+    background: rgba(90, 125, 255, 0.35);
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    box-shadow: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sr-animated-bg__grid::after {
+  .sr-animated-bg__dot {
     animation: none;
-    opacity: 0.14;
-  }
-
-  .sr-animated-bg--subtle .sr-animated-bg__grid::after {
-    opacity: 0.1;
+    box-shadow: none;
+    opacity: 0.18;
+    transform: translate3d(-50%, -50%, 0) scale(1);
   }
 }

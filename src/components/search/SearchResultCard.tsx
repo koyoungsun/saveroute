@@ -204,6 +204,13 @@ function accentClassName(accent: SearchResultCardAccent) {
   return `sr-user-search-result-card--accent-${accent}`;
 }
 
+function searchRankClassName(rank: number) {
+  if (rank === 1) return "sr-user-search-rank-number--first";
+  if (rank === 2) return "sr-user-search-rank-number--second";
+  if (rank === 3) return "sr-user-search-rank-number--third";
+  return "sr-user-search-rank-number--default";
+}
+
 export function SearchResultCard({
   discount,
   isBest,
@@ -267,12 +274,7 @@ export function SearchResultCard({
     >
       {rank != null ? (
         <span
-          className={cn(
-            "sr-user-search-result-card__rank",
-            rank === 1
-              ? "sr-user-search-result-card__rank--first"
-              : "sr-user-search-result-card__rank--default",
-          )}
+          className={cn("sr-user-search-rank-number", searchRankClassName(rank))}
           aria-hidden="true"
         >
           {formatRankDisplay(rank)}
