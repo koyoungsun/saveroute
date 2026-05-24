@@ -647,6 +647,10 @@
   overflow-y: visible;
 }
 
+.sr-user-app .sr-user-home-hub__content:has(.sr-user-search-bar__input:focus) {
+  overflow: visible;
+}
+
 .sr-user-app.sr-user-home-hub {
   overflow-x: clip;
   overflow-y: visible;

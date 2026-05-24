@@ -1915,6 +1915,73 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sr-user-app .sr-user-search-suggestions--portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  z-index: 10050;
+  width: auto;
+  max-width: calc(100vw - 1rem);
+}
+
+.sr-user-search-suggestions-portal-host {
+  position: static;
+  pointer-events: none;
+}
+
+.sr-user-app .sr-user-search-suggestions-portal-host .sr-user-search-suggestions--portal {
+  pointer-events: auto;
+}
+
+/* ── Build version stamp (production debug overlay) ── */
+.sr-build-version-stamp-portal-host {
+  position: static;
+  pointer-events: none;
+}
+
+.sr-user-app .sr-build-version-stamp {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 10050;
+  display: flex;
+  justify-content: center;
+  padding-bottom: max(0.375rem, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.sr-user-app .sr-build-version-stamp__inner {
+  max-width: calc(100vw - 1rem);
+  border-radius: 10px 10px 0 0;
+  background: rgba(0, 0, 0, 0.82);
+  padding: 0.375rem 0.625rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(0.6875rem, 2.8vw, 0.8125rem);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.sr-user-app .sr-build-version-stamp__host-ok {
+  color: rgba(110, 231, 183, 0.92);
+}
+
+.sr-user-app .sr-build-version-stamp__host-warn {
+  color: rgba(252, 211, 77, 0.95);
+}
+
+@media (max-width: 430px) {
+  .sr-user-app .sr-build-version-stamp__inner {
+    font-size: clamp(0.75rem, 3.2vw, 0.875rem);
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 .sr-user-app .sr-user-search-suggestions__status {
@@ -1942,6 +2009,9 @@
   padding: 0.625rem 1rem;
   text-align: left;
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background-color 180ms ease,
     color 180ms ease;

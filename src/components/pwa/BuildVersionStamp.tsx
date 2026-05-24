@@ -1,21 +1,70 @@
 "use client";
 
-import { APP_BUILD_ID, SHOW_BUILD_STAMP } from "@/lib/build-info";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+import { BUILD_DEBUG_INFO, SHOW_BUILD_DEBUG_DETAILS } from "@/lib/build-info";
 
 export function BuildVersionStamp() {
-  if (!SHOW_BUILD_STAMP) {
+  const [clientHost, setClientHost] = useState("");
+  const [clientPath, setClientPath] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setClientHost(window.location.host);
+    setClientPath(window.location.pathname);
+  }, []);
+
+  if (!SHOW_BUILD_DEBUG_DETAILS || !isMounted) {
     return null;
   }
 
-  return (
+  const deploymentShort = BUILD_DEBUG_INFO.deploymentId
+    ? BUILD_DEBUG_INFO.deploymentId.replace(/^dpl_/, "").slice(0, 8)
+    : "n/a";
+
+  const expectedHost = BUILD_DEBUG_INFO.vercelUrl || "n/a";
+  const hostMatchesDeployment =
+    !BUILD_DEBUG_INFO.vercelUrl ||
+    clientHost === BUILD_DEBUG_INFO.vercelUrl ||
+    clientHost.endsWith(".vercel.app");
+
+  const stamp = (
     <div
-      className="sr-build-version-stamp pointer-events-none fixed inset-x-0 bottom-0 z-[9999] flex justify-center pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-      data-build-version={APP_BUILD_ID}
+      className="sr-build-version-stamp"
+      data-build-version={BUILD_DEBUG_INFO.buildId}
+      data-commit-sha={BUILD_DEBUG_INFO.commitSha || BUILD_DEBUG_INFO.commitShaShort}
+      data-deployment-id={BUILD_DEBUG_INFO.deploymentId}
+      data-vercel-url={BUILD_DEBUG_INFO.vercelUrl}
+      data-vercel-env={BUILD_DEBUG_INFO.vercelEnv}
+      data-client-host={clientHost}
+      data-host-matches-deployment={hostMatchesDeployment ? "1" : "0"}
       aria-hidden
     >
-      <span className="rounded-t-md bg-black/55 px-2 py-0.5 font-mono text-[10px] leading-none tracking-tight text-white/70">
-        build {APP_BUILD_ID}
-      </span>
+      <div className="sr-build-version-stamp__inner">
+        <div>
+          env={BUILD_DEBUG_INFO.vercelEnv || "unknown"} · sha={BUILD_DEBUG_INFO.commitShaShort} ·
+          build={BUILD_DEBUG_INFO.buildId}
+        </div>
+        <div>
+          dpl={deploymentShort} · deploy={expectedHost}
+        </div>
+        <div
+          className={
+            hostMatchesDeployment
+              ? "sr-build-version-stamp__host-ok"
+              : "sr-build-version-stamp__host-warn"
+          }
+        >
+          host={clientHost || "…"} · path={clientPath || "/"}
+        </div>
+      </div>
     </div>
+  );
+
+  return createPortal(
+    <div className="sr-user-app sr-build-version-stamp-portal-host">{stamp}</div>,
+    document.body,
   );
 }
