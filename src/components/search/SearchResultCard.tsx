@@ -93,8 +93,8 @@ function getCardDisplayName(discount: DiscountResult) {
   return product.name;
 }
 
-function formatRankWatermark(rank: number) {
-  return String(rank);
+function formatRankDisplay(rank: number) {
+  return String(rank).padStart(2, "0");
 }
 
 function normalizeCompareText(value: string) {
@@ -275,24 +275,30 @@ export function SearchResultCard({
           )}
           aria-hidden="true"
         >
-          {formatRankWatermark(rank)}
+          {formatRankDisplay(rank)}
         </span>
       ) : null}
       <div className="sr-user-search-result-card__body">
         <div className="sr-user-search-result-card__top">
-          <div className="sr-user-search-result-card__header-inline">
-            <span
-              className={cn(
-                "sr-user-search-result-card__type-badge sr-user-t-badge shrink-0",
-                `sr-user-search-result-card__type-badge--${accent}`,
-              )}
-            >
-              {accentLabel}
-            </span>
-            <span className="sr-user-search-result-card__provider-name">{cardDisplayName}</span>
-            {isBest ? (
-              <span className="sr-user-search-result-card__best-badge shrink-0">BEST</span>
-            ) : null}
+          <div className="sr-user-search-result-card__header">
+            <div className="sr-user-search-result-card__header-leading">
+              <span
+                className={cn(
+                  "sr-user-search-result-card__type-badge sr-user-t-badge shrink-0",
+                  `sr-user-search-result-card__type-badge--${accent}`,
+                )}
+              >
+                {accentLabel}
+              </span>
+              <span className="sr-user-search-result-card__provider-name">
+                {cardDisplayName}
+              </span>
+              {isBest ? (
+                <span className="sr-user-search-result-card__best-badge shrink-0">
+                  BEST
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 

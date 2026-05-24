@@ -36,7 +36,7 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
         <p className="sr-user-content-page__meta">
           {formatNoticeDate(notice.publishedAt ?? notice.createdAt)}
         </p>
-        <h1 className="sr-user-content-page__title">{notice.title}</h1>
+        <h1 className="sr-user-content-page__article-title">{notice.title}</h1>
         <div className="sr-user-content-page__prose sr-user-content-page__prose--pre">
           {notice.body}
         </div>

@@ -11,13 +11,14 @@ export function getAnimatedBackgroundIntensity(pathname: string): AnimatedBackgr
     return "normal";
   }
 
-  if (path === "/about" || path === "/guide" || path === "/onboarding") {
+  if (path === "/about" || path === "/onboarding") {
     return "normal";
   }
 
   if (
     path === "/mypage" ||
     path === "/my-benefits" ||
+    path === "/guide" ||
     path.startsWith("/mypage/") ||
     path === "/terms" ||
     path === "/privacy" ||

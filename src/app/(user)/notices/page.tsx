@@ -22,12 +22,12 @@ export default async function NoticesPage() {
   return (
     <ContentPageShell>
       <div className="sr-user-content-page__header">
-        <div>
-          <h1 className="sr-user-content-page__title">공지사항</h1>
-          <p className="sr-user-content-page__description">
+        <header className="sr-user-account-page__intro">
+          <h1 className="sr-user-account-page__title">공지사항</h1>
+          <p className="sr-user-account-page__description">
             SaveRoute 서비스 업데이트와 안내를 확인하세요.
           </p>
-        </div>
+        </header>
         {isAdmin ? (
           <Link
             href="/notices/manage"
@@ -41,7 +41,7 @@ export default async function NoticesPage() {
       <section className="sr-user-notice-list">
         {notices.length === 0 ? (
           <div className="sr-user-content-card sr-user-content-card--empty text-center">
-            <p className="sr-user-content-page__description">등록된 공지가 없습니다.</p>
+            <p className="sr-user-content-page__prose">등록된 공지가 없습니다.</p>
           </div>
         ) : (
           notices.map((notice) => (

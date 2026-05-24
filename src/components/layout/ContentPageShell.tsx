@@ -15,8 +15,8 @@ export function ContentPageShell({ children, className }: ContentPageShellProps)
       tone="comfortable"
       className={cn("sr-user-account-page sr-user-content-page sr-user-stack", className)}
     >
-      <BrandHubChrome variant="content" />
-      <div className="sr-user-content-page__body">{children}</div>
+      <BrandHubChrome variant="account" />
+      <div className="sr-user-account-page__body">{children}</div>
     </UserPage>
   );
 }

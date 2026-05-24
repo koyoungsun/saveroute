@@ -16,6 +16,7 @@ import {
   SHOW_CONTENT_HEADER,
   SHOW_CONTENT_FONT_SIZE_CONTROLS,
   SHOW_FONT_SIZE_CONTROLS,
+  SHOW_GUIDE_BUILD_DEBUG_STAMP,
   SHOW_HOME_FLOATING_MENU,
   SHOW_LEGACY_HOME_DESKTOP_NAV,
   SHOW_USER_HOME_FOOTER,
@@ -50,7 +51,11 @@ function isAuthPath(pathname: string) {
 }
 
 function isAccountHubPath(pathname: string) {
-  return pathname === "/mypage" || pathname === "/my-benefits";
+  return (
+    pathname === "/mypage" ||
+    pathname === "/my-benefits" ||
+    pathname === "/guide"
+  );
 }
 
 function isContentHubPath(pathname: string) {
@@ -111,8 +116,13 @@ export function UserShellInner({ children }: UserShellInnerProps) {
   const showFontSizeControls =
     hubKind === "content" ? SHOW_CONTENT_FONT_SIZE_CONTROLS : SHOW_FONT_SIZE_CONTROLS;
 
-  const showZoomControl = !showFloatingMenu && showFontSizeControls;
+  const showZoomControl =
+    pathname !== "/guide" &&
+    !showFloatingMenu &&
+    showFontSizeControls;
   const backgroundIntensity = getAnimatedBackgroundIntensity(pathname);
+  const showBuildVersionStamp =
+    SHOW_GUIDE_BUILD_DEBUG_STAMP || pathname !== "/guide";
 
   return (
     <ZoomProvider>
@@ -132,7 +142,7 @@ export function UserShellInner({ children }: UserShellInnerProps) {
         <div id="sr-user-bottom-dock-root" />
         {showFooter ? <UserFooter /> : null}
         {showZoomControl ? <UserZoomControl /> : null}
-        <BuildVersionStamp />
+        {showBuildVersionStamp ? <BuildVersionStamp /> : null}
       </div>
     </ZoomProvider>
   );
