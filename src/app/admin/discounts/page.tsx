@@ -257,7 +257,10 @@ export default async function AdminDiscountsPage({
   return (
     <>
       <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
-        <h1 className="admin-page-title mb-0">Discounts</h1>
+        <div>
+          <h1 className="admin-page-title">할인 관리</h1>
+          <p className="admin-page-intro mb-0">브랜드별 할인 정보를 등록·수정·검수하세요.</p>
+        </div>
         <Link href="/admin/discounts/new" className="btn btn-primary">
           + 할인 등록
         </Link>

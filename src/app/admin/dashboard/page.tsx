@@ -122,13 +122,11 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
+      <div className="admin-page-header d-flex justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="admin-page-title mb-1">Dashboard</h1>
-          <p className="text-muted mb-0">
-            search_logs, result_click_logs, brand_requests, user_benefits 및 카탈로그 테이블을 기준으로
-            실제 집계를 표시합니다. 검색 횟수는 검색창에서 검색 버튼(또는 Enter)으로
-            실행한 explicit search action 만 집계하며, F5·URL 재방문은 포함하지 않습니다.
+          <h1 className="admin-page-title">Dashboard</h1>
+          <p className="admin-page-intro mb-0">
+            오늘 운영 현황을 확인하세요. 검색·클릭·요청·보유혜택 지표를 한 화면에서 봅니다.
           </p>
         </div>
         <span className="badge text-bg-light text-dark border">

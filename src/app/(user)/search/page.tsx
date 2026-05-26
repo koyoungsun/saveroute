@@ -79,12 +79,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <div className="sr-user-search-panel sr-user-search-panel--empty text-center">
             <p className="sr-user-search-panel__title">
               {result.authenticated
-                ? "등록한 혜택으로 받을 수 있는 할인이 아직 없어요."
+                ? "받을 수 있는 할인이 없습니다."
                 : "현재 확인된 할인 정보가 없어요."}
             </p>
             <p className="sr-user-search-panel__body">
               {result.authenticated
-                ? "다른 카드나 카드사 전체 혜택을 등록하면 결과가 달라질 수 있어요."
+                ? "다른 카드 멤버십을 등록하면 결과가 달라질 수 있어요."
                 : "로그인 후 내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
             </p>
             {result.authenticated ? (

@@ -1,23 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { SAVEROUTE_SLOGAN } from "@/lib/user/brand-slogan";
+import { MenuBrandHeader } from "@/components/layout/MenuBrandHeader";
+import { buildFloatingMenuLinkGroups } from "@/lib/user/floating-menu-config";
 import { cn } from "@/lib/utils";
-
-type MobileNavItem = {
-  id: string;
-  label: string;
-  href: string;
-};
 
 type UserMobileNavDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
   pathname: string;
-  items: readonly MobileNavItem[];
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -25,14 +20,13 @@ function isActivePath(pathname: string, href: string) {
     return pathname === href;
   }
 
-  return pathname.startsWith(href);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function UserMobileNavDrawer({
   isOpen,
   onClose,
   pathname,
-  items,
 }: UserMobileNavDrawerProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -88,6 +82,8 @@ export function UserMobileNavDrawer({
     return null;
   }
 
+  const menuGroups = buildFloatingMenuLinkGroups(true);
+
   return createPortal(
     <div className="sr-user-mobile-nav" data-open={visible ? "true" : "false"}>
       <button
@@ -105,46 +101,56 @@ export function UserMobileNavDrawer({
         className="sr-user-mobile-nav__panel"
       >
         <div className="sr-user-mobile-nav__header">
-          <p className="sr-user-mobile-nav__title">메뉴</p>
+          <MenuBrandHeader
+            className="sr-user-mobile-nav__brand-header"
+            logoLinkClassName="sr-user-mobile-nav__brand-logo-link"
+            logoClassName="sr-user-mobile-nav__brand-logo"
+            sloganClassName="sr-user-mobile-nav__brand-slogan"
+            sloganAccentClassName="sr-user-mobile-nav__brand-slogan-accent"
+            onLogoClick={onClose}
+          />
           <button
             type="button"
             className="sr-user-mobile-nav__close"
             aria-label="메뉴 닫기"
             onClick={onClose}
           >
-            닫기
+            <X aria-hidden="true" size={18} strokeWidth={2.2} />
           </button>
         </div>
 
         <nav className="sr-user-mobile-nav__list" aria-label="모바일 메뉴">
-          {items.map((item) => {
-            const isActive = isActivePath(pathname, item.href);
+          {menuGroups.map((group, groupIndex) => (
+            <div key={group.id} className="sr-user-mobile-nav__group">
+              {groupIndex > 0 ? (
+                <div className="sr-user-mobile-nav__divider" aria-hidden="true" />
+              ) : null}
 
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={onClose}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "sr-user-mobile-nav__link",
-                  isActive && "sr-user-mobile-nav__link--active",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+              {group.label ? (
+                <p className="sr-user-mobile-nav__group-label">{group.label}</p>
+              ) : null}
+
+              {group.items.map((item) => {
+                const isActive = isActivePath(pathname, item.href);
+
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "sr-user-mobile-nav__link",
+                      isActive && "sr-user-mobile-nav__link--active",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
-
-        <footer className="sr-user-mobile-nav__brand" aria-label="SaveRoute 브랜드">
-          <div className="sr-user-mobile-nav__brand-divider" aria-hidden="true" />
-          <p className="sr-user-mobile-nav__brand-name">
-            Save<span className="sr-user-mobile-nav__brand-accent">Route</span>
-          </p>
-          <p className="sr-user-mobile-nav__brand-slogan">{SAVEROUTE_SLOGAN}</p>
-          <p className="sr-user-mobile-nav__brand-copy">© 2026 SaveRoute</p>
-        </footer>
       </aside>
     </div>,
     document.body,

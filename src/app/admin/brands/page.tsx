@@ -83,9 +83,12 @@ export default async function AdminBrandsPage({ searchParams }: AdminBrandsPageP
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="admin-page-title mb-0">Brands</h1>
-        <Link href="/admin/brands/new" className="btn btn-primary">
+      <div className="admin-page-header d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <h1 className="admin-page-title">브랜드 관리</h1>
+          <p className="admin-page-intro mb-0">브랜드와 할인 데이터를 관리하세요.</p>
+        </div>
+        <Link href="/admin/brands/new" className="btn btn-primary flex-shrink-0">
           + 브랜드 등록
         </Link>
       </div>

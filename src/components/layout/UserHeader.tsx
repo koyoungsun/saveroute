@@ -9,20 +9,6 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { UserMobileNavDrawer } from "@/components/layout/UserMobileNavDrawer";
 import { useUserMobileViewport } from "@/components/layout/use-user-mobile-viewport";
 
-const primaryNavItems = [
-  { id: "home", label: "홈", href: "/" },
-  { id: "notices", label: "공지사항", href: "/notices" },
-  { id: "about", label: "서비스 소개", href: "/about" },
-  { id: "my-benefits", label: "My Benefits", href: "/my-benefits" },
-  { id: "mypage", label: "My Page", href: "/mypage" },
-] as const;
-
-const mobileNavItems = [
-  ...primaryNavItems,
-  { id: "terms", label: "약관", href: "/terms" },
-  { id: "privacy", label: "개인정보처리방침", href: "/privacy" },
-] as const;
-
 const LOGO_INTRINSIC_WIDTH = 204;
 const LOGO_INTRINSIC_HEIGHT = 40;
 const LOGO_DISPLAY_HEIGHT = 28;
@@ -101,7 +87,6 @@ export function UserHeader() {
           isOpen={isMenuOpen}
           onClose={closeMenu}
           pathname={pathname}
-          items={mobileNavItems}
         />
       ) : null}
     </>

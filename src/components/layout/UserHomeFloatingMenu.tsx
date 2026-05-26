@@ -1,32 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bell,
-  CreditCard,
-  FileText,
-  HelpCircle,
-  Home,
-  LogIn,
-  LogOut,
-  Mail,
-  Menu,
-  ShieldCheck,
-  User,
-  UserPlus,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { LogOut, Mail, Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { MenuBrandHeader } from "@/components/layout/MenuBrandHeader";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
-import {
-  emitFloatingMenuState,
-} from "@/lib/user/floating-menu-events";
+import { emitFloatingMenuState } from "@/lib/user/floating-menu-events";
 import { buildSaverouteContactMailto } from "@/lib/user/brand-slogan";
+import {
+  buildFloatingMenuLinkGroups,
+  GUEST_ACCOUNT_MENU_ITEMS,
+  type FloatingMenuAccountLinkItem,
+  type FloatingMenuLinkItem,
+} from "@/lib/user/floating-menu-config";
 import { usePwaInstall } from "@/lib/pwa/use-pwa-install";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -36,54 +26,6 @@ import styles from "./UserHomeFloatingMenu.module.css";
 const INK_DURATION_MS = 720;
 const ITEM_STAGGER_MS = 50;
 const ITEM_BASE_DELAY_MS = 280;
-
-type FloatingMenuLinkItem = {
-  id: string;
-  label: string;
-  href: string;
-  icon: LucideIcon;
-};
-
-type FloatingMenuActionItem = {
-  id: string;
-  label: string;
-  action: "logout";
-  icon: LucideIcon;
-};
-
-type FloatingMenuAccountLinkItem = {
-  id: string;
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  account: true;
-};
-
-type FloatingMenuItem = FloatingMenuLinkItem | FloatingMenuActionItem | FloatingMenuAccountLinkItem;
-
-const PRIMARY_NAV_ITEMS: FloatingMenuLinkItem[] = [
-  { id: "home", label: "홈", href: "/", icon: Home },
-  { id: "my-benefits", label: "내 혜택", href: "/my-benefits", icon: CreditCard },
-  { id: "mypage", label: "마이페이지", href: "/mypage", icon: User },
-  { id: "notices", label: "공지사항", href: "/notices", icon: Bell },
-  { id: "guide", label: "사용방법", href: "/guide", icon: HelpCircle },
-  { id: "terms", label: "약관", href: "/terms", icon: FileText },
-  { id: "privacy", label: "개인정보처리방침", href: "/privacy", icon: ShieldCheck },
-];
-
-function getGuestMenuItems(): FloatingMenuItem[] {
-  return [
-    ...PRIMARY_NAV_ITEMS.filter(
-      (item) => item.id !== "my-benefits" && item.id !== "mypage",
-    ),
-    { id: "login", label: "로그인", href: "/auth/login", icon: LogIn, account: true },
-    { id: "signup", label: "회원가입", href: "/auth/signup", icon: UserPlus, account: true },
-  ];
-}
-
-function getAuthenticatedMenuItems(): FloatingMenuItem[] {
-  return [...PRIMARY_NAV_ITEMS];
-}
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/") {
@@ -112,6 +54,76 @@ function getItemDelay(index: number, total: number, visible: boolean) {
   }
 
   return `${Math.max(0, (total - 1 - index) * 40)}ms`;
+}
+
+type MenuLinkRowProps = {
+  item: FloatingMenuLinkItem;
+  index: number;
+  totalItemCount: number;
+  pathname: string;
+  visible: boolean;
+  onNavigate: () => void;
+};
+
+function MenuLinkRow({
+  item,
+  index,
+  totalItemCount,
+  pathname,
+  visible,
+  onNavigate,
+}: MenuLinkRowProps) {
+  const Icon = item.icon;
+  const isActive = isActivePath(pathname, item.href);
+
+  return (
+    <li className={styles.menuListItem}>
+      <Link
+        href={item.href}
+        style={{
+          transitionDelay: getItemDelay(index, totalItemCount, visible),
+        }}
+        className={cn(styles.menuItem, isActive && styles.menuItemActive)}
+        aria-current={isActive ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        <Icon aria-hidden="true" className={styles.menuItemIcon} strokeWidth={1.75} />
+        <span className={styles.menuItemLabel}>{item.label}</span>
+      </Link>
+    </li>
+  );
+}
+
+type MenuAccountLinkRowProps = {
+  item: FloatingMenuAccountLinkItem;
+  index: number;
+  totalItemCount: number;
+  visible: boolean;
+  onNavigate: () => void;
+};
+
+function MenuAccountLinkRow({
+  item,
+  index,
+  totalItemCount,
+  visible,
+  onNavigate,
+}: MenuAccountLinkRowProps) {
+  const Icon = item.icon;
+
+  return (
+    <li className={styles.menuListItem}>
+      <Link
+        href={item.href}
+        style={{ transitionDelay: getItemDelay(index, totalItemCount, visible) }}
+        className={cn(styles.menuItem, styles.menuItemAccount)}
+        onClick={onNavigate}
+      >
+        <Icon aria-hidden="true" className={styles.menuItemIcon} strokeWidth={1.75} />
+        <span className={styles.menuItemLabel}>{item.label}</span>
+      </Link>
+    </li>
+  );
 }
 
 export function UserHomeFloatingMenu() {
@@ -180,12 +192,15 @@ export function UserHomeFloatingMenu() {
   useEffect(() => {
     const supabase = createClient();
 
-    void supabase.auth.getUser().then(({ data }) => {
-      setIsAuthenticated(Boolean(data.user));
-      setAuthReady(true);
-    }).catch(() => {
-      setAuthReady(true);
-    });
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        setIsAuthenticated(Boolean(data.user));
+        setAuthReady(true);
+      })
+      .catch(() => {
+        setAuthReady(true);
+      });
 
     const {
       data: { subscription },
@@ -273,20 +288,19 @@ export function UserHomeFloatingMenu() {
     void handleLogout();
   }
 
-  const menuItems =
-    !authReady || !isAuthenticated
-      ? getGuestMenuItems()
-      : getAuthenticatedMenuItems();
-  const primaryItems = menuItems.filter(
-    (item): item is FloatingMenuLinkItem => "href" in item && !("account" in item),
-  );
-  const accountLinks = menuItems.filter(
-    (item): item is FloatingMenuAccountLinkItem => "account" in item && item.account,
+  const accountLinks =
+    !authReady || isAuthenticated ? [] : GUEST_ACCOUNT_MENU_ITEMS;
+  const menuLinkGroups = buildFloatingMenuLinkGroups(isAuthenticated);
+  const linkItemCount = menuLinkGroups.reduce(
+    (count, group) => count + group.items.length,
+    0,
   );
   const utilityItemCount =
     (showInstallButton ? 1 : 0) + 1 + (isAuthenticated ? 1 : 0);
-  const totalItemCount = primaryItems.length + accountLinks.length + utilityItemCount;
+  const totalItemCount = linkItemCount + accountLinks.length + utilityItemCount;
   const contactMailto = buildSaverouteContactMailto("SaveRoute 문의");
+
+  let itemIndex = 0;
 
   const inkStyle = {
     "--ink-origin-x": `${inkOrigin.x}px`,
@@ -320,70 +334,92 @@ export function UserHomeFloatingMenu() {
               }}
             >
               <div className={styles.menuContent}>
-                <p className={styles.menuBrand}>
-                  Save<span className={styles.menuBrandAccent}>Route</span>
-                </p>
+                <MenuBrandHeader
+                  className={styles.menuBrandHeader}
+                  logoLinkClassName={styles.menuBrandLogoLink}
+                  logoClassName={styles.menuBrandLogo}
+                  sloganClassName={styles.menuSlogan}
+                  sloganAccentClassName={styles.menuSloganAccent}
+                  onLogoClick={closeMenu}
+                />
 
                 <nav className={styles.menuNav} aria-label="주요 메뉴">
+                  {menuLinkGroups.map((group, groupIndex) => (
+                    <div key={group.id} className={styles.menuGroup}>
+                      {groupIndex > 0 ? (
+                        <div
+                          className={styles.menuDivider}
+                          aria-hidden="true"
+                          style={{
+                            transitionDelay: getItemDelay(
+                              itemIndex++,
+                              totalItemCount,
+                              visible,
+                            ),
+                          }}
+                        />
+                      ) : null}
+
+                      {group.label ? (
+                        <p
+                          className={styles.menuGroupLabel}
+                          style={{
+                            transitionDelay: getItemDelay(
+                              itemIndex++,
+                              totalItemCount,
+                              visible,
+                            ),
+                          }}
+                        >
+                          {group.label}
+                        </p>
+                      ) : null}
+
+                      <ul className={styles.menuList}>
+                        {group.items.map((item) => {
+                          const currentIndex = itemIndex;
+                          itemIndex += 1;
+
+                          return (
+                            <MenuLinkRow
+                              key={item.id}
+                              item={item}
+                              index={currentIndex}
+                              totalItemCount={totalItemCount}
+                              pathname={pathname}
+                              visible={visible}
+                              onNavigate={closeMenu}
+                            />
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+
+                  <div
+                    className={styles.menuDivider}
+                    aria-hidden="true"
+                    style={{
+                      transitionDelay: getItemDelay(itemIndex++, totalItemCount, visible),
+                    }}
+                  />
+
                   <ul className={styles.menuList}>
-                    {primaryItems.map((item, index) => {
-                      const Icon = item.icon;
-                      const isActive = isActivePath(pathname, item.href);
+                    {accountLinks.map((item) => {
+                      const currentIndex = itemIndex;
+                      itemIndex += 1;
 
                       return (
-                        <li key={item.id} className={styles.menuListItem}>
-                          <Link
-                            href={item.href}
-                            style={{
-                              transitionDelay: getItemDelay(index, totalItemCount, visible),
-                            }}
-                            className={cn(
-                              styles.menuItem,
-                              isActive && styles.menuItemActive,
-                            )}
-                            aria-current={isActive ? "page" : undefined}
-                            onClick={closeMenu}
-                          >
-                            <Icon
-                              aria-hidden="true"
-                              className={styles.menuItemIcon}
-                              strokeWidth={1.75}
-                            />
-                            <span className={styles.menuItemLabel}>{item.label}</span>
-                          </Link>
-                        </li>
+                        <MenuAccountLinkRow
+                          key={item.id}
+                          item={item}
+                          index={currentIndex}
+                          totalItemCount={totalItemCount}
+                          visible={visible}
+                          onNavigate={closeMenu}
+                        />
                       );
                     })}
-
-                    {accountLinks.length > 0 ? (
-                      <li className={styles.menuDivider} aria-hidden="true" />
-                    ) : null}
-
-                    {accountLinks.map((item, index) => {
-                      const Icon = item.icon;
-                      const itemIndex = primaryItems.length + index;
-                      const delay = getItemDelay(itemIndex, totalItemCount, visible);
-
-                      return (
-                        <li key={item.id} className={styles.menuListItem}>
-                          <Link
-                            href={item.href}
-                            style={{ transitionDelay: delay }}
-                            className={cn(styles.menuItem, styles.menuItemAccount)}
-                            onClick={closeMenu}
-                          >
-                            <Icon
-                              aria-hidden="true"
-                              className={styles.menuItemIcon}
-                              strokeWidth={1.75}
-                            />
-                            <span className={styles.menuItemLabel}>{item.label}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-
-                    <li className={styles.menuDivider} aria-hidden="true" />
 
                     {showInstallButton ? (
                       <li className={styles.menuListItem}>
@@ -391,7 +427,7 @@ export function UserHomeFloatingMenu() {
                           variant="menu"
                           style={{
                             transitionDelay: getItemDelay(
-                              primaryItems.length + accountLinks.length,
+                              itemIndex++,
                               totalItemCount,
                               visible,
                             ),
@@ -406,9 +442,7 @@ export function UserHomeFloatingMenu() {
                         href={contactMailto}
                         style={{
                           transitionDelay: getItemDelay(
-                            primaryItems.length +
-                              accountLinks.length +
-                              (showInstallButton ? 1 : 0),
+                            itemIndex++,
                             totalItemCount,
                             visible,
                           ),
@@ -432,10 +466,7 @@ export function UserHomeFloatingMenu() {
                           type="button"
                           style={{
                             transitionDelay: getItemDelay(
-                              primaryItems.length +
-                                accountLinks.length +
-                                (showInstallButton ? 1 : 0) +
-                                1,
+                              itemIndex,
                               totalItemCount,
                               visible,
                             ),
@@ -472,10 +503,7 @@ export function UserHomeFloatingMenu() {
           <button
             ref={toggleRef}
             type="button"
-            className={cn(
-              styles.iconButton,
-              isOpen && styles.iconButtonOpen,
-            )}
+            className={cn(styles.iconButton, isOpen && styles.iconButtonOpen)}
             aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
             aria-expanded={isOpen}
             aria-controls={menuId}

@@ -87,11 +87,13 @@ export function DiscountBenefitInfoGroup({
     <fieldset className="sr-discounts-benefit-group">
       <legend className="sr-discounts-group-title">혜택 정보</legend>
 
-      <div className="sr-discounts-benefit-group__category-provider">
+      <div className="sr-discounts-benefit-group__row">
         <DiscountFormField
           label="혜택 카테고리"
           htmlFor="benefit_category_id"
           required
+          stack
+          className="sr-discounts-benefit-group__cell"
           error={fieldErrors?.benefit_category_id}
         >
           <select
@@ -117,6 +119,8 @@ export function DiscountBenefitInfoGroup({
           label="제공사"
           htmlFor="provider_id"
           required
+          stack
+          className="sr-discounts-benefit-group__cell"
           error={fieldErrors?.provider_id}
         >
           <select
@@ -136,26 +140,14 @@ export function DiscountBenefitInfoGroup({
               </option>
             ))}
           </select>
-          {inlineProviderCategory ? (
-            <InlineProviderAddPanel
-              categoryCode={inlineProviderCategory.code}
-              benefitCategoryId={inlineProviderCategory.benefitCategoryId}
-              visible
-              disabled={!selectedCategoryId}
-              panelClassName="sr-discounts-card-add-panel"
-              onProviderCreated={onProviderUpsert}
-              onSelectProvider={onProviderChange}
-            />
-          ) : null}
         </DiscountFormField>
-      </div>
 
-      <div className="sr-discounts-benefit-group__product">
         <DiscountFormField
           label="혜택상품"
           htmlFor="benefit_product_id"
           required
           stack
+          className="sr-discounts-benefit-group__cell sr-discounts-benefit-group__cell--product"
           hint={benefitProductHint}
           error={
             selectedCategoryCode !== "telecom" && selectedCategoryCode !== "card"
@@ -198,6 +190,20 @@ export function DiscountBenefitInfoGroup({
           )}
         </DiscountFormField>
       </div>
+
+      {inlineProviderCategory ? (
+        <div className="sr-discounts-benefit-group__provider-extra">
+          <InlineProviderAddPanel
+            categoryCode={inlineProviderCategory.code}
+            benefitCategoryId={inlineProviderCategory.benefitCategoryId}
+            visible
+            disabled={!selectedCategoryId}
+            panelClassName="sr-discounts-card-add-panel"
+            onProviderCreated={onProviderUpsert}
+            onSelectProvider={onProviderChange}
+          />
+        </div>
+      ) : null}
     </fieldset>
   );
 }

@@ -3,11 +3,11 @@
 .sr-admin .sr-admin-discounts {
   --sr-discounts-field-height: 40px;
   --sr-discounts-textarea-sm-height: 80px;
-  --sr-discounts-max-width: 1320px;
 
+  /* Width follows sr-admin-main (98%); no extra centering / max-width */
   width: 100%;
-  max-width: var(--sr-discounts-max-width);
-  margin-inline: auto;
+  max-width: 100%;
+  margin-inline: 0;
 }
 
 .sr-admin .sr-admin-discounts-header {
@@ -133,26 +133,35 @@
   width: 100%;
 }
 
-.sr-admin .sr-discounts-benefit-group__category-provider {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sr-discounts-field-row-gap);
+.sr-admin .sr-discounts-benefit-group__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: start;
 }
 
-.sr-admin .sr-discounts-benefit-group__category-provider .sr-discounts-field__control {
-  max-width: var(--sr-discounts-w50);
-  min-width: min(100%, 220px);
-}
-
-.sr-admin .sr-discounts-benefit-group__product .sr-discounts-field__control {
-  max-width: var(--sr-discounts-w60);
-  min-width: min(100%, 280px);
-}
-
-.sr-admin .sr-discounts-benefit-group__product .sr-discounts-card-select-area,
-.sr-admin .sr-discounts-benefit-group__product .sr-admin-discounts-telecom-fieldset,
-.sr-admin .sr-discounts-benefit-group__product .sr-discounts-card-add-panel {
+.sr-admin .sr-discounts-benefit-group__cell .sr-discounts-field__control,
+.sr-admin .sr-discounts-benefit-group__cell .sr-discounts-field__control-row {
   max-width: 100%;
+  width: 100%;
+}
+
+.sr-admin .sr-discounts-benefit-group__cell--product .sr-discounts-card-select-area,
+.sr-admin .sr-discounts-benefit-group__cell--product .sr-admin-discounts-telecom-fieldset,
+.sr-admin .sr-discounts-benefit-group__provider-extra .sr-discounts-card-add-panel {
+  max-width: 100%;
+}
+
+.sr-admin .sr-discounts-benefit-group__provider-extra {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 991.98px) {
+  .sr-admin .sr-discounts-benefit-group__row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sr-admin .sr-discounts-value-range-row {
@@ -166,12 +175,6 @@
   .sr-admin .sr-discounts-value-range-row {
     grid-template-columns: 1fr;
   }
-}
-
-.sr-admin .sr-discounts-benefit-group__product {
-  margin-top: 0.625rem;
-  padding-top: 0.625rem;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 /* Group section titles (text only) */
@@ -825,4 +828,175 @@
 
 .sr-admin .sr-admin-discounts-meta.card .card-body {
   padding: 0.75rem 1rem !important;
+}
+
+/* ── 할인 등록/수정 폼: 좌우 10% 여백 + 라이트 입력 워크스페이스 ── */
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) {
+  width: 80%;
+  max-width: 80%;
+  margin-inline: auto;
+  color: #111827;
+}
+
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .sr-admin-discounts-header .admin-page-title,
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .sr-admin-discounts-header h1,
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .sr-admin-discounts-header h3 {
+  color: #111827 !important;
+}
+
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .admin-page-intro,
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .text-muted {
+  color: #6b7280 !important;
+}
+
+.sr-admin .sr-admin-discounts-form {
+  --sr-discounts-form-bg: #ffffff;
+  --sr-discounts-form-surface: #f9fafb;
+  --sr-discounts-form-text: #111827;
+  --sr-discounts-form-text-secondary: #374151;
+  --sr-discounts-form-text-muted: #6b7280;
+  --sr-discounts-form-border: #e5e7eb;
+  --sr-discounts-form-border-focus: #4f7cff;
+  --sr-discounts-form-input-bg: #ffffff;
+  --sr-discounts-label-font-size: 14px;
+  --sr-discounts-control-font-size: 14px;
+  --sr-discounts-help-font-size: 12px;
+  --sr-discounts-help-color: #b45309;
+  --sr-discounts-group-title-color: #1e3a5f;
+
+  background: var(--sr-discounts-form-bg) !important;
+  color: var(--sr-discounts-form-text) !important;
+  border: 1px solid var(--sr-discounts-form-border) !important;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+}
+
+.sr-admin .sr-admin-discounts-form .card-body,
+.sr-admin .sr-admin-discounts-form .card-footer {
+  background: var(--sr-discounts-form-bg) !important;
+  color: var(--sr-discounts-form-text) !important;
+  border-color: var(--sr-discounts-form-border) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-group-title {
+  color: var(--sr-discounts-group-title-color) !important;
+  letter-spacing: 0.02em;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-field__label,
+.sr-admin .sr-admin-discounts-form .form-label {
+  color: var(--sr-discounts-form-text-secondary) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-field__hint,
+.sr-admin .sr-admin-discounts-form .form-text {
+  color: var(--sr-discounts-form-text-muted) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-field__hint::before {
+  color: var(--sr-discounts-help-color);
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-field__error {
+  color: #dc2626 !important;
+}
+
+.sr-admin .sr-admin-discounts-form .form-control,
+.sr-admin .sr-admin-discounts-form .form-select,
+.sr-admin .sr-admin-discounts-form textarea.form-control,
+.sr-admin .sr-admin-discounts-form .input-group-text {
+  background: var(--sr-discounts-form-input-bg) !important;
+  border: 1px solid var(--sr-discounts-form-border) !important;
+  color: var(--sr-discounts-form-text) !important;
+  box-shadow: none;
+}
+
+.sr-admin .sr-admin-discounts-form .form-control::placeholder,
+.sr-admin .sr-admin-discounts-form textarea.form-control::placeholder {
+  color: #9ca3af !important;
+}
+
+.sr-admin .sr-admin-discounts-form .form-control:focus,
+.sr-admin .sr-admin-discounts-form .form-select:focus,
+.sr-admin .sr-admin-discounts-form textarea.form-control:focus {
+  background: var(--sr-discounts-form-input-bg) !important;
+  border-color: var(--sr-discounts-form-border-focus) !important;
+  color: var(--sr-discounts-form-text) !important;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .form-control:disabled,
+.sr-admin .sr-admin-discounts-form .form-select:disabled {
+  background: var(--sr-discounts-form-surface) !important;
+  color: var(--sr-discounts-form-text-muted) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .form-check-label {
+  color: var(--sr-discounts-form-text-secondary) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .list-group-item {
+  background: var(--sr-discounts-form-input-bg) !important;
+  border-color: var(--sr-discounts-form-border) !important;
+  color: var(--sr-discounts-form-text) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-card-select-area .small.text-muted,
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-telecom-fieldset .small.text-muted {
+  color: var(--sr-discounts-form-text-muted) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-card-add-panel {
+  border-top-color: var(--sr-discounts-form-border) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-card-add-panel__title {
+  color: #1d4ed8 !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-option-group {
+  border-color: var(--sr-discounts-form-border) !important;
+  background: var(--sr-discounts-form-surface) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-admin-discounts-chips .badge {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+.sr-admin .sr-admin-discounts-form .alert-danger {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-form-footer {
+  background: var(--sr-discounts-form-surface) !important;
+  border-top: 1px solid var(--sr-discounts-form-border) !important;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-cancel-btn.btn-outline-secondary {
+  --bs-btn-color: #374151;
+  --bs-btn-border-color: #d1d5db;
+  --bs-btn-bg: #ffffff;
+  --bs-btn-hover-color: #111827;
+  --bs-btn-hover-bg: #f3f4f6;
+  --bs-btn-hover-border-color: #9ca3af;
+}
+
+.sr-admin .sr-admin-discounts-form .sr-discounts-submit-btn.btn-primary {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: #4f7cff;
+  --bs-btn-border-color: #4f7cff;
+  --bs-btn-hover-bg: #3f6ef0;
+  --bs-btn-hover-border-color: #3f6ef0;
+}
+
+.sr-admin .sr-admin-discounts:has(.sr-admin-discounts-form) .sr-discounts-action-btn.btn-outline-secondary {
+  --bs-btn-color: #374151;
+  --bs-btn-border-color: #d1d5db;
+  --bs-btn-bg: #ffffff;
+  --bs-btn-hover-color: #111827;
+  --bs-btn-hover-bg: #f3f4f6;
+  --bs-btn-hover-border-color: #9ca3af;
 }
