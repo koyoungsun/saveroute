@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  calculateDiscountEstimate,
   formatPaymentInput,
   parsePaymentInput,
 } from "@/lib/search/calculate-discount-estimate";
-import { supportsPaymentDiscountEstimate } from "@/lib/search/format-point-benefit-info";
+import {
+  calculatePriceBoardResult,
+  type PaymentApplyMode,
+} from "@/lib/search/price-board-engine";
 import type { BrandPriceItemResult, DiscountResult } from "@/types/search";
 
 function formatWon(value: number) {
@@ -20,6 +22,8 @@ type PriceBoardAccordionProps = {
   onMaxDiscountLimitChange?: (limit: number | null) => void;
   highlightDiscount?: DiscountResult | null;
   highlightIsBest?: boolean;
+  paymentApplyMode?: PaymentApplyMode;
+  availableDiscounts?: DiscountResult[];
 };
 
 function SummaryRow({
@@ -92,21 +96,12 @@ export function PriceBoardAccordion({
   onMaxDiscountLimitChange,
   highlightDiscount = null,
   highlightIsBest = false,
+  paymentApplyMode = "single",
+  availableDiscounts = [],
 }: PriceBoardAccordionProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [extraFeeInput, setExtraFeeInput] = useState("");
   const [maxDiscountLimitInput, setMaxDiscountLimitInput] = useState("");
-
-  const ticketTotal = useMemo(() => {
-    let sum = 0;
-    for (const item of items) {
-      const qty = quantities[item.id] ?? 0;
-      if (qty > 0) {
-        sum += Number(item.price) * qty;
-      }
-    }
-    return sum;
-  }, [items, quantities]);
 
   const extraAmount = useMemo(() => parsePaymentInput(extraFeeInput), [extraFeeInput]);
 
@@ -115,7 +110,30 @@ export function PriceBoardAccordion({
     return parsed > 0 ? parsed : null;
   }, [maxDiscountLimitInput]);
 
-  const totalAmount = ticketTotal + extraAmount;
+  const engineResult = useMemo(() => {
+    return calculatePriceBoardResult({
+      items,
+      quantities,
+      extraAmount,
+      paymentApplyMode,
+      highlightDiscount,
+      availableDiscounts,
+      maxDiscountLimitOverride,
+    });
+  }, [
+    availableDiscounts,
+    extraAmount,
+    highlightDiscount,
+    items,
+    maxDiscountLimitOverride,
+    paymentApplyMode,
+    quantities,
+  ]);
+
+  const { ticketTotal, totalAmount, splitResult } = engineResult;
+  const paymentEstimate = engineResult.estimate?.kind === "payment" ? engineResult.estimate : null;
+  const splitPaymentPlans = splitResult?.paymentPlans ?? [];
+  const showSplitPlans = paymentApplyMode === "split" && splitPaymentPlans.length > 0;
 
   const resolvedMaxDiscountLimit =
     maxDiscountLimitOverride ??
@@ -123,28 +141,6 @@ export function PriceBoardAccordion({
     Number(highlightDiscount.max_discount_amount) > 0
       ? Number(highlightDiscount.max_discount_amount)
       : null);
-
-  const highlightEstimate = useMemo(() => {
-    if (totalAmount <= 0 || !highlightDiscount) {
-      return null;
-    }
-
-    if (!supportsPaymentDiscountEstimate(highlightDiscount.discount_unit)) {
-      return null;
-    }
-
-    return calculateDiscountEstimate({
-      paymentAmount: totalAmount,
-      discount_value: highlightDiscount.discount_value,
-      discount_value_max: highlightDiscount.discount_value_max,
-      max_discount_amount: highlightDiscount.max_discount_amount,
-      max_support_amount_override: maxDiscountLimitOverride,
-      discount_unit: highlightDiscount.discount_unit,
-    });
-  }, [highlightDiscount, maxDiscountLimitOverride, totalAmount]);
-
-  const paymentEstimate =
-    highlightEstimate?.kind === "payment" ? highlightEstimate : null;
 
   useEffect(() => {
     onTotalChange?.(totalAmount);
@@ -161,7 +157,7 @@ export function PriceBoardAccordion({
         extraAmount,
         totalAmount,
         maxDiscountLimit: resolvedMaxDiscountLimit,
-        bestDiscountEstimate: highlightEstimate,
+        bestDiscountEstimate: engineResult.estimate,
       });
     }
   }, [
@@ -169,7 +165,7 @@ export function PriceBoardAccordion({
     extraAmount,
     totalAmount,
     resolvedMaxDiscountLimit,
-    highlightEstimate,
+    engineResult.estimate,
   ]);
 
   const discountSummaryLabel = highlightIsBest
@@ -270,14 +266,70 @@ export function PriceBoardAccordion({
         <div className="sr-user-price-board__summary">
           <SummaryRow label="총 이용요금" amount={totalAmount} variant="total" />
 
-          {paymentEstimate ? (
+          {showSplitPlans ? (
             <>
-              <SummaryRow label={discountSummaryLabel} amount={paymentEstimate.discountAmount} />
-              <SummaryRow
-                label={paymentSummaryLabel}
-                amount={paymentEstimate.paymentAmount}
-                variant="emphasis"
-              />
+              <div className="sr-user-price-board__split-plans">
+                <h3 className="sr-user-price-board__split-plans-title">추천 결제 방식</h3>
+                <ul className="sr-user-price-board__split-plans-list">
+                  {splitPaymentPlans.map((plan) => (
+                    <li key={plan.label} className="sr-user-price-board__split-plan">
+                      <div className="sr-user-price-board__split-plan-head">
+                        <span className="sr-user-price-board__split-plan-label">{plan.label}</span>
+                        <span className="sr-user-price-board__split-plan-amounts">
+                          할인 {formatWon(plan.discountAmount)} · 결제 {formatWon(plan.finalAmount)}
+                        </span>
+                      </div>
+                      <p className="sr-user-price-board__split-plan-line">
+                        {plan.benefitName}: {plan.target}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                {splitResult?.remainingNote ? (
+                  <p className="sr-user-price-board__split-remaining">{splitResult.remainingNote}</p>
+                ) : null}
+              </div>
+
+              {paymentEstimate ? (
+                <>
+                  <SummaryRow label={discountSummaryLabel} amount={paymentEstimate.discountAmount} />
+                  <SummaryRow
+                    label={paymentSummaryLabel}
+                    amount={paymentEstimate.paymentAmount}
+                    variant="emphasis"
+                  />
+                </>
+              ) : null}
+
+              <p className="sr-user-price-board__summary-note">
+                혜택별로 나눠 결제하는 추천 조합입니다. 실제 적용 조건은 아래 할인 카드를
+                확인해 주세요.
+              </p>
+            </>
+          ) : paymentEstimate ? (
+            <>
+              {paymentApplyMode === "grouped_prepay" ? (
+                <>
+                  <SummaryRow
+                    label={highlightIsBest ? "BEST 기준 예상 예매 할인" : "예상 예매 할인"}
+                    amount={paymentEstimate.discountAmount}
+                  />
+                  <SummaryRow
+                    label={paymentSummaryLabel}
+                    amount={paymentEstimate.paymentAmount}
+                    variant="emphasis"
+                  />
+                </>
+              ) : (
+                <>
+                  <SummaryRow label={discountSummaryLabel} amount={paymentEstimate.discountAmount} />
+                  <SummaryRow
+                    label={paymentSummaryLabel}
+                    amount={paymentEstimate.paymentAmount}
+                    variant="emphasis"
+                  />
+                </>
+              )}
               {highlightDiscount ? (
                 <p className="sr-user-price-board__summary-note">
                   {highlightIsBest ? "BEST" : highlightDiscount.provider?.name ?? "대표"} 혜택

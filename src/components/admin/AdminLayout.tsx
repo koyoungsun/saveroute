@@ -18,7 +18,9 @@ export function AdminLayout({ children, adminUser }: AdminLayoutProps) {
       <div className="sr-admin-frame d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
         <AdminHeader adminUser={adminUser} />
         <div className="d-flex flex-grow-1 overflow-hidden">
-          <main className="sr-admin-main container-fluid overflow-auto flex-grow-1">{children}</main>
+          <main className="sr-admin-main container-fluid overflow-auto flex-grow-1">
+            <div className="sr-admin-page-container">{children}</div>
+          </main>
           <AdminOpsPanel />
         </div>
       </div>

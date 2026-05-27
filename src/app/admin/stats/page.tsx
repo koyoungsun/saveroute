@@ -53,16 +53,6 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
-        <div>
-          <h1 className="admin-page-title mb-1">Statistics</h1>
-          <p className="text-muted mb-0">
-            search_logs, result_click_logs, brand_requests, user_benefits 및 카탈로그 테이블 기준
-            실제 집계입니다.
-          </p>
-        </div>
-      </div>
-
       {stats.warnings.length > 0 ? (
         <div className="alert alert-warning shadow-sm border-0 mb-4" role="alert">
           <div className="fw-bold">데이터베이스 조회 오류 {stats.warnings.length}건</div>

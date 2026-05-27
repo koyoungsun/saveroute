@@ -53,6 +53,47 @@
   - 예: 혜택 카테고리/제공사/혜택 상품 참조(식별자) 중심
 - Supabase RLS(Row Level Security)를 통해 사용자 데이터 접근을 제한합니다.
 
+## 운영 배포 전 체크리스트 (베타 보호/백업)
+
+### robots / 검색 노출 제한
+
+- 베타/준비중 단계에서는 크롤러가 `/admin/*`, `/search` 등 주요 경로를 수집하지 않도록 `robots` 규칙을 적용합니다.
+- Admin 페이지는 서버/미들웨어 레벨에서 로그인·권한 확인 없이는 접근할 수 없도록 유지합니다.
+
+### Supabase 주요 테이블 백업(Export) 절차
+
+운영 배포 전(또는 마이그레이션 적용 전) 아래 중 하나로 백업을 남깁니다.
+
+1) **Supabase Dashboard → Database → Backups** 사용  
+  - 프로젝트 단위 백업/복구 기능을 사용합니다.
+
+2) **Postgres dump (권장: 테이블 단위)**  
+  - 연결 정보는 Supabase Dashboard의 DB 연결 정보(Host/Port/User/DB/Password)를 사용합니다.
+  - 예시(로컬 PC에서 실행):
+
+```bash
+# (예시) 주요 테이블만 덤프
+pg_dump \\
+  --format=custom \\
+  --file saveroute_prelaunch.dump \\
+  --dbname \"postgresql://USER:PASSWORD@HOST:PORT/DBNAME\" \\
+  --table public.brands \\
+  --table public.brand_categories \\
+  --table public.brand_price_items \\
+  --table public.discounts \\
+  --table public.providers \\
+  --table public.benefit_categories \\
+  --table public.benefit_products \\
+  --table public.user_benefits \\
+  --table public.search_logs \\
+  --table public.result_click_logs
+```
+
+3) **CSV Export (간단 확인용)**  
+  - Dashboard의 Table Editor에서 필요한 테이블을 CSV로 export 합니다.
+
+> 주의: 덤프/CSV 파일은 개인정보/운영데이터가 포함될 수 있으므로 저장·공유 범위를 엄격히 관리합니다.
+
 ## 로컬 실행 방법
 
 ### 사전 준비

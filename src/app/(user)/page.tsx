@@ -88,6 +88,10 @@ export default async function HomePage() {
           <HomeOrbitHero />
         ) : null}
 
+        <p className="mt-2 text-center text-xs text-slate-500">
+          현재 SaveRoute는 베타(준비중) 상태입니다. 일부 데이터/기능은 변경될 수 있습니다.
+        </p>
+
         {/* Legacy section: 로그인 사용자 인사말 — 추후 개인화 영역으로 재배치 예정 */}
         {SHOW_LEGACY_HOME_SECTIONS && user ? (
           <div className="sr-user-home-greeting mb-4 text-center">

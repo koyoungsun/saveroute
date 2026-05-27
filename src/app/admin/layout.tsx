@@ -2,6 +2,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./admin.css";
 
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -11,6 +12,10 @@ const spoqaHanSansNeoCss =
   "https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css";
 const notoSansKrCss =
   "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminRouteLayout({
   children,

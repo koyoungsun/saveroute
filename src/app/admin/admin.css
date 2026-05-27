@@ -36,7 +36,8 @@
   --admin-radius: 16px;
   --admin-input-bg: rgba(12, 18, 32, 0.92);
   --admin-shadow-panel: 0 10px 28px rgba(0, 0, 0, 0.28);
-  --admin-header-height: 56px;
+  --admin-header-height: 95.84px;
+  --admin-header-padding-x: 1.25rem;
   --admin-sidebar-width: 240px;
   --admin-sidebar-width-collapsed: 72px;
   --admin-letter: 0.02em;
@@ -218,12 +219,27 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  padding: 1.125rem 1rem 0;
+  padding: 0;
   background: transparent !important;
   border-bottom: 0 !important;
 }
 
 .sr-admin .sr-sidebar-brand--collapsed {
+  padding-inline: 0;
+}
+
+.sr-admin .sr-sidebar-brand-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--admin-header-height);
+  height: var(--admin-header-height);
+  padding-inline: var(--admin-header-padding-x);
+  box-sizing: border-box;
+}
+
+.sr-admin .sr-sidebar-brand--collapsed .sr-sidebar-brand-top {
   padding-inline: 0.625rem;
 }
 
@@ -451,11 +467,9 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
   min-height: var(--admin-header-height);
   height: var(--admin-header-height);
-  padding: 0 1.25rem;
+  padding: 0 var(--admin-header-padding-x);
   background: var(--admin-header-bg);
   color: var(--admin-text-sub);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -465,12 +479,64 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
+.sr-admin .sr-admin-header-inner {
+  /* Align with main content (98% width + desktop 5% padding) */
+  width: 98%;
+  max-width: 98%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (min-width: 768px) {
+  .sr-admin .sr-admin-header-inner {
+    padding-left: 3%;
+    padding-right: 3%;
+  }
+}
+
+.sr-admin .sr-admin-header-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  /* ~30% larger than previous 18px, responsive to prevent overflow */
+  font-size: clamp(16px, 2.1vw, 24px);
+  font-weight: 700;
+  letter-spacing: var(--admin-letter);
+  color: rgba(255, 255, 255, 0.94);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sr-admin .sr-admin-header-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
   margin-left: auto;
+  height: 100%;
+  justify-content: center;
+}
+
+/* Keep legacy H1 structure for a11y, but hide in content */
+.sr-admin .sr-admin-page-container .admin-page-title,
+.sr-admin .sr-admin-page-container .admin-page-intro {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 .sr-admin .sr-admin-header-email {
@@ -513,12 +579,29 @@
   max-width: 98%;
   margin-left: auto;
   margin-right: auto;
-  padding-top: 24px;
+  padding-top: 0;
   padding-bottom: 32px;
   padding-left: 0;
   padding-right: 0;
   background: transparent;
   color: var(--admin-text);
+}
+
+/* Common page container (discounts layout baseline) */
+.sr-admin .sr-admin-page-container {
+  width: 100%;
+  padding-top: 32px;
+  padding-left: 0;
+  padding-right: 0;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .sr-admin .sr-admin-page-container {
+    padding-top: 50px;
+    padding-left: 5%;
+    padding-right: 5%;
+  }
 }
 
 .sr-admin .sr-admin-main.container-fluid {
@@ -586,6 +669,188 @@
 
 .sr-admin .sr-block.card {
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------------------------------------------
+ * Brand edit page readability (white editor-style surface)
+ * Scope: /admin/brands/[id]/edit only
+ * Note: page padding comes from .sr-admin-page-container
+ * ------------------------------------------------------------ */
+.sr-admin .sr-admin-brand-edit {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sr-admin .sr-admin-brand-edit__header {
+  margin-bottom: 28px !important;
+}
+
+.sr-admin .sr-admin-brand-edit__card {
+  border-radius: 16px !important;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.06) !important;
+  border: 1px solid #ededed !important;
+  background: #ffffff !important;
+  color: #111 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.sr-admin .sr-admin-brand-edit__card .card-body {
+  color: #111 !important;
+}
+
+.sr-admin .sr-admin-brand-edit__card-title {
+  margin: 0 0 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #111;
+}
+
+.sr-admin .sr-admin-brand-edit .text-muted,
+.sr-admin .sr-admin-brand-edit .form-text {
+  color: #666 !important;
+}
+
+.sr-admin .sr-admin-brand-edit .form-label,
+.sr-admin .sr-admin-brand-edit .form-check-label {
+  color: #222 !important;
+}
+
+.sr-admin .sr-admin-brand-edit .form-control,
+.sr-admin .sr-admin-brand-edit .form-select,
+.sr-admin .sr-admin-brand-edit textarea {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #dcdcdc !important;
+}
+
+.sr-admin .sr-admin-brand-edit .form-control:focus,
+.sr-admin .sr-admin-brand-edit .form-select:focus,
+.sr-admin .sr-admin-brand-edit textarea:focus {
+  /* SaveRoute main green (brand edit only) */
+  border-color: rgba(64, 154, 83, 0.65) !important;
+  box-shadow: 0 0 0 0.2rem rgba(64, 154, 83, 0.14) !important;
+}
+
+.sr-admin .sr-admin-brand-edit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Mode select groups (2-col → 1-col) */
+.sr-admin .sr-admin-brand-edit__modes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.sr-admin .sr-admin-brand-edit__modes-help {
+  margin: 0 0 14px;
+}
+
+.sr-admin .sr-admin-brand-edit__modes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sr-admin .sr-admin-brand-edit__modes-group .form-label {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 767.98px) {
+  .sr-admin .sr-admin-brand-edit__modes-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.sr-admin .sr-admin-brand-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+@media (max-width: 767.98px) {
+  .sr-admin .sr-admin-brand-edit__card .card-body {
+    padding: 1rem !important;
+  }
+}
+
+/* Price items list readability */
+.sr-admin .sr-admin-brand-edit__price-item-row {
+  border: 1px solid #ededed;
+  border-radius: 16px;
+  padding: 14px 14px;
+  background: #fff;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.sr-admin .sr-admin-brand-edit__price-item-row:hover {
+  background: #fbfbfd;
+  border-color: #e4e4e4;
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
+}
+
+.sr-admin .sr-admin-brand-edit__price-item-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 0.7fr 1.1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.sr-admin .sr-admin-brand-edit__price-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+@media (max-width: 991.98px) {
+  .sr-admin .sr-admin-brand-edit__price-item-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sr-admin .sr-admin-brand-edit__price-item-actions {
+    align-items: flex-start;
+  }
+}
+
+.sr-admin .sr-admin-brand-edit__price-item-create {
+  border-radius: 16px !important;
+  background: #fafafa !important;
+  border: 1px solid #ededed !important;
+}
+
+/* Discounts list uses common .sr-admin-page-container padding */
+.sr-admin .sr-admin-discounts-page {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Pagination: allow natural wrap/scroll on mobile */
+.sr-admin .sr-admin-pagination--scroll .pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+@media (max-width: 575.98px) {
+  .sr-admin .sr-admin-pagination--scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .sr-admin .sr-admin-pagination--scroll .pagination {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    min-width: max-content;
+  }
 }
 
 .sr-admin .table-responsive {

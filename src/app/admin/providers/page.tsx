@@ -40,8 +40,7 @@ export default async function ProvidersPage() {
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">Providers</h1>
+      <div className="d-flex justify-content-end mb-3">
         <Link href="/admin/providers/new" className="btn btn-primary">
           + 제공사 등록
         </Link>

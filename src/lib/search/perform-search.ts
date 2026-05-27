@@ -41,7 +41,7 @@ import {
 } from "./match-brand";
 
 const BRAND_SELECT =
-  "id,name,slug,official_url,is_active,category_id,aliases,has_price_board";
+  "id,name,slug,official_url,is_active,category_id,aliases,has_price_board,price_input_mode,payment_apply_mode";
 
 export async function performSearch(
   supabase: SupabaseClient,
@@ -185,7 +185,10 @@ export async function performSearch(
         slug: matchedRow.slug,
         official_url: matchedRow.official_url,
         category_id: matchedRow.category_id,
+        aliases: matchedRow.aliases ?? null,
         has_price_board: Boolean(matchedRow.has_price_board),
+        price_input_mode: matchedRow.price_input_mode ?? null,
+        payment_apply_mode: matchedRow.payment_apply_mode ?? null,
       }
     : null;
 

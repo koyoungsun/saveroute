@@ -122,13 +122,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
   return (
     <>
-      <div className="admin-page-header d-flex justify-content-between align-items-start gap-3">
-        <div>
-          <h1 className="admin-page-title">Dashboard</h1>
-          <p className="admin-page-intro mb-0">
-            오늘 운영 현황을 확인하세요. 검색·클릭·요청·보유혜택 지표를 한 화면에서 봅니다.
-          </p>
-        </div>
+      <div className="d-flex justify-content-end mb-3">
         <span className="badge text-bg-light text-dark border">
           기준: {formatAdminStatsDateTime(new Date().toISOString())}
         </span>

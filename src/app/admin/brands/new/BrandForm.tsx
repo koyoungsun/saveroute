@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { BrandPriceBoardModeFields } from "@/components/admin/BrandPriceBoardModeFields";
+
 import { createBrandAction, type BrandFormState } from "./actions";
 
 type BrandCategoryOption = {
@@ -156,6 +158,8 @@ export function BrandForm({
               </label>
             </div>
           </div>
+
+          <BrandPriceBoardModeFields />
         </div>
       </div>
 

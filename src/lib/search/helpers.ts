@@ -27,6 +27,8 @@ export type BrandCandidateRow = {
   category_id: number | null;
   aliases: string[] | null;
   has_price_board: boolean;
+  price_input_mode?: string | null;
+  payment_apply_mode?: string | null;
 };
 
 export type DiscountBaseRow = {

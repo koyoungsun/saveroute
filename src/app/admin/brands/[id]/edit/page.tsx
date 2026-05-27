@@ -45,7 +45,9 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
         admin_memo,
         official_url,
         is_active,
-        has_price_board
+        has_price_board,
+        price_input_mode,
+        payment_apply_mode
       `,
       )
       .eq("id", brandId)
@@ -92,10 +94,10 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
   );
 
   return (
-    <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div className="sr-admin-brand-edit">
+      <div className="d-flex justify-content-between align-items-center mb-4 sr-admin-brand-edit__header">
         <div>
-          <h1 className="h3 mb-1 d-flex flex-wrap align-items-center gap-2">
+          <h1 className="h3 mb-1 d-flex flex-wrap align-items-center gap-2 sr-admin-brand-edit__title">
             <span>{brand.name}</span>
             <span className="text-muted fw-normal fs-5 d-inline-flex align-items-center gap-1">
               (연결 할인 <BrandDiscountCountBadge count={activeDiscountCount} />)
@@ -111,6 +113,6 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
       </div>
 
       <EditBrandForm brand={brand} categories={categories} priceItems={priceItems} />
-    </>
+    </div>
   );
 }

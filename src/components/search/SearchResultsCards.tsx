@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { splitSearchResultDiscounts } from "@/lib/search/classify-search-discount";
 import { supportsPaymentDiscountEstimate } from "@/lib/search/format-point-benefit-info";
+import { resolvePriceBoardModes } from "@/lib/search/resolve-price-board-modes";
 import type { DiscountResult } from "@/types/search";
 
 import { ThemeParkConditionFilters } from "./ThemeParkConditionFilters";
@@ -23,7 +24,9 @@ const GUEST_PREVIEW_LIMIT = 5;
 
 type SearchResultsCardsProps = {
   keyword: string;
+  brandCategoryCode: string;
   brandName: string;
+  brandAliases?: string[] | null;
   officialUrl: string | null;
   discounts: DiscountResult[];
   catalogDiscounts: DiscountResult[];
@@ -31,6 +34,8 @@ type SearchResultsCardsProps = {
   bestDiscountId: number | null;
   ownedDiscountIds: number[];
   brandHasPriceBoard?: boolean;
+  brandPriceInputMode?: string | null;
+  brandPaymentApplyMode?: string | null;
   brandPriceItems?: BrandPriceItemResult[];
   showThemeParkFilters?: boolean;
   authenticated?: boolean;
@@ -49,6 +54,7 @@ function renderDiscountCard(
     maxDiscountLimitOverride: number | null;
     inPointSection: boolean;
     usePriceBoard: boolean;
+    suppressCardEstimates: boolean;
     rank?: number;
   },
 ) {
@@ -62,6 +68,7 @@ function renderDiscountCard(
     inPointSection,
     rank,
     usePriceBoard,
+    suppressCardEstimates,
   } = options;
 
   return (
@@ -74,6 +81,7 @@ function renderDiscountCard(
       matchesUserBenefit={matchesUserBenefit}
       sharedPaymentAmount={basisPaymentAmount}
       maxDiscountLimitOverride={maxDiscountLimitOverride}
+      suppressSharedEstimate={suppressCardEstimates}
       inPointSection={inPointSection}
       rank={rank}
       fallbackCalculator={
@@ -90,7 +98,9 @@ function renderDiscountCard(
 
 export function SearchResultsCards({
   keyword,
+  brandCategoryCode,
   brandName,
+  brandAliases = [],
   officialUrl,
   discounts,
   catalogDiscounts,
@@ -98,6 +108,8 @@ export function SearchResultsCards({
   bestDiscountId,
   ownedDiscountIds,
   brandHasPriceBoard = false,
+  brandPriceInputMode = null,
+  brandPaymentApplyMode = null,
   brandPriceItems = [],
   showThemeParkFilters = false,
   authenticated = true,
@@ -110,13 +122,39 @@ export function SearchResultsCards({
   const [visibleCount, setVisibleCount] = useState(RESULTS_PAGE_SIZE);
   const sharedPaymentAmount = useSharedPaymentAmount(paymentInput);
 
-  const usePriceBoard = brandHasPriceBoard && brandPriceItems.length > 0;
-  const basisPaymentAmount = usePriceBoard ? priceBoardTotal : sharedPaymentAmount;
-
   const showCatalogAll =
     discounts.length === 0 && catalogDiscounts.length > 0;
 
   const activeDiscounts = showCatalogAll ? catalogDiscounts : discounts;
+
+  const priceBoardModes = useMemo(() => {
+    const pickDiscount =
+      activeDiscounts.find((d) => d.id === bestDiscountId) ?? activeDiscounts[0] ?? null;
+    return resolvePriceBoardModes({
+      brandPriceInputMode,
+      brandPaymentApplyMode,
+      brandCategoryCode,
+      brandName,
+      brandAliases,
+      discount: pickDiscount,
+    });
+  }, [
+    activeDiscounts,
+    bestDiscountId,
+    brandAliases,
+    brandCategoryCode,
+    brandName,
+    brandPaymentApplyMode,
+    brandPriceInputMode,
+  ]);
+
+  const useTicketPriceBoard =
+    brandHasPriceBoard &&
+    brandPriceItems.length > 0 &&
+    priceBoardModes.priceInputMode !== "manual_total";
+  const usePriceBoard = useTicketPriceBoard;
+  const paymentApplyMode = priceBoardModes.paymentApplyMode;
+  const basisPaymentAmount = usePriceBoard ? priceBoardTotal : sharedPaymentAmount;
 
   const handlePriceBoardTotalChange = useCallback((total: number) => {
     setPriceBoardTotal(total);
@@ -151,7 +189,12 @@ export function SearchResultsCards({
         isLoggedIn: authenticated,
         hasRegisteredBenefits,
         userBenefitsCount: ownedDiscountIds.length,
+        paymentApplyMode,
       });
+
+      console.debug(
+        `[SaveRoute PriceBoardMode]\nbrandName: ${brandName}\nbrandCategoryCode: ${brandCategoryCode}\npriceInputMode: ${priceBoardModes.priceInputMode} (${priceBoardModes.priceInputSource})\npaymentApplyMode: ${priceBoardModes.paymentApplyMode} (${priceBoardModes.paymentApplySource})\nreason: ${priceBoardModes.reason}`,
+      );
     }
   }, [
     activeDiscounts.length,
@@ -165,6 +208,14 @@ export function SearchResultsCards({
     ownedDiscountIds.length,
     showCatalogAll,
     usePriceBoard,
+    paymentApplyMode,
+    keyword,
+    brandCategoryCode,
+    priceBoardModes.paymentApplyMode,
+    priceBoardModes.priceInputMode,
+    priceBoardModes.priceInputSource,
+    priceBoardModes.paymentApplySource,
+    priceBoardModes.reason,
   ]);
 
   const visibleImmediateDiscounts = authenticated
@@ -225,6 +276,8 @@ export function SearchResultsCards({
           onMaxDiscountLimitChange={handleMaxDiscountLimitChange}
           highlightDiscount={highlightDiscount}
           highlightIsBest={highlightIsBest}
+          paymentApplyMode={paymentApplyMode}
+          availableDiscounts={immediateDiscounts}
         />
       ) : null}
 
@@ -271,6 +324,7 @@ export function SearchResultsCards({
                 isBest: bestDiscountId === discount.id,
                 matchesUserBenefit: authenticated && ownedSet.has(discount.id),
                 inPointSection: false,
+                suppressCardEstimates: usePriceBoard,
                 rank: index + 1,
               }),
             )}
@@ -329,6 +383,7 @@ export function SearchResultsCards({
                 isBest: false,
                 matchesUserBenefit: authenticated && ownedSet.has(discount.id),
                 inPointSection: true,
+                suppressCardEstimates: usePriceBoard,
               }),
             )}
           </div>

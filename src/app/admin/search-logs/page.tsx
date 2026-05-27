@@ -23,8 +23,6 @@ const logs = [
 export default function SearchLogsPage() {
   return (
     <>
-      <h1 className="admin-page-title mb-4">Search Logs</h1>
-
       <div className="sr-block card">
         <div className="card-body">
           <div className="row g-3">

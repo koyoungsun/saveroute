@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 
+import { BrandPriceBoardModeFields } from "@/components/admin/BrandPriceBoardModeFields";
+
 import { updateBrandAction, type BrandEditFormState } from "./actions";
 import {
   createBrandPriceItemAction,
@@ -28,6 +30,8 @@ export type BrandEditValues = {
   official_url: string | null;
   is_active: boolean;
   has_price_board: boolean;
+  price_input_mode: string | null;
+  payment_apply_mode: string | null;
 };
 
 export type BrandPriceItem = {
@@ -74,16 +78,19 @@ export function EditBrandForm({
 
   return (
     <>
-      <form action={formAction} className="card sr-block">
-        <div className="card-body">
-          {state.message ? (
-            <div className="alert alert-danger" role="alert">
-              {state.message}
-            </div>
-          ) : null}
+      <form action={formAction} className="sr-block sr-admin-brand-edit__form">
+        {state.message ? (
+          <div className="alert alert-danger" role="alert">
+            {state.message}
+          </div>
+        ) : null}
 
-          <div className="row g-3">
-            <div className="col-md-6">
+        <section className="card sr-admin-brand-edit__card">
+          <div className="card-body">
+            <h2 className="sr-admin-brand-edit__card-title">브랜드 기본정보</h2>
+
+            <div className="row g-3">
+              <div className="col-md-6">
               <label className="form-label fw-semibold" htmlFor="name">
                 브랜드명
               </label>
@@ -99,7 +106,7 @@ export function EditBrandForm({
               ) : null}
             </div>
 
-            <div className="col-md-6">
+              <div className="col-md-6">
               <label className="form-label fw-semibold" htmlFor="slug">
                 slug
               </label>
@@ -115,7 +122,7 @@ export function EditBrandForm({
               ) : null}
             </div>
 
-            <div className="col-md-6">
+              <div className="col-md-6">
               <label className="form-label fw-semibold" htmlFor="category_id">
                 카테고리
               </label>
@@ -137,7 +144,7 @@ export function EditBrandForm({
               ) : null}
             </div>
 
-            <div className="col-md-6">
+              <div className="col-md-6">
               <label className="form-label fw-semibold" htmlFor="official_url">
                 공식 URL
               </label>
@@ -154,7 +161,7 @@ export function EditBrandForm({
               ) : null}
             </div>
 
-            <div className="col-12">
+              <div className="col-12">
               <label className="form-label fw-semibold" htmlFor="aliases">
                 aliases
               </label>
@@ -171,7 +178,7 @@ export function EditBrandForm({
               </div>
             </div>
 
-            <div className="col-12">
+              <div className="col-12">
               <label className="form-label fw-semibold" htmlFor="admin_memo">
                 운영 메모
               </label>
@@ -184,7 +191,7 @@ export function EditBrandForm({
               />
             </div>
 
-            <div className="col-12">
+              <div className="col-12">
               <div className="form-check form-switch">
                 <input
                   id="is_active"
@@ -198,30 +205,40 @@ export function EditBrandForm({
                 </label>
               </div>
             </div>
+          </div>
+          </div>
+        </section>
 
-            <div className="col-12">
-              <div className="form-check form-switch">
-                <input
-                  id="has_price_board"
-                  name="has_price_board"
-                  className="form-check-input"
-                  type="checkbox"
-                  defaultChecked={brand.has_price_board}
-                  onChange={(event) => setPriceBoardEnabled(event.currentTarget.checked)}
-                />
-                <label className="form-check-label" htmlFor="has_price_board">
-                  이용요금 계산기 사용
-                </label>
-                <div className="form-text">
-                  ON으로 저장한 뒤, 아래 &quot;이용요금 항목&quot; 섹션에서 가격 항목을 각각
-                  추가해야 검색 결과 계산기에 노출됩니다.
-                </div>
+        <section className="card sr-admin-brand-edit__card">
+          <div className="card-body">
+            <h2 className="sr-admin-brand-edit__card-title">이용요금 계산기 설정</h2>
+
+            <div className="form-check form-switch mb-3">
+              <input
+                id="has_price_board"
+                name="has_price_board"
+                className="form-check-input"
+                type="checkbox"
+                defaultChecked={brand.has_price_board}
+                onChange={(event) => setPriceBoardEnabled(event.currentTarget.checked)}
+              />
+              <label className="form-check-label" htmlFor="has_price_board">
+                이용요금 계산기 사용
+              </label>
+              <div className="form-text">
+                ON으로 저장한 뒤, 아래 &quot;기본요금항목&quot;에서 가격 항목을 추가해야 검색 결과에
+                계산기가 노출됩니다.
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="card-footer bg-white d-flex justify-content-end gap-2">
+            <BrandPriceBoardModeFields
+              priceInputMode={brand.price_input_mode}
+              paymentApplyMode={brand.payment_apply_mode}
+            />
+          </div>
+        </section>
+
+        <div className="sr-admin-brand-edit__actions">
           <Link href="/admin/brands" className="btn btn-outline-secondary">
             취소
           </Link>
@@ -290,11 +307,11 @@ function BrandPriceItemsEditor({
   }, [createState.success, router]);
 
   return (
-    <div className="card sr-block mt-3">
+    <div className="card sr-block mt-3 sr-admin-brand-edit__card">
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
           <div>
-            <h2 className="h5 mb-1">이용요금 항목</h2>
+            <h2 className="sr-admin-brand-edit__card-title mb-1">기본요금항목</h2>
             <p className="text-muted small mb-0">
               가격 항목은 <strong>항목 추가</strong> / <strong>저장</strong> / <strong>삭제</strong>{" "}
               버튼을 눌러 즉시 DB에 반영됩니다. 상단 &quot;브랜드 정보 저장&quot;만으로는 저장되지
@@ -322,7 +339,7 @@ function BrandPriceItemsEditor({
         {items.length === 0 ? (
           <div className="text-muted small mb-3">등록된 가격 항목이 없습니다.</div>
         ) : (
-          <div className="d-flex flex-column gap-2 mb-3">
+          <div className="d-flex flex-column gap-3 mb-3 sr-admin-brand-edit__price-items">
             {items.map((item) => (
               <PriceItemRow key={item.id} brandId={brandId} item={item} />
             ))}
@@ -332,7 +349,7 @@ function BrandPriceItemsEditor({
         <form
           key={createFormKey}
           action={createFormAction}
-          className="border rounded-3 p-3 bg-light"
+          className="border rounded-3 p-3 bg-light sr-admin-brand-edit__price-item-create"
         >
           <p className="small fw-semibold mb-2">새 가격 항목 추가</p>
           <div className="row g-2 align-items-end">
@@ -408,9 +425,9 @@ function PriceItemRow({ brandId, item }: { brandId: number; item: BrandPriceItem
   }, [updateState.success, router]);
 
   return (
-    <form action={updateFormAction} className="border rounded-3 p-3">
-      <div className="row g-2 align-items-end">
-        <div className="col-md-5">
+    <form action={updateFormAction} className="sr-admin-brand-edit__price-item-row">
+      <div className="sr-admin-brand-edit__price-item-grid">
+        <div className="sr-admin-brand-edit__field">
           <label className="form-label fw-semibold mb-1">라벨</label>
           <input
             name="label"
@@ -419,7 +436,8 @@ function PriceItemRow({ brandId, item }: { brandId: number; item: BrandPriceItem
             required
           />
         </div>
-        <div className="col-md-3">
+
+        <div className="sr-admin-brand-edit__field">
           <label className="form-label fw-semibold mb-1">가격</label>
           <input
             name="price"
@@ -429,7 +447,8 @@ function PriceItemRow({ brandId, item }: { brandId: number; item: BrandPriceItem
             required
           />
         </div>
-        <div className="col-md-2">
+
+        <div className="sr-admin-brand-edit__field">
           <label className="form-label fw-semibold mb-1">정렬</label>
           <input
             name="sort_order"
@@ -438,7 +457,8 @@ function PriceItemRow({ brandId, item }: { brandId: number; item: BrandPriceItem
             inputMode="numeric"
           />
         </div>
-        <div className="col-md-2">
+
+        <div className="sr-admin-brand-edit__field sr-admin-brand-edit__price-item-actions">
           <div className="form-check form-switch mb-2">
             <input
               id={`active-${item.id}`}

@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
+import {
+  parseBrandPaymentApplyMode,
+  parseBrandPriceInputMode,
+} from "@/lib/search/price-board-mode-types";
 
 export type BrandFormState = {
   message?: string;
@@ -42,6 +46,8 @@ export async function createBrandAction(
   const description = readString(formData, "description");
   const websiteUrlValue = readString(formData, "website_url");
   const isActive = formData.get("is_active") === "on";
+  const priceInputMode = parseBrandPriceInputMode(readString(formData, "price_input_mode"));
+  const paymentApplyMode = parseBrandPaymentApplyMode(readString(formData, "payment_apply_mode"));
 
   const fieldErrors: BrandFormState["fieldErrors"] = {};
 
@@ -80,6 +86,8 @@ export async function createBrandAction(
     admin_memo: description || null,
     official_url: websiteUrl,
     is_active: isActive,
+    price_input_mode: priceInputMode,
+    payment_apply_mode: paymentApplyMode,
   }).select("id").single();
 
   if (error || !createdBrand) {
@@ -101,7 +109,13 @@ export async function createBrandAction(
     targetTable: "brands",
     targetId: createdBrand.id,
     summary: `브랜드 생성: ${name}`,
-    afterData: { name, slug, is_active: isActive },
+    afterData: {
+      name,
+      slug,
+      is_active: isActive,
+      price_input_mode: priceInputMode,
+      payment_apply_mode: paymentApplyMode,
+    },
   });
 
   revalidatePath("/admin/brands");

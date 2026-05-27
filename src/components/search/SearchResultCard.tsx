@@ -31,6 +31,8 @@ export type SearchResultCardProps = {
   featured?: boolean;
   sharedPaymentAmount?: number;
   maxDiscountLimitOverride?: number | null;
+  /** When true, hide per-card estimate summary (calculator shows totals elsewhere). */
+  suppressSharedEstimate?: boolean;
   fallbackCalculator?: ReactNode;
   inPointSection?: boolean;
   rank?: number;
@@ -218,6 +220,7 @@ export function SearchResultCard({
   matchesUserBenefit,
   sharedPaymentAmount = 0,
   maxDiscountLimitOverride = null,
+  suppressSharedEstimate = false,
   fallbackCalculator = null,
   inPointSection = false,
   rank,
@@ -263,7 +266,7 @@ export function SearchResultCard({
     .filter((row) => !primarySourceLabels.has(row.label))
     .filter(filterDetailRow);
 
-  const showSharedEstimate = !inPointSection && sharedPaymentAmount > 0;
+  const showSharedEstimate = !suppressSharedEstimate && !inPointSection && sharedPaymentAmount > 0;
 
   return (
     <article

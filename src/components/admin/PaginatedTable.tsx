@@ -17,6 +17,7 @@ export function PaginatedTable({
   rows,
   rowKeys,
   className,
+  pagination,
 }: {
   title: string;
   titleClassName?: string;
@@ -27,6 +28,12 @@ export function PaginatedTable({
   rows: ReactNode[][];
   rowKeys?: (string | number)[];
   className?: string;
+  pagination?: {
+    className?: string;
+    groupSize?: number;
+    showPrevNext?: boolean;
+    showJumpByGroup?: boolean;
+  };
 }) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
@@ -99,6 +106,10 @@ export function PaginatedTable({
           totalItems={rows.length}
           pageSize={pageSize}
           onChange={setPage}
+          className={pagination?.className}
+          groupSize={pagination?.groupSize}
+          showPrevNext={pagination?.showPrevNext}
+          showJumpByGroup={pagination?.showJumpByGroup}
         />
       </div>
     </div>

@@ -4054,6 +4054,70 @@
   line-height: 1.5;
 }
 
+.sr-user-app .sr-user-price-board__split-plans {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.sr-user-app .sr-user-price-board__split-plans-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sr-user-app .sr-user-price-board__split-plans-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sr-user-app .sr-user-price-board__split-plan {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.sr-user-app .sr-user-price-board__split-plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.sr-user-app .sr-user-price-board__split-plan-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.sr-user-app .sr-user-price-board__split-plan-amounts {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.sr-user-app .sr-user-price-board__split-plan-line {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #0f172a;
+}
+
+.sr-user-app .sr-user-price-board__split-remaining {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .sr-user-app .sr-user-search-result-card__condition-preview {
   margin: 0.375rem 0 0;
   display: -webkit-box;

@@ -66,7 +66,12 @@ export type BrandResult = {
   slug: string;
   official_url: string | null;
   category_id: number | null;
+  aliases?: string[] | null;
   has_price_board: boolean;
+  /** Admin: manual_total | per_person | ticket_type. null = search infers */
+  price_input_mode?: string | null;
+  /** Admin: single | grouped_prepay | split. null = search infers */
+  payment_apply_mode?: string | null;
 };
 
 export type BrandPriceItemResult = {

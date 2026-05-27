@@ -15,7 +15,6 @@ import {
   sortDiscountListRows,
   type DiscountListRow,
 } from "@/lib/admin/discount-list-query";
-import { formatUsageChannelLabel } from "@/lib/discounts/discount-detail-fields";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatAdminDiscountListValue } from "@/lib/ui/format-money";
 
@@ -50,13 +49,6 @@ function formatUsageType(usageType: string) {
   };
 
   return labels[usageType] ?? usageType;
-}
-
-function formatUsageLabel(discount: DiscountListRow) {
-  return (
-    formatUsageChannelLabel(discount.usage_channel) ??
-    formatUsageType(discount.usage_type)
-  );
 }
 
 const TEXT_COLUMN_CLASS = "text-start";
@@ -232,7 +224,6 @@ export default async function AdminDiscountsPage({
         discount.discount_unit,
         discount.discount_value_max,
       ),
-      formatUsageLabel(discount),
       formatAdminDiscountTimestamp(discount.created_at),
       formatAdminDiscountTimestamp(discount.updated_at),
       <StatusBadge key={`${key}-status`} status={discount.status} />,
@@ -264,11 +255,7 @@ export default async function AdminDiscountsPage({
 
   return (
     <>
-      <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
-        <div>
-          <h1 className="admin-page-title">할인 관리</h1>
-          <p className="admin-page-intro mb-0">브랜드별 할인 정보를 등록·수정·검수하세요.</p>
-        </div>
+      <div className="d-flex justify-content-end mb-3">
         <Link href="/admin/discounts/new" className="btn btn-primary">
           + 할인 등록
         </Link>
@@ -367,7 +354,6 @@ export default async function AdminDiscountsPage({
             { header: "제공사", className: TEXT_COLUMN_CLASS },
             { header: "혜택상품", className: TEXT_COLUMN_CLASS },
             { header: "할인값" },
-            { header: "채널" },
             { header: "작성일" },
             { header: "수정일" },
             { header: "상태" },
@@ -377,6 +363,12 @@ export default async function AdminDiscountsPage({
           ]}
           rowKeys={discounts.map((discount) => discount.id)}
           rows={rows}
+          pagination={{
+            className: "sr-admin-pagination sr-admin-pagination--scroll",
+            groupSize: 10,
+            showPrevNext: true,
+            showJumpByGroup: true,
+          }}
         />
       )}
     </>

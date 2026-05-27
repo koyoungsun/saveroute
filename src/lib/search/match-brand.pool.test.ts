@@ -11,6 +11,7 @@ const base = {
   official_url: null as string | null,
   is_active: true,
   category_id: null as number | null,
+  has_price_board: false,
 };
 
 const pool: BrandCandidateRow[] = [

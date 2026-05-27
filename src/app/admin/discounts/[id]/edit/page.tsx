@@ -146,13 +146,7 @@ export default async function EditDiscountPage({
 
   return (
     <>
-      <div className="sr-admin-discounts-header d-flex justify-content-between align-items-center">
-        <div>
-          <h1 className="h3 mb-1">Edit Discount</h1>
-          <p className="text-muted mb-0">
-            실제 discounts 테이블 컬럼 기준으로 할인 정보를 수정합니다.
-          </p>
-        </div>
+      <div className="d-flex justify-content-end mb-3">
         <Link href="/admin/discounts" className="btn btn-outline-secondary sr-discounts-action-btn">
           목록으로
         </Link>

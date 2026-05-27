@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
+import {
+  parseBrandPaymentApplyMode,
+  parseBrandPriceInputMode,
+} from "@/lib/search/price-board-mode-types";
 
 export type BrandEditFormState = {
   message?: string;
@@ -64,6 +68,8 @@ export async function updateBrandAction(
   const officialUrlValue = readString(formData, "official_url");
   const isActive = formData.get("is_active") === "on";
   const hasPriceBoard = formData.get("has_price_board") === "on";
+  const priceInputMode = parseBrandPriceInputMode(readString(formData, "price_input_mode"));
+  const paymentApplyMode = parseBrandPaymentApplyMode(readString(formData, "payment_apply_mode"));
 
   const fieldErrors: BrandEditFormState["fieldErrors"] = {};
 
@@ -106,6 +112,8 @@ export async function updateBrandAction(
       official_url: officialUrl,
       is_active: isActive,
       has_price_board: hasPriceBoard,
+      price_input_mode: priceInputMode,
+      payment_apply_mode: paymentApplyMode,
     })
     .eq("id", brandId);
 
@@ -133,6 +141,8 @@ export async function updateBrandAction(
       slug,
       is_active: isActive,
       has_price_board: hasPriceBoard,
+      price_input_mode: priceInputMode,
+      payment_apply_mode: paymentApplyMode,
     },
   });
 

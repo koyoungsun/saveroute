@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import type { Metadata } from "next";
 
 import { UserPage } from "@/components/layout/UserPage";
 import { EmptyState } from "@/components/search/EmptyState";
@@ -9,6 +10,10 @@ import { performSearch } from "@/lib/search/perform-search";
 import { sortDiscountsPrioritizeOwned } from "@/lib/search/helpers";
 import { VISITOR_SESSION_COOKIE } from "@/lib/session/visitor-session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -70,7 +75,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {showResults ? (
           <SearchResultsCards
             keyword={keyword}
+            brandCategoryCode={result.brandCategoryCode}
             brandName={brand.name}
+            brandAliases={brand.aliases ?? []}
             officialUrl={brand.official_url}
             discounts={displayDiscounts}
             catalogDiscounts={result.catalogDiscounts}
@@ -78,6 +85,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             bestDiscountId={result.bestDiscountId}
             ownedDiscountIds={result.ownedDiscountIds}
             brandHasPriceBoard={brand.has_price_board}
+            brandPriceInputMode={brand.price_input_mode ?? null}
+            brandPaymentApplyMode={brand.payment_apply_mode ?? null}
             brandPriceItems={result.brandPriceItems}
             showThemeParkFilters={showThemeParkFilters}
             authenticated={result.authenticated}
