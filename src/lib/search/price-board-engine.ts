@@ -189,7 +189,7 @@ function formatSplitBenefitPhrase(discount: DiscountResult): string {
     return `${value}%`;
   }
 
-  if (unit === "won" || unit === "amount" || unit === "fixed_amount") {
+  if (unit === "won" || unit === "amount") {
     return `${value.toLocaleString("ko-KR")}원 할인`;
   }
 
@@ -341,8 +341,7 @@ export function calculateGroupedPrepay(input: {
     ticketCount > 0 &&
     looksTicketCountBased(discount) &&
     (discount.discount_unit === "won" ||
-      discount.discount_unit === "amount" ||
-      discount.discount_unit === "fixed_amount")
+      discount.discount_unit === "amount")
   ) {
     const perTicket = Math.max(0, Number(discount.discount_value) || 0);
     const raw = perTicket * ticketCount;
