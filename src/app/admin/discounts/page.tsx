@@ -20,7 +20,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatAdminDiscountListValue } from "@/lib/ui/format-money";
 
 import { hideDiscountAction } from "./actions";
-import { DiscountBenefitProductsCell } from "./DiscountBenefitProductsCell";
+import {
+  DiscountBenefitProductsCell,
+  type DiscountBenefitProductCellItem,
+} from "./DiscountBenefitProductsCell";
 
 type BrandFilterOption = {
   id: number;
@@ -204,21 +207,26 @@ export default async function AdminDiscountsPage({
   const rows = discounts.map((discount) => {
     const key = `${discount.id}-${discount.title}`;
     const junctionIds = linkedProductIdsByDiscount.get(discount.id) ?? [];
-    const linkedNames =
+    const linkedProducts: DiscountBenefitProductCellItem[] =
       junctionIds.length > 0
-        ? junctionIds
-            .map((id) => productNameById.get(id))
-            .filter((name): name is string => typeof name === "string")
-        : [getDiscountRelationName(discount.benefit_product)].filter(
-            (name) => name !== "-",
-          );
+        ? junctionIds.flatMap((id) => {
+            const name = productNameById.get(id);
+            if (typeof name !== "string") {
+              return [];
+            }
+
+            return [{ id, name }];
+          })
+        : [getDiscountRelationName(discount.benefit_product)]
+            .filter((name) => name !== "-")
+            .map((name) => ({ name }));
 
     return [
       clipCellText(getDiscountBrandMeta(discount).name),
       clipCellText(discount.title, 2),
       getDiscountBenefitCategoryLabel(discount.benefit_category),
       clipCellText(getDiscountRelationName(discount.provider)),
-      <DiscountBenefitProductsCell key={`${key}-products`} names={linkedNames} />,
+      <DiscountBenefitProductsCell key={`${key}-products`} products={linkedProducts} />,
       formatAdminDiscountListValue(
         discount.discount_value,
         discount.discount_unit,

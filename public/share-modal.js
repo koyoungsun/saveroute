@@ -14,27 +14,43 @@
     return;
   }
 
-  function onReady(cb) {
+  function onReady(callback) {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", cb, { once: true });
-    } else {
-      cb();
+      document.addEventListener("DOMContentLoaded", callback, { once: true });
+      return;
     }
+
+    callback();
+  }
+
+  function bindClick(element, handler) {
+    if (!element || typeof element.addEventListener !== "function") {
+      return;
+    }
+
+    element.addEventListener("click", handler);
   }
 
   onReady(function attachShareModal() {
     try {
-      var trigger = document.querySelector("[data-share-modal-trigger]");
       var modal = document.getElementById("share-modal");
+      if (!modal) {
+        return;
+      }
 
-      if (!trigger || !modal) {
+      var triggers = document.querySelectorAll("[data-share-modal-trigger]");
+      if (!triggers || triggers.length === 0) {
         return;
       }
 
       var backdrop = modal.querySelector("[data-share-modal-backdrop]");
       var closeNodes = modal.querySelectorAll("[data-share-modal-close]");
 
-      function openModal() {
+      function openModal(event) {
+        if (event && typeof event.preventDefault === "function") {
+          event.preventDefault();
+        }
+
         modal.classList.remove("hidden");
         modal.setAttribute("aria-hidden", "false");
       }
@@ -44,31 +60,29 @@
         modal.setAttribute("aria-hidden", "true");
       }
 
-      trigger.addEventListener("click", function (e) {
-        e.preventDefault();
-        openModal();
-      });
-
-      if (backdrop) {
-        backdrop.addEventListener("click", closeModal);
+      for (var triggerIndex = 0; triggerIndex < triggers.length; triggerIndex += 1) {
+        bindClick(triggers[triggerIndex], openModal);
       }
 
-      for (var i = 0; i < closeNodes.length; i += 1) {
-        closeNodes[i].addEventListener("click", closeModal);
+      bindClick(backdrop, closeModal);
+
+      for (var closeIndex = 0; closeIndex < closeNodes.length; closeIndex += 1) {
+        bindClick(closeNodes[closeIndex], closeModal);
       }
 
       document.addEventListener(
         "keydown",
-        function (ev) {
-          if (ev.key === "Escape" && !modal.classList.contains("hidden")) {
-            closeModal();
+        function onEscapeKey(event) {
+          if (event.key !== "Escape" || modal.classList.contains("hidden")) {
+            return;
           }
+
+          closeModal();
         },
         true,
       );
-    } catch (error) {
+    } catch (_error) {
       // Optional UI — never break host pages when markup is absent or incomplete.
-      void error;
     }
   });
 })();
