@@ -48,6 +48,7 @@ export type DiscountBaseRow = {
   installment_condition: string | null;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  condition_amount?: number | null;
   max_discount_amount?: number | null;
   discount_unit: DiscountUnit;
   usage_type: string;
@@ -184,10 +185,12 @@ export function formatDiscountValue(
   value: number | string,
   unit: DiscountUnit,
   valueMax?: number | string | null,
+  conditionAmount?: number | string | null,
 ) {
   return formatDiscountValueDisplay({
     value,
     valueMax,
+    conditionAmount,
     unit,
     style: "search",
   });
@@ -281,6 +284,8 @@ export function mapBaseDiscountToResult(
     installment_condition: row.installment_condition,
     discount_value: row.discount_value,
     discount_value_max: row.discount_value_max,
+    condition_amount:
+      row.condition_amount != null ? Number(row.condition_amount) : null,
     max_discount_amount:
       row.max_discount_amount != null ? Number(row.max_discount_amount) : null,
     discount_unit: row.discount_unit,

@@ -20,7 +20,13 @@ export function isPointBenefitDiscount(discount: DiscountResult): boolean {
 }
 
 function supportsImmediateDiscountUnit(unit: string): boolean {
-  return unit === "percent" || unit === "won" || unit === "amount" || unit === "special_price";
+  return (
+    unit === "percent" ||
+    unit === "won" ||
+    unit === "amount" ||
+    unit === "per_amount" ||
+    unit === "special_price"
+  );
 }
 
 export function splitSearchResultDiscounts(discounts: DiscountResult[]) {

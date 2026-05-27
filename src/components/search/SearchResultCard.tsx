@@ -234,6 +234,7 @@ export function SearchResultCard({
     discount.discount_value,
     discount.discount_unit,
     discount.discount_value_max,
+    discount.condition_amount,
   );
   const { value: discountValueHighlight, suffix: discountSuffix } =
     splitDiscountLabelForHighlight(discountLabel);

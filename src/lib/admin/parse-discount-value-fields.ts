@@ -12,11 +12,13 @@ import {
 export type ParsedDiscountValues = {
   discountValue: number;
   discountValueMax: number | null;
+  conditionAmount: number | null;
 };
 
 export type DiscountValueFieldErrors = {
   discount_value?: string;
   discount_value_max?: string;
+  condition_amount?: string;
 };
 
 function readString(formData: FormData, key: string) {
@@ -38,6 +40,39 @@ export function parseDiscountValueFields(
       value: {
         discountValue: 0,
         discountValueMax: null,
+        conditionAmount: null,
+      },
+    };
+  }
+
+  if (unit === "per_amount") {
+    const conditionAmount = readPositiveNumber(readString(formData, "condition_amount"));
+    const discountValue = readPositiveNumber(readString(formData, "discount_value"));
+
+    if (conditionAmount === null) {
+      return {
+        ok: false,
+        fieldErrors: {
+          condition_amount: "0보다 큰 기준금액을 입력해 주세요.",
+        },
+      };
+    }
+
+    if (discountValue === null) {
+      return {
+        ok: false,
+        fieldErrors: {
+          discount_value: "0보다 큰 할인금액을 입력해 주세요.",
+        },
+      };
+    }
+
+    return {
+      ok: true,
+      value: {
+        discountValue,
+        discountValueMax: null,
+        conditionAmount,
       },
     };
   }
@@ -63,6 +98,7 @@ export function parseDiscountValueFields(
       value: {
         discountValue,
         discountValueMax: null,
+        conditionAmount: null,
       },
     };
   }
@@ -111,6 +147,7 @@ export function parseDiscountValueFields(
     value: {
       discountValue,
       discountValueMax,
+      conditionAmount: null,
     },
   };
 }

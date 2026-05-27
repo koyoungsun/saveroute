@@ -46,4 +46,20 @@ describe("calculateDiscountEstimate max_discount_amount", () => {
       expect(result.paymentAmount).toBe(45_000);
     }
   });
+
+  it("calculates per_amount discount with floor blocks", () => {
+    const result = calculateDiscountEstimate({
+      paymentAmount: 5_500,
+      discount_value: 50,
+      condition_amount: 1_000,
+      discount_unit: "per_amount",
+    });
+
+    expect(result?.kind).toBe("payment");
+    if (result?.kind === "payment") {
+      expect(result.discountAmount).toBe(250);
+      expect(result.paymentAmount).toBe(5_250);
+      expect(result.appliedLabel).toBe("1,000원당 50원 할인");
+    }
+  });
 });

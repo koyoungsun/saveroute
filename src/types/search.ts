@@ -8,6 +8,7 @@ export type DiscountUnit =
   | "point_percent"
   | "won"
   | "amount"
+  | "per_amount"
   | "special_price"
   | "free"
   | "unknown";
@@ -45,6 +46,8 @@ export type DiscountResult = {
   installment_condition: string | null;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  /** per_amount 기준금액 (예: 1000원당) */
+  condition_amount?: number | null;
   /** Maximum discount amount (KRW) when applying this benefit */
   max_discount_amount?: number | null;
   discount_unit: DiscountUnit;

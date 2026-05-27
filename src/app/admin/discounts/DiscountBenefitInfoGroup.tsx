@@ -76,12 +76,27 @@ export function DiscountBenefitInfoGroup({
         ? "카드/통신사/멤버십 상품별 할인인 경우에만 선택합니다."
         : undefined;
 
-  const inlineProviderCategory =
-    selectedCategoryCode === "card" && cardCategoryId != null
-      ? ({ code: "card" as const, benefitCategoryId: cardCategoryId })
-      : selectedCategoryCode === "membership" && membershipCategoryId != null
-        ? ({ code: "membership" as const, benefitCategoryId: membershipCategoryId })
-        : null;
+  const selectedCategoryNumericId =
+    selectedCategoryId !== "" ? Number(selectedCategoryId) : null;
+
+  const isCardCategorySelected =
+    cardCategoryId != null &&
+    selectedCategoryNumericId != null &&
+    selectedCategoryNumericId === cardCategoryId;
+
+  const isMembershipCategorySelected =
+    membershipCategoryId != null &&
+    selectedCategoryNumericId != null &&
+    selectedCategoryNumericId === membershipCategoryId;
+
+  const inlineProviderCategory = isCardCategorySelected
+    ? ({ code: "card" as const, benefitCategoryId: cardCategoryId })
+    : isMembershipCategorySelected
+      ? ({ code: "membership" as const, benefitCategoryId: membershipCategoryId })
+      : null;
+
+  const showMembershipProviderHint =
+    isMembershipCategorySelected && filteredProviders.length === 0;
 
   return (
     <fieldset className="sr-discounts-benefit-group">
@@ -121,6 +136,11 @@ export function DiscountBenefitInfoGroup({
           required
           stack
           className="sr-discounts-benefit-group__cell"
+          hint={
+            showMembershipProviderHint
+              ? "등록된 제공사가 없으면 아래 「신규 제공사 추가」로 등록할 수 있습니다."
+              : undefined
+          }
           error={fieldErrors?.provider_id}
         >
           <select

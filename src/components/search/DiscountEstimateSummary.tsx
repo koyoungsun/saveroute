@@ -49,6 +49,7 @@ export function DiscountEstimateSummary({
       paymentAmount,
       discount_value: discount.discount_value,
       discount_value_max: discount.discount_value_max,
+      condition_amount: discount.condition_amount,
       max_discount_amount: discount.max_discount_amount,
       max_support_amount_override: maxDiscountLimitOverride,
       discount_unit: discount.discount_unit,

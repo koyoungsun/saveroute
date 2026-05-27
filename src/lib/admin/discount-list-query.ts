@@ -113,6 +113,8 @@ export type DiscountListRow = {
 
   discount_value_max?: number | string | null;
 
+  condition_amount?: number | null;
+
   discount_unit: string;
 
   usage_type: string;

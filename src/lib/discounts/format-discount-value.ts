@@ -59,6 +59,10 @@ function formatSingleValue(numberValue: number, unit: string, style: DiscountVal
     return style === "search" ? `${amount} 할인` : amount;
   }
 
+  if (unit === "per_amount") {
+    return `${numberValue.toLocaleString("ko-KR")}원 할인`;
+  }
+
   if (unit === "special_price") {
     return style === "search"
       ? `${numberValue.toLocaleString("ko-KR")}원 특가`
@@ -108,9 +112,26 @@ function formatRangeValue(
   return formatSingleValue(minValue, unit, style);
 }
 
+export function formatPerAmountDiscountLabel(input: {
+  conditionAmount: number | string | null | undefined;
+  discountValue: number | string;
+  style?: DiscountValueDisplayStyle;
+}): string {
+  const base = Number(input.conditionAmount) || 0;
+  const discount = Number(input.discountValue) || 0;
+
+  if (base <= 0 || discount <= 0) {
+    return "금액별 할인";
+  }
+
+  const label = `${base.toLocaleString("ko-KR")}원당 ${discount.toLocaleString("ko-KR")}원 할인`;
+  return input.style === "search" ? label : label;
+}
+
 export function formatDiscountValueDisplay(input: {
   value: number | string;
   valueMax?: number | string | null;
+  conditionAmount?: number | string | null;
   unit: string;
   style?: DiscountValueDisplayStyle;
 }): string {
@@ -119,6 +140,14 @@ export function formatDiscountValueDisplay(input: {
   const maxValue = hasDiscountValueRange(input.valueMax)
     ? Number(input.valueMax)
     : null;
+
+  if (input.unit === "per_amount") {
+    return formatPerAmountDiscountLabel({
+      conditionAmount: input.conditionAmount,
+      discountValue: input.value,
+      style,
+    });
+  }
 
   if (
     maxValue != null &&

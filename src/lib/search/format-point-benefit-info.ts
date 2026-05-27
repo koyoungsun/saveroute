@@ -6,7 +6,13 @@ export function isPointRelatedDiscountUnit(unit: string): boolean {
 }
 
 export function supportsPaymentDiscountEstimate(unit: string): boolean {
-  return unit === "percent" || unit === "won" || unit === "amount" || unit === "fixed_amount";
+  return (
+    unit === "percent" ||
+    unit === "won" ||
+    unit === "amount" ||
+    unit === "per_amount" ||
+    unit === "fixed_amount"
+  );
 }
 
 export type PointBenefitInfo = {

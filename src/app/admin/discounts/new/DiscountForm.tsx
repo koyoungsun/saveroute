@@ -10,6 +10,7 @@ import {
 
 import { DiscountValueFields } from "@/components/admin/DiscountValueFields";
 import { MoneyInput } from "@/components/admin/MoneyInput";
+import { PerAmountDiscountFields } from "@/components/admin/PerAmountDiscountFields";
 
 import { AdminDiscountUnitSelect } from "../AdminDiscountUnitSelect";
 
@@ -240,25 +241,39 @@ export function DiscountForm({
                     />
                   </DiscountFormField>
 
-                  <DiscountFormField
-                    label="할인값"
-                  htmlFor="discount_value"
-                  required
-                  className="sr-discounts-field--discount-value"
-                  error={
-                      state.fieldErrors?.discount_value &&
-                      !state.fieldErrors?.discount_value_max
-                        ? state.fieldErrors.discount_value
-                        : undefined
-                    }
-                  >
-                    <DiscountValueFields
-                      unit={discountType}
-                      required={discountType !== "free"}
-                      valueError={state.fieldErrors?.discount_value}
-                      valueMaxError={state.fieldErrors?.discount_value_max}
-                    />
-                  </DiscountFormField>
+                  {discountType === "per_amount" ? (
+                    <DiscountFormField
+                      label="금액별 할인"
+                      htmlFor="condition_amount"
+                      required
+                      className="sr-discounts-field--discount-value"
+                    >
+                      <PerAmountDiscountFields
+                        conditionAmountError={state.fieldErrors?.condition_amount}
+                        discountValueError={state.fieldErrors?.discount_value}
+                      />
+                    </DiscountFormField>
+                  ) : (
+                    <DiscountFormField
+                      label="할인값"
+                      htmlFor="discount_value"
+                      required
+                      className="sr-discounts-field--discount-value"
+                      error={
+                        state.fieldErrors?.discount_value &&
+                        !state.fieldErrors?.discount_value_max
+                          ? state.fieldErrors.discount_value
+                          : undefined
+                      }
+                    >
+                      <DiscountValueFields
+                        unit={discountType}
+                        required={discountType !== "free"}
+                        valueError={state.fieldErrors?.discount_value}
+                        valueMaxError={state.fieldErrors?.discount_value_max}
+                      />
+                    </DiscountFormField>
+                  )}
 
                 <DiscountFormField
                   label="최대 할인금액"

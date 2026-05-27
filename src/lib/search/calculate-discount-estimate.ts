@@ -1,4 +1,5 @@
 import {
+  formatPerAmountDiscountLabel,
   hasDiscountValueRange,
 } from "@/lib/discounts/format-discount-value";
 import { isPercentLikeDiscountUnit } from "@/lib/discounts/discount-units";
@@ -10,6 +11,7 @@ export type DiscountEstimateInput = {
   paymentAmount: number;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  condition_amount?: number | string | null;
   max_discount_amount?: number | string | null;
   /** 계산기 최대 할인제한금액 — 있으면 max_discount_amount보다 우선 (할인액 상한) */
   max_support_amount_override?: number | string | null;
@@ -98,6 +100,32 @@ export function calculateDiscountEstimate(
         bounds.max != null && bounds.max > bounds.min
           ? `최대 ${bounds.use}% 할인`
           : `${bounds.use}% 할인`,
+    };
+  }
+
+  if (unit === "per_amount") {
+    const baseAmount = Number(input.condition_amount) || 0;
+    const discountPerBlock = bounds.use;
+
+    if (baseAmount <= 0 || discountPerBlock <= 0) {
+      return null;
+    }
+
+    const blocks = Math.floor(paymentAmount / baseAmount);
+    let discountAmount = blocks * discountPerBlock;
+    discountAmount = applyMaxDiscountCap(discountAmount, input);
+    discountAmount = Math.min(paymentAmount, discountAmount);
+    const finalPayment = Math.max(0, paymentAmount - discountAmount);
+
+    return {
+      kind: "payment",
+      discountAmount,
+      paymentAmount: finalPayment,
+      appliedLabel: formatPerAmountDiscountLabel({
+        conditionAmount: baseAmount,
+        discountValue: discountPerBlock,
+        style: "search",
+      }),
     };
   }
 

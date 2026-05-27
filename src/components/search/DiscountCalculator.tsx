@@ -31,6 +31,7 @@ export function DiscountCalculator({ discount }: DiscountCalculatorProps) {
       paymentAmount,
       discount_value: discount.discount_value,
       discount_value_max: discount.discount_value_max,
+      condition_amount: discount.condition_amount,
       max_discount_amount: discount.max_discount_amount,
       discount_unit: discount.discount_unit,
     });

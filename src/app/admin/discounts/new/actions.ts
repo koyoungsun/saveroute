@@ -35,6 +35,7 @@ export type DiscountFormState = {
       | "discount_type"
       | "discount_value"
       | "discount_value_max"
+      | "condition_amount"
       | "source_url"
       | "end_date",
       string
@@ -146,12 +147,14 @@ export async function createDiscountAction(
 
   let discountValue: number | null = null;
   let discountValueMax: number | null = null;
+  let conditionAmount: number | null = null;
 
   if (parsedDiscountValues && !parsedDiscountValues.ok) {
     Object.assign(fieldErrors, parsedDiscountValues.fieldErrors);
   } else if (parsedDiscountValues?.ok) {
     discountValue = parsedDiscountValues.value.discountValue;
     discountValueMax = parsedDiscountValues.value.discountValueMax;
+    conditionAmount = parsedDiscountValues.value.conditionAmount;
   }
 
   const maxDiscountAmount = readPositiveNumber(maxDiscountAmountValue);
@@ -238,6 +241,7 @@ export async function createDiscountAction(
       installment_condition: conditionFields.installment_condition,
       discount_value: discountValue,
       discount_value_max: discountValueMax,
+      condition_amount: conditionAmount,
       max_discount_amount: maxDiscountAmount,
       discount_unit: discountType,
       usage_type: "unknown",

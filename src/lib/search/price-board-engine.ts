@@ -193,6 +193,14 @@ function formatSplitBenefitPhrase(discount: DiscountResult): string {
     return `${value.toLocaleString("ko-KR")}원 할인`;
   }
 
+  if (unit === "per_amount") {
+    const base = Number(discount.condition_amount) || 0;
+    if (base > 0) {
+      return `${base.toLocaleString("ko-KR")}원당 ${value.toLocaleString("ko-KR")}원 할인`;
+    }
+    return `${value.toLocaleString("ko-KR")}원 할인`;
+  }
+
   if (unit === "free") {
     return "무료";
   }
@@ -272,6 +280,7 @@ function estimatePaymentDiscount(
     paymentAmount,
     discount_value: discount.discount_value,
     discount_value_max: discount.discount_value_max,
+    condition_amount: discount.condition_amount,
     max_discount_amount: discount.max_discount_amount,
     max_support_amount_override: maxDiscountLimitOverride,
     discount_unit: discount.discount_unit,
@@ -321,6 +330,7 @@ export function calculateSinglePayment(input: {
     paymentAmount: totalAmount,
     discount_value: discount.discount_value,
     discount_value_max: discount.discount_value_max,
+    condition_amount: discount.condition_amount,
     max_discount_amount: discount.max_discount_amount,
     max_support_amount_override: maxDiscountLimitOverride,
     discount_unit: discount.discount_unit,

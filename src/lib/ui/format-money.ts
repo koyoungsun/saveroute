@@ -80,10 +80,12 @@ export function formatAdminDiscountListValue(
   value: number | string,
   unit: string,
   valueMax?: number | string | null,
+  conditionAmount?: number | string | null,
 ): string {
   return formatDiscountValueDisplay({
     value,
     valueMax,
+    conditionAmount,
     unit,
     style: "admin-list",
   });

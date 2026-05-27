@@ -277,6 +277,7 @@ export async function performSearch(
       installment_condition,
       discount_value,
       discount_value_max,
+      condition_amount,
       max_discount_amount,
       discount_unit,
       usage_type,

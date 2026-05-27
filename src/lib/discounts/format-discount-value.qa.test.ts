@@ -21,6 +21,10 @@ assert.equal(formatAdminDiscountListValue(5, "point_percent"), "5% 포인트");
 assert.equal(formatAdminDiscountListValue(20, "percent", 30), "20% ~ 30%");
 assert.equal(formatAdminDiscountListValue(5, "point_percent", 10), "5% ~ 10% 포인트");
 assert.equal(formatAdminDiscountListValue(5000, "won", 10000), "5,000원 ~ 10,000원");
+assert.equal(
+  formatAdminDiscountListValue(50, "per_amount", null, 1000),
+  "1,000원당 50원 할인",
+);
 
 assert.equal(
   formatDiscountValueDisplay({
