@@ -45,6 +45,8 @@ export type DiscountResult = {
   installment_condition: string | null;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  /** Maximum discount amount (KRW) when applying this benefit */
+  max_discount_amount?: number | null;
   discount_unit: DiscountUnit;
   usage_type: string;
   benefit_category_id: number;
@@ -64,6 +66,16 @@ export type BrandResult = {
   slug: string;
   official_url: string | null;
   category_id: number | null;
+  has_price_board: boolean;
+};
+
+export type BrandPriceItemResult = {
+  id: string;
+  brand_id: number;
+  label: string;
+  price: number;
+  sort_order: number;
+  is_active: boolean;
 };
 
 /** GET /api/search JSON body */
@@ -71,7 +83,12 @@ export type SearchApiPayload = {
   keyword: string;
   normalizedKeyword: string;
   matchedBrand: BrandResult | null;
+  /** Active price items (sorted) for matchedBrand when price board enabled */
+  brandPriceItems: BrandPriceItemResult[];
+  /** Personalized discounts (user benefits match); may be empty when logged in */
   discounts: DiscountResult[];
+  /** All active discounts for matched brand (before personalization) */
+  catalogDiscounts: DiscountResult[];
   /** Discount IDs where user benefits match this discount */
   ownedDiscountIds: number[];
   bestDiscountId: number | null;

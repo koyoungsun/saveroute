@@ -238,6 +238,7 @@ export async function createDiscountAction(
       installment_condition: conditionFields.installment_condition,
       discount_value: discountValue,
       discount_value_max: discountValueMax,
+      max_discount_amount: maxDiscountAmount,
       discount_unit: discountType,
       usage_type: "unknown",
       valid_from: periodFields.valid_from,

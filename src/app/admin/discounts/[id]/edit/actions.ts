@@ -21,6 +21,7 @@ import {
 } from "@/lib/discounts/discount-units";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { writeAdminAuditLog } from "@/lib/admin/write-admin-audit-log";
+import { parseNumericInput } from "@/lib/ui/format-money";
 
 type DiscountStatus = "draft" | "active" | "expired" | "hidden";
 
@@ -80,6 +81,7 @@ export async function updateDiscountAction(
   const providerIdValue = readString(formData, "provider_id");
   const title = readString(formData, "title");
   const discountUnitValue = readString(formData, "discount_unit");
+  const maxDiscountAmountValue = readString(formData, "max_discount_amount");
 
   const fieldErrors: DiscountEditFormState["fieldErrors"] = {};
 
@@ -125,6 +127,8 @@ export async function updateDiscountAction(
     discountValue = parsedDiscountValues.value.discountValue;
     discountValueMax = parsedDiscountValues.value.discountValueMax;
   }
+
+  const maxDiscountAmount = parseNumericInput(maxDiscountAmountValue);
 
   const supabase = createSupabaseAdminClient();
   const { data: existingDiscount, error: existingError } = await supabase
@@ -259,6 +263,7 @@ export async function updateDiscountAction(
       installment_condition: conditionFields.installment_condition,
       discount_value: discountValue,
       discount_value_max: discountValueMax,
+      max_discount_amount: maxDiscountAmount,
       discount_unit: discountUnit,
       valid_from: periodFields.valid_from,
       valid_until: periodFields.valid_until,

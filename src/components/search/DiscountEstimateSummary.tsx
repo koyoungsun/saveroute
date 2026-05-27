@@ -8,6 +8,8 @@ import type { DiscountResult } from "@/types/search";
 type DiscountEstimateSummaryProps = {
   discount: DiscountResult;
   paymentAmount: number;
+  /** 계산기 최대 할인제한금액 — 입력 시 할인 cap 우선 적용 */
+  maxDiscountLimitOverride?: number | null;
 };
 
 function WonDisplay({
@@ -36,6 +38,7 @@ function WonDisplay({
 export function DiscountEstimateSummary({
   discount,
   paymentAmount,
+  maxDiscountLimitOverride = null,
 }: DiscountEstimateSummaryProps) {
   const estimate = useMemo(() => {
     if (paymentAmount <= 0) {
@@ -46,9 +49,11 @@ export function DiscountEstimateSummary({
       paymentAmount,
       discount_value: discount.discount_value,
       discount_value_max: discount.discount_value_max,
+      max_discount_amount: discount.max_discount_amount,
+      max_support_amount_override: maxDiscountLimitOverride,
       discount_unit: discount.discount_unit,
     });
-  }, [discount, paymentAmount]);
+  }, [discount, maxDiscountLimitOverride, paymentAmount]);
 
   if (!estimate || estimate.kind !== "payment") {
     return null;
@@ -58,17 +63,13 @@ export function DiscountEstimateSummary({
     <div className="sr-user-discount-estimate-summary-box">
       <div className="sr-user-discount-estimate-summary">
         <div className="sr-user-discount-estimate-summary__row">
-          <span className="sr-user-discount-estimate-summary__label">
-            - 할인 예상금액
-          </span>
+          <span className="sr-user-discount-estimate-summary__label">예상 할인금액</span>
           <strong className="sr-user-discount-estimate-summary__value">
             <WonDisplay value={estimate.discountAmount} variant="discount" />
           </strong>
         </div>
         <div className="sr-user-discount-estimate-summary__row">
-          <span className="sr-user-discount-estimate-summary__label">
-            - 예상 결제금액
-          </span>
+          <span className="sr-user-discount-estimate-summary__label">예상 결제금액</span>
           <strong className="sr-user-discount-estimate-summary__value">
             <WonDisplay value={estimate.paymentAmount} variant="payment" />
           </strong>

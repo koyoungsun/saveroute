@@ -1,34 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  splitSearchResultDiscounts,
-} from "@/lib/search/classify-search-discount";
+import { splitSearchResultDiscounts } from "@/lib/search/classify-search-discount";
 import { supportsPaymentDiscountEstimate } from "@/lib/search/format-point-benefit-info";
 import type { DiscountResult } from "@/types/search";
 
 import { ThemeParkConditionFilters } from "./ThemeParkConditionFilters";
 import { DiscountCalculator } from "./DiscountCalculator";
+import { PriceBoardAccordion } from "./PriceBoardAccordion";
 import { SearchGuestLoginPrompt } from "./SearchGuestLoginPrompt";
 import { SearchResultCard } from "./SearchResultCard";
 import {
   SharedPaymentAmountInput,
   useSharedPaymentAmount,
 } from "./SharedPaymentAmountInput";
+import type { BrandPriceItemResult } from "@/types/search";
 
 const RESULTS_PAGE_SIZE = 5;
 const GUEST_PREVIEW_LIMIT = 5;
 
 type SearchResultsCardsProps = {
+  keyword: string;
   brandName: string;
   officialUrl: string | null;
   discounts: DiscountResult[];
+  catalogDiscounts: DiscountResult[];
   totalCount: number;
   bestDiscountId: number | null;
   ownedDiscountIds: number[];
+  brandHasPriceBoard?: boolean;
+  brandPriceItems?: BrandPriceItemResult[];
   showThemeParkFilters?: boolean;
   authenticated?: boolean;
+  hasRegisteredBenefits?: boolean;
   loginRedirect?: string;
 };
 
@@ -39,13 +45,24 @@ function renderDiscountCard(
     officialUrl: string | null;
     isBest: boolean;
     matchesUserBenefit: boolean;
-    sharedPaymentAmount: number;
+    basisPaymentAmount: number;
+    maxDiscountLimitOverride: number | null;
     inPointSection: boolean;
+    usePriceBoard: boolean;
     rank?: number;
   },
 ) {
-  const { brandName, officialUrl, isBest, matchesUserBenefit, sharedPaymentAmount, inPointSection, rank } =
-    options;
+  const {
+    brandName,
+    officialUrl,
+    isBest,
+    matchesUserBenefit,
+    basisPaymentAmount,
+    maxDiscountLimitOverride,
+    inPointSection,
+    rank,
+    usePriceBoard,
+  } = options;
 
   return (
     <SearchResultCard
@@ -55,12 +72,14 @@ function renderDiscountCard(
       discount={discount}
       isBest={isBest}
       matchesUserBenefit={matchesUserBenefit}
-      sharedPaymentAmount={sharedPaymentAmount}
+      sharedPaymentAmount={basisPaymentAmount}
+      maxDiscountLimitOverride={maxDiscountLimitOverride}
       inPointSection={inPointSection}
       rank={rank}
       fallbackCalculator={
+        !usePriceBoard &&
         !inPointSection &&
-        sharedPaymentAmount <= 0 &&
+        basisPaymentAmount <= 0 &&
         supportsPaymentDiscountEstimate(discount.discount_unit) ? (
           <DiscountCalculator discount={discount} />
         ) : null
@@ -70,30 +89,83 @@ function renderDiscountCard(
 }
 
 export function SearchResultsCards({
+  keyword,
   brandName,
   officialUrl,
   discounts,
+  catalogDiscounts,
   totalCount,
   bestDiscountId,
   ownedDiscountIds,
+  brandHasPriceBoard = false,
+  brandPriceItems = [],
   showThemeParkFilters = false,
   authenticated = true,
+  hasRegisteredBenefits = false,
   loginRedirect = "/search",
 }: SearchResultsCardsProps) {
   const [paymentInput, setPaymentInput] = useState("");
+  const [priceBoardTotal, setPriceBoardTotal] = useState(0);
+  const [maxDiscountLimitOverride, setMaxDiscountLimitOverride] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(RESULTS_PAGE_SIZE);
   const sharedPaymentAmount = useSharedPaymentAmount(paymentInput);
+
+  const usePriceBoard = brandHasPriceBoard && brandPriceItems.length > 0;
+  const basisPaymentAmount = usePriceBoard ? priceBoardTotal : sharedPaymentAmount;
+
+  const showCatalogAll =
+    discounts.length === 0 && catalogDiscounts.length > 0;
+
+  const activeDiscounts = showCatalogAll ? catalogDiscounts : discounts;
+
+  const handlePriceBoardTotalChange = useCallback((total: number) => {
+    setPriceBoardTotal(total);
+  }, []);
+
+  const handleMaxDiscountLimitChange = useCallback((limit: number | null) => {
+    setMaxDiscountLimitOverride(limit);
+  }, []);
 
   const ownedSet = useMemo(() => new Set(ownedDiscountIds), [ownedDiscountIds]);
 
   const { immediateDiscounts, pointBenefits } = useMemo(
-    () => splitSearchResultDiscounts(discounts),
-    [discounts],
+    () => splitSearchResultDiscounts(activeDiscounts),
+    [activeDiscounts],
   );
 
   useEffect(() => {
     setVisibleCount(RESULTS_PAGE_SIZE);
-  }, [discounts]);
+  }, [activeDiscounts]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("search render debug", {
+        keyword,
+        brandName,
+        hasPriceBoard: usePriceBoard,
+        priceItemsLength: brandPriceItems.length,
+        resultsLength: activeDiscounts.length,
+        personalizedLength: discounts.length,
+        catalogLength: catalogDiscounts.length,
+        showCatalogAll,
+        isLoggedIn: authenticated,
+        hasRegisteredBenefits,
+        userBenefitsCount: ownedDiscountIds.length,
+      });
+    }
+  }, [
+    activeDiscounts.length,
+    authenticated,
+    brandName,
+    brandPriceItems.length,
+    catalogDiscounts.length,
+    discounts.length,
+    hasRegisteredBenefits,
+    keyword,
+    ownedDiscountIds.length,
+    showCatalogAll,
+    usePriceBoard,
+  ]);
 
   const visibleImmediateDiscounts = authenticated
     ? immediateDiscounts.slice(0, visibleCount)
@@ -107,29 +179,88 @@ export function SearchResultsCards({
   const displayBestDiscountId =
     authenticated && immediateDiscounts.some((discount) => discount.id === bestDiscountId)
       ? bestDiscountId
-      : null;
+      : bestDiscountId;
+
+  const highlightDiscount = useMemo(() => {
+    const preferredId = displayBestDiscountId;
+    if (preferredId != null) {
+      const preferred = immediateDiscounts.find((d) => d.id === preferredId);
+      if (preferred) {
+        return preferred;
+      }
+    }
+
+    return (
+      immediateDiscounts.find((d) => supportsPaymentDiscountEstimate(d.discount_unit)) ??
+      immediateDiscounts[0] ??
+      null
+    );
+  }, [displayBestDiscountId, immediateDiscounts]);
+
+  const highlightIsBest =
+    bestDiscountId != null && highlightDiscount?.id === bestDiscountId;
 
   const cardOptions = {
     brandName,
     officialUrl,
-    sharedPaymentAmount,
+    basisPaymentAmount,
+    maxDiscountLimitOverride: usePriceBoard ? maxDiscountLimitOverride : null,
+    usePriceBoard,
   };
+
+  const listTotalCount = showCatalogAll ? catalogDiscounts.length : totalCount;
 
   return (
     <>
-      <SharedPaymentAmountInput value={paymentInput} onChange={setPaymentInput} />
+      {!usePriceBoard ? (
+        <SharedPaymentAmountInput value={paymentInput} onChange={setPaymentInput} />
+      ) : null}
 
       {showThemeParkFilters ? <ThemeParkConditionFilters /> : null}
+
+      {usePriceBoard ? (
+        <PriceBoardAccordion
+          items={brandPriceItems}
+          onTotalChange={handlePriceBoardTotalChange}
+          onMaxDiscountLimitChange={handleMaxDiscountLimitChange}
+          highlightDiscount={highlightDiscount}
+          highlightIsBest={highlightIsBest}
+        />
+      ) : null}
+
+      {showCatalogAll ? (
+        <div className="sr-user-search-catalog-notice" role="status">
+          <p className="sr-user-search-catalog-notice__title">
+            {hasRegisteredBenefits
+              ? "내 보유 혜택 기준으로 적용 가능한 할인이 없습니다."
+              : "내 혜택이 등록되지 않아 맞춤 할인을 표시할 수 없습니다."}
+          </p>
+          <p className="sr-user-search-catalog-notice__body">
+            {hasRegisteredBenefits
+              ? `아래는 ${brandName} 전체 활성 할인 목록입니다. 다른 카드·멤버십을 등록하면 맞춤 결과가 달라질 수 있습니다.`
+              : `아래는 ${brandName} 전체 활성 할인 목록입니다. 내 혜택을 등록하면 맞춤 할인만 볼 수 있습니다.`}
+          </p>
+          {hasRegisteredBenefits ? (
+            <Link href="/my-benefits" className="sr-user-search-catalog-notice__link">
+              내 혜택 수정하기
+            </Link>
+          ) : (
+            <Link href="/my-benefits" className="sr-user-search-catalog-notice__link">
+              내 혜택 등록하기
+            </Link>
+          )}
+        </div>
+      ) : null}
 
       {immediateDiscounts.length > 0 ? (
         <section className="sr-user-search-immediate-discounts" aria-label="즉시 할인">
           <p className="sr-user-search-results-count sr-user-canvas-text-muted">
             총{" "}
             <span className="sr-user-search-results-count__highlight">
-              {totalCount}건
+              {listTotalCount}건
             </span>{" "}
-            검색
-            {!authenticated && totalCount > GUEST_PREVIEW_LIMIT ? (
+            {showCatalogAll ? "전체 할인" : "검색"}
+            {!authenticated && listTotalCount > GUEST_PREVIEW_LIMIT ? (
               <span className="sr-user-search-results-count__note"> · 미리보기 5개</span>
             ) : null}
           </p>
@@ -137,7 +268,7 @@ export function SearchResultsCards({
             {visibleImmediateDiscounts.map((discount, index) =>
               renderDiscountCard(discount, {
                 ...cardOptions,
-                isBest: displayBestDiscountId === discount.id,
+                isBest: bestDiscountId === discount.id,
                 matchesUserBenefit: authenticated && ownedSet.has(discount.id),
                 inPointSection: false,
                 rank: index + 1,
@@ -161,6 +292,19 @@ export function SearchResultsCards({
             </div>
           ) : null}
         </section>
+      ) : discounts.length === 0 && catalogDiscounts.length === 0 ? (
+        <div className="sr-user-search-panel sr-user-search-panel--empty">
+          <p className="sr-user-search-panel__title">
+            {authenticated
+              ? "현재 확인된 할인 정보가 없습니다."
+              : "현재 확인된 할인 정보가 없어요."}
+          </p>
+          <p className="sr-user-search-panel__body">
+            {authenticated
+              ? "다른 카드 멤버십을 등록하면 결과가 달라질 수 있어요."
+              : "로그인 후 내 혜택을 등록하면 맞춤 할인을 볼 수 있어요."}
+          </p>
+        </div>
       ) : null}
 
       {!authenticated ? (

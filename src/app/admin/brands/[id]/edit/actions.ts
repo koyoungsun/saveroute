@@ -63,6 +63,7 @@ export async function updateBrandAction(
   const adminMemo = readString(formData, "admin_memo");
   const officialUrlValue = readString(formData, "official_url");
   const isActive = formData.get("is_active") === "on";
+  const hasPriceBoard = formData.get("has_price_board") === "on";
 
   const fieldErrors: BrandEditFormState["fieldErrors"] = {};
 
@@ -104,6 +105,7 @@ export async function updateBrandAction(
       admin_memo: adminMemo || null,
       official_url: officialUrl,
       is_active: isActive,
+      has_price_board: hasPriceBoard,
     })
     .eq("id", brandId);
 
@@ -126,10 +128,22 @@ export async function updateBrandAction(
     targetTable: "brands",
     targetId: brandId,
     summary: `브랜드 수정: ${name}`,
-    afterData: { name, slug, is_active: isActive },
+    afterData: {
+      name,
+      slug,
+      is_active: isActive,
+      has_price_board: hasPriceBoard,
+    },
   });
 
   revalidatePath("/admin/brands");
   revalidatePath(`/admin/brands/${brandId}/edit`);
-  redirect("/admin/brands");
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug(
+      `[updateBrandAction] brand_id=${brandId} has_price_board=${hasPriceBoard} (price items are saved separately via price-items-actions)`,
+    );
+  }
+
+  redirect(`/admin/brands/${brandId}/edit`);
 }

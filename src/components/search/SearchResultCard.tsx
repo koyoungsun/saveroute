@@ -30,6 +30,7 @@ export type SearchResultCardProps = {
   matchesUserBenefit: boolean;
   featured?: boolean;
   sharedPaymentAmount?: number;
+  maxDiscountLimitOverride?: number | null;
   fallbackCalculator?: ReactNode;
   inPointSection?: boolean;
   rank?: number;
@@ -216,6 +217,7 @@ export function SearchResultCard({
   isBest,
   matchesUserBenefit,
   sharedPaymentAmount = 0,
+  maxDiscountLimitOverride = null,
   fallbackCalculator = null,
   inPointSection = false,
   rank,
@@ -321,6 +323,12 @@ export function SearchResultCard({
 
         <p className="sr-user-search-result-card__title">{discount.title}</p>
 
+        {!expanded && !inPointSection && discount.condition_text?.trim() ? (
+          <p className="sr-user-search-result-card__condition-preview">
+            {discount.condition_text.trim()}
+          </p>
+        ) : null}
+
         {inPointSection && !expanded ? <SearchPointBenefitSummary discount={discount} /> : null}
 
         {showSharedEstimate ? (
@@ -332,6 +340,7 @@ export function SearchResultCard({
             <DiscountEstimateSummary
               discount={discount}
               paymentAmount={sharedPaymentAmount}
+              maxDiscountLimitOverride={maxDiscountLimitOverride}
             />
             <div
               className="sr-user-search-result-card__divider sr-user-search-result-card__divider--after-summary"

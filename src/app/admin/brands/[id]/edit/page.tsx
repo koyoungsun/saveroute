@@ -5,7 +5,7 @@ import { BrandDiscountCountBadge } from "@/components/admin/BrandDiscountCountBa
 import { buildDiscountCountByBrandId, getBrandDiscountCount } from "@/lib/admin/brand-discount-counts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-import { EditBrandForm, type BrandEditValues } from "./EditBrandForm";
+import { EditBrandForm, type BrandEditValues, type BrandPriceItem } from "./EditBrandForm";
 
 type EditBrandPageProps = {
   params: Promise<{
@@ -31,6 +31,7 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
     { data: brandData, error: brandError },
     { data: categoryData, error: categoryError },
     { data: discountBrandRows, error: discountCountError },
+    { data: priceItemData, error: priceItemError },
   ] = await Promise.all([
     supabase
       .from("brands")
@@ -43,7 +44,8 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
         aliases,
         admin_memo,
         official_url,
-        is_active
+        is_active,
+        has_price_board
       `,
       )
       .eq("id", brandId)
@@ -53,6 +55,12 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
       .select("id,name")
       .order("sort_order", { ascending: true }),
     supabase.from("discounts").select("brand_id,status").eq("brand_id", brandId),
+    supabase
+      .from("brand_price_items")
+      .select("id,brand_id,label,price,sort_order,is_active,created_at")
+      .eq("brand_id", brandId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   if (brandError) {
@@ -71,8 +79,13 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
     throw new Error(`Failed to load discount counts: ${discountCountError.message}`);
   }
 
+  if (priceItemError) {
+    throw new Error(`Failed to load brand price items: ${priceItemError.message}`);
+  }
+
   const brand = brandData as BrandEditValues;
   const categories = (categoryData ?? []) as BrandCategoryOption[];
+  const priceItems = (priceItemData ?? []) as BrandPriceItem[];
   const activeDiscountCount = getBrandDiscountCount(
     brandId,
     buildDiscountCountByBrandId(discountBrandRows ?? []),
@@ -97,7 +110,7 @@ export default async function EditBrandPage({ params }: EditBrandPageProps) {
         </Link>
       </div>
 
-      <EditBrandForm brand={brand} categories={categories} />
+      <EditBrandForm brand={brand} categories={categories} priceItems={priceItems} />
     </>
   );
 }

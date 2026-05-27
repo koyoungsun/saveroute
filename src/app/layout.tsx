@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
+import { APP_BUILD_ID } from "@/lib/build-info";
 import { FontScaleProvider } from "@/components/settings/FontScaleProvider";
 
 import {
@@ -31,6 +32,9 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const SHARE_MODAL_SCRIPT_VERSION = "4";
+const SHARE_MODAL_SCRIPT_SRC = `/share-modal.js?v=${SHARE_MODAL_SCRIPT_VERSION}&build=${encodeURIComponent(APP_BUILD_ID)}`;
 
 const spoqaHanSansNeoCss =
   "https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css";
@@ -76,6 +80,11 @@ export default function RootLayout({
         <Script id="saveroute-font-scale-boot" strategy="beforeInteractive">
           {FONT_SCALE_BOOTSTRAP}
         </Script>
+        <Script
+          id="saveroute-share-modal"
+          src={SHARE_MODAL_SCRIPT_SRC}
+          strategy="afterInteractive"
+        />
         <FontScaleProvider>{children}</FontScaleProvider>
       </body>
     </html>

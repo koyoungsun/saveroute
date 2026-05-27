@@ -10,6 +10,9 @@ export type DiscountEstimateInput = {
   paymentAmount: number;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  max_discount_amount?: number | string | null;
+  /** 계산기 최대 할인제한금액 — 있으면 max_discount_amount보다 우선 (할인액 상한) */
+  max_support_amount_override?: number | string | null;
   discount_unit: DiscountUnit | string;
 };
 
@@ -39,6 +42,33 @@ function pickUpperBound(value: number | string, valueMax?: number | string | nul
   return { min, max: null, use: min };
 }
 
+function readMaxDiscountCap(maxDiscountAmount?: number | string | null) {
+  if (maxDiscountAmount == null || maxDiscountAmount === "") {
+    return null;
+  }
+
+  const parsed = Number(maxDiscountAmount);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function resolveMaxDiscountCap(input: DiscountEstimateInput) {
+  const override = readMaxDiscountCap(input.max_support_amount_override);
+  if (override != null) {
+    return override;
+  }
+
+  return readMaxDiscountCap(input.max_discount_amount);
+}
+
+function applyMaxDiscountCap(discountAmount: number, input: DiscountEstimateInput) {
+  const cap = resolveMaxDiscountCap(input);
+  if (cap == null) {
+    return discountAmount;
+  }
+
+  return Math.min(discountAmount, cap);
+}
+
 export function calculateDiscountEstimate(
   input: DiscountEstimateInput,
 ): DiscountEstimate | null {
@@ -56,7 +86,8 @@ export function calculateDiscountEstimate(
   }
 
   if (unit === "percent") {
-    const discountAmount = Math.round((paymentAmount * bounds.use) / 100);
+    let discountAmount = Math.round((paymentAmount * bounds.use) / 100);
+    discountAmount = applyMaxDiscountCap(discountAmount, input);
     const finalPayment = Math.max(0, paymentAmount - discountAmount);
 
     return {
@@ -70,8 +101,9 @@ export function calculateDiscountEstimate(
     };
   }
 
-  if (unit === "won" || unit === "amount") {
-    const discountAmount = Math.min(paymentAmount, bounds.use);
+  if (unit === "won" || unit === "amount" || unit === "fixed_amount") {
+    let discountAmount = applyMaxDiscountCap(bounds.use, input);
+    discountAmount = Math.min(paymentAmount, discountAmount);
     const finalPayment = Math.max(0, paymentAmount - discountAmount);
 
     return {

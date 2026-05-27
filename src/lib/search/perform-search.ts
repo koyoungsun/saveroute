@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { loadDiscountBenefitProductIdsByDiscountId } from "@/lib/admin/discount-benefit-product-links";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isUserBenefitEligibleForMatching } from "@/lib/benefits/benefit-product-request-status";
 import {
   attachBenefitProductIdsToDiscounts,
   collectUniqueBenefitProductIds,
 } from "@/lib/benefits/discount-benefit-products";
-import type { BrandResult, SearchApiPayload } from "@/types/search";
+import type { BrandPriceItemResult, BrandResult, SearchApiPayload } from "@/types/search";
 
 import type {
   BenefitCategoryRow,
@@ -40,7 +41,7 @@ import {
 } from "./match-brand";
 
 const BRAND_SELECT =
-  "id,name,slug,official_url,is_active,category_id,aliases";
+  "id,name,slug,official_url,is_active,category_id,aliases,has_price_board";
 
 export async function performSearch(
   supabase: SupabaseClient,
@@ -57,7 +58,9 @@ export async function performSearch(
     keyword,
     normalizedKeyword: normalized,
     matchedBrand: null,
+    brandPriceItems: [],
     discounts: [],
+    catalogDiscounts: [],
     ownedDiscountIds: [],
     bestDiscountId: null,
     brandCategoryName: "",
@@ -182,8 +185,66 @@ export async function performSearch(
         slug: matchedRow.slug,
         official_url: matchedRow.official_url,
         category_id: matchedRow.category_id,
+        has_price_board: Boolean(matchedRow.has_price_board),
       }
     : null;
+
+  let brandPriceItems: BrandPriceItemResult[] = [];
+  if (matchedRow?.has_price_board) {
+    // Server-side catalog read (anon RLS may block until migration 076 is applied)
+    const priceBoardClient = createSupabaseAdminClient();
+    const { data: itemRows, error: itemError } = await priceBoardClient
+      .from("brand_price_items")
+      .select("id,brand_id,label,price,sort_order,is_active,created_at")
+      .eq("brand_id", matchedRow.id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (itemError) {
+      throw new Error(`Failed to load brand price items: ${itemError.message}`);
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.debug(
+        `[${keyword}] price_board brand_id=${matchedRow.id} has_price_board=${Boolean(matchedRow.has_price_board)} active_items=${(itemRows ?? []).length}`,
+      );
+      if ((itemRows ?? []).length === 0) {
+        const { count: totalCount } = await supabase
+          .from("brand_price_items")
+          .select("id", { count: "exact", head: true })
+          .eq("brand_id", matchedRow.id);
+        const { count: allActiveCount } = await supabase
+          .from("brand_price_items")
+          .select("id", { count: "exact", head: true })
+          .eq("brand_id", matchedRow.id)
+          .eq("is_active", true);
+        console.debug(
+          `[${keyword}] price_board debug: total_items=${totalCount ?? 0} active_items=${allActiveCount ?? 0}`,
+        );
+      }
+    }
+
+    brandPriceItems = (itemRows ?? []).map((row) => ({
+      id: String(row.id),
+      brand_id: Number(row.brand_id),
+      label: String(row.label),
+      price: Number(row.price),
+      sort_order: Number(row.sort_order ?? 0),
+      is_active: Boolean(row.is_active),
+    }));
+
+    if (process.env.NODE_ENV === "development" && brandPriceItems.length > 0) {
+      console.debug(
+        `[${keyword}] brandPriceItems sample`,
+        brandPriceItems.slice(0, 3).map((item) => ({
+          id: item.id,
+          label: item.label,
+          price: item.price,
+        })),
+      );
+    }
+  }
 
   let discountsRaw: ReturnType<typeof mapBaseDiscountToResult>[] = [];
   let brandCategoryName = "";
@@ -213,6 +274,7 @@ export async function performSearch(
       installment_condition,
       discount_value,
       discount_value_max,
+      max_discount_amount,
       discount_unit,
       usage_type,
       is_stackable,
@@ -341,6 +403,7 @@ export async function performSearch(
 
   /** 할인율·금액 기준 내림차순 (동점 처리 포함) */
   const byRate = sortDiscountsByRate(personalizedDiscounts);
+  const catalogByRate = sortDiscountsByRate(discountsRaw);
 
   const ownedDiscountIds =
     authenticated && hasRegisteredBenefits ? byRate.map((d) => d.id) : [];
@@ -348,17 +411,27 @@ export async function performSearch(
   let bestDiscountId: number | null = null;
   if (byRate.length > 0) {
     bestDiscountId = byRate[0]!.id;
+  } else if (catalogByRate.length > 0) {
+    bestDiscountId = catalogByRate[0]!.id;
   }
 
-  const hasMvnoDiscount = byRate.some(
+  const hasMvnoDiscount = [...byRate, ...catalogByRate].some(
     (d) => d.benefit_product?.is_mvno || d.benefit_product?.mvno_notice_required,
   );
+
+  if (process.env.NODE_ENV === "development" && matchedRow) {
+    console.debug(
+      `[${keyword}] search discounts personalized=${byRate.length} catalog=${catalogByRate.length} authenticated=${authenticated} hasRegisteredBenefits=${hasRegisteredBenefits}`,
+    );
+  }
 
   return {
     keyword,
     normalizedKeyword: normalized,
     matchedBrand,
+    brandPriceItems,
     discounts: byRate,
+    catalogDiscounts: catalogByRate,
     ownedDiscountIds,
     bestDiscountId,
     brandCategoryName,

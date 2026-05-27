@@ -261,16 +261,16 @@ export function DiscountForm({
                   </DiscountFormField>
 
                 <DiscountFormField
-                  label="최대 할인 한도 금액"
+                  label="최대 할인금액"
                   htmlFor="max_discount_amount"
                   className="sr-discounts-field--max-discount-amount"
-                  hint="예: 월 최대 10,000원 할인 시 10000 입력"
+                  hint="할인 적용 시 이 금액을 초과해 할인되지 않습니다."
                   hintInline
                 >
                   <MoneyInput
                     id="max_discount_amount"
                     name="max_discount_amount"
-                    placeholder="예: 10,000"
+                    placeholder="예: 10000"
                   />
                 </DiscountFormField>
 

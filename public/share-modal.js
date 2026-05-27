@@ -1,26 +1,23 @@
-/**
- * 선택적 공유 UI — 마크업이 없는 페이지에서는 아무 동작도 하지 않습니다.
- *
- * 선택자 (모두 존재할 때만 초기화):
- *   - 트리거: [data-share-modal-trigger]
- *   - 패널:   #share-modal
- *
- * 선택적:
- *   - 닫기(백드롭): #share-modal [data-share-modal-backdrop]
- *   - 닫기(버튼):  #share-modal [data-share-modal-close]
- */
+/* share-modal.js v4 — optional share UI; no-op when markup is absent */
 (function shareModalBoot() {
-  if (typeof document === "undefined") {
+  "use strict";
+
+  if (typeof window === "undefined" || typeof document === "undefined") {
     return;
   }
 
-  function onReady(callback) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", callback, { once: true });
-      return;
-    }
+  if (window.__SAVEROUTE_SHARE_MODAL_BOOTED__) {
+    return;
+  }
 
-    callback();
+  window.__SAVEROUTE_SHARE_MODAL_BOOTED__ = true;
+
+  function safeRun(callback) {
+    try {
+      callback();
+    } catch {
+      // Optional UI — never break host pages when markup is absent or incomplete.
+    }
   }
 
   function bindClick(element, handler) {
@@ -31,15 +28,12 @@
     element.addEventListener("click", handler);
   }
 
-  onReady(function attachShareModal() {
-    try {
+  function attachShareModal() {
+    safeRun(function () {
       var modal = document.getElementById("share-modal");
-      if (!modal) {
-        return;
-      }
-
       var triggers = document.querySelectorAll("[data-share-modal-trigger]");
-      if (!triggers || triggers.length === 0) {
+
+      if (!modal || !triggers || triggers.length === 0) {
         return;
       }
 
@@ -70,10 +64,14 @@
         bindClick(closeNodes[closeIndex], closeModal);
       }
 
+      if (typeof document.addEventListener !== "function") {
+        return;
+      }
+
       document.addEventListener(
         "keydown",
         function onEscapeKey(event) {
-          if (event.key !== "Escape" || modal.classList.contains("hidden")) {
+          if (!event || event.key !== "Escape" || modal.classList.contains("hidden")) {
             return;
           }
 
@@ -81,8 +79,19 @@
         },
         true,
       );
-    } catch (_error) {
-      // Optional UI — never break host pages when markup is absent or incomplete.
+    });
+  }
+
+  safeRun(function scheduleShareModalInit() {
+    if (typeof document.addEventListener !== "function") {
+      return;
     }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", attachShareModal, { once: true });
+      return;
+    }
+
+    attachShareModal();
   });
 })();

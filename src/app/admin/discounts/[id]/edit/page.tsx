@@ -74,6 +74,7 @@ export default async function EditDiscountPage({
         installment_condition,
         discount_value,
         discount_value_max,
+        max_discount_amount,
         discount_unit,
         valid_from,
         valid_until,

@@ -26,6 +26,7 @@ export type BrandCandidateRow = {
   is_active: boolean;
   category_id: number | null;
   aliases: string[] | null;
+  has_price_board: boolean;
 };
 
 export type DiscountBaseRow = {
@@ -45,6 +46,7 @@ export type DiscountBaseRow = {
   installment_condition: string | null;
   discount_value: number | string;
   discount_value_max?: number | string | null;
+  max_discount_amount?: number | null;
   discount_unit: DiscountUnit;
   usage_type: string;
   is_stackable: boolean;
@@ -277,6 +279,8 @@ export function mapBaseDiscountToResult(
     installment_condition: row.installment_condition,
     discount_value: row.discount_value,
     discount_value_max: row.discount_value_max,
+    max_discount_amount:
+      row.max_discount_amount != null ? Number(row.max_discount_amount) : null,
     discount_unit: row.discount_unit,
     usage_type: row.usage_type,
     benefit_category_id: row.benefit_category_id,

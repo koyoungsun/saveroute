@@ -41,6 +41,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/share-modal.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+      {
         source: "/debug-build",
         headers: [
           {

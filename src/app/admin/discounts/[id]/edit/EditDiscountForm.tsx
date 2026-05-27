@@ -9,6 +9,7 @@ import {
 } from "@/lib/benefits/discount-product-options";
 
 import { DiscountValueFields } from "@/components/admin/DiscountValueFields";
+import { MoneyInput } from "@/components/admin/MoneyInput";
 
 import { AdminDiscountUnitSelect } from "../../AdminDiscountUnitSelect";
 
@@ -58,6 +59,7 @@ export type DiscountEditValues = {
   installment_condition: string | null;
   discount_value: number | string;
   discount_value_max: number | string | null;
+  max_discount_amount: number | null;
   discount_unit: string;
   valid_from: string | null;
   valid_until: string | null;
@@ -304,6 +306,25 @@ export function EditDiscountForm({
                     required={discountUnit !== "free"}
                     valueError={state.fieldErrors?.discount_value}
                     valueMaxError={state.fieldErrors?.discount_value_max}
+                  />
+                </DiscountFormField>
+
+                <DiscountFormField
+                  label="최대 할인금액"
+                  htmlFor="max_discount_amount"
+                  className="sr-discounts-field--max-discount-amount"
+                  hint="할인 적용 시 이 금액을 초과해 할인되지 않습니다."
+                  hintInline
+                >
+                  <MoneyInput
+                    id="max_discount_amount"
+                    name="max_discount_amount"
+                    placeholder="예: 10000"
+                    defaultValue={
+                      discount.max_discount_amount != null
+                        ? String(discount.max_discount_amount)
+                        : ""
+                    }
                   />
                 </DiscountFormField>
               </div>

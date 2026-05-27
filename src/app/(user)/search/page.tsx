@@ -51,7 +51,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? sortDiscountsPrioritizeOwned(result.discounts, ownedSet)
     : result.discounts;
   const { matchedBrand: brand } = result;
-  const hasDiscounts = displayDiscounts.length > 0;
+  const hasDiscounts =
+    displayDiscounts.length > 0 || result.catalogDiscounts.length > 0;
+  const showPriceBoard =
+    brand.has_price_board && result.brandPriceItems.length > 0;
+  const showResults = hasDiscounts || showPriceBoard;
   const searchRedirect = `/search?keyword=${encodeURIComponent(keyword)}`;
   const showThemeParkFilters =
     result.brandCategoryCode === "amusement_park" ||
@@ -63,16 +67,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <SearchHubChrome variant="results" defaultValue={keyword} hideSuggestions />
 
         <section className="sr-user-search-results-list">
-        {hasDiscounts ? (
+        {showResults ? (
           <SearchResultsCards
+            keyword={keyword}
             brandName={brand.name}
             officialUrl={brand.official_url}
             discounts={displayDiscounts}
+            catalogDiscounts={result.catalogDiscounts}
             totalCount={displayDiscounts.length}
             bestDiscountId={result.bestDiscountId}
             ownedDiscountIds={result.ownedDiscountIds}
+            brandHasPriceBoard={brand.has_price_board}
+            brandPriceItems={result.brandPriceItems}
             showThemeParkFilters={showThemeParkFilters}
             authenticated={result.authenticated}
+            hasRegisteredBenefits={result.hasRegisteredBenefits}
             loginRedirect={searchRedirect}
           />
         ) : (
