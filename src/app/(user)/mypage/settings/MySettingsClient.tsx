@@ -6,6 +6,13 @@ import { useActionState } from "react";
 import { FontSizeControl } from "@/components/settings/FontSizeControl";
 import { UserPage } from "@/components/layout/UserPage";
 import {
+  normalizeProfileAgeGroup,
+  normalizeProfileGender,
+  PROFILE_AGE_GROUP_OPTIONS,
+  PROFILE_GENDER_OPTIONS,
+} from "@/lib/profile/demographics";
+
+import {
   updateConsentAction,
   updateDemographicsAction,
   updateNicknameAction,
@@ -14,6 +21,7 @@ import {
 export type SettingsInitial = {
   email: string;
   nickname: string | null;
+  gender: string | null;
   gender_group: string | null;
   age_group: string | null;
   allow_search_stats: boolean;
@@ -37,22 +45,11 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
     null as { ok?: boolean; message?: string } | null,
   );
 
-  const genderValue =
-    initial.gender_group === "male" ||
-    initial.gender_group === "female" ||
-    initial.gender_group === "other"
-      ? initial.gender_group
-      : "none";
+  const normalizedGender = normalizeProfileGender(initial.gender, initial.gender_group);
+  const genderValue = normalizedGender ?? "none";
 
-  const ageValue =
-    initial.age_group === "10s" ||
-    initial.age_group === "20s" ||
-    initial.age_group === "30s" ||
-    initial.age_group === "40s" ||
-    initial.age_group === "50s" ||
-    initial.age_group === "60s+"
-      ? initial.age_group
-      : "none";
+  const normalizedAge = normalizeProfileAgeGroup(initial.age_group);
+  const ageValue = normalizedAge ?? "none";
 
   return (
     <UserPage withBottomDock className="sr-user-stack">
@@ -198,10 +195,8 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
               <legend className="text-sm font-medium text-gray-700">성별</legend>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {[
-                  ["male", "남성"],
-                  ["female", "여성"],
-                  ["other", "기타"],
-                  ["none", "응답 안 함"],
+                  ...PROFILE_GENDER_OPTIONS.map((option) => [option.value, option.label] as const),
+                  ["none", "응답 안 함"] as const,
                 ].map(([value, label]) => (
                   <label
                     key={value}
@@ -209,7 +204,7 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                   >
                     <input
                       type="radio"
-                      name="gender_group"
+                      name="gender"
                       value={value}
                       defaultChecked={genderValue === value}
                       className="size-4 accent-[#6D5EF7]"
@@ -231,12 +226,11 @@ export default function MySettingsClient({ initial }: { initial: SettingsInitial
                 className="sr-user-input mt-2 px-4 py-3 text-sm"
               >
                 <option value="none">응답 안 함</option>
-                <option value="10s">10대</option>
-                <option value="20s">20대</option>
-                <option value="30s">30대</option>
-                <option value="40s">40대</option>
-                <option value="50s">50대</option>
-                <option value="60s+">60대 이상</option>
+                {PROFILE_AGE_GROUP_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 

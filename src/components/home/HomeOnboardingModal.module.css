@@ -1,0 +1,238 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(8, 10, 22, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  position: fixed;
+  left: 50%;
+  bottom: 70px;
+  z-index: 121;
+  width: min(calc(100% - 2rem), 22rem);
+  max-height: min(36rem, calc(100vh - 70px - 6.5rem - env(safe-area-inset-bottom, 0px)));
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  box-shadow:
+    0 28px 56px rgba(0, 0, 0, 0.32),
+    0 12px 24px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transform: translateX(-50%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.closeBtn:hover {
+  background: #f8fafc;
+  color: #101828;
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid #6d5ef7;
+  outline-offset: 2px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 2.5rem 1.5rem 1rem;
+}
+
+.imagePlaceholder {
+  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 1.25rem;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #101828;
+}
+
+/* .sr-user-page :is(h2) canvas rule보다 우선 (동일 요소) */
+.modal :is(h2, h3).title,
+.modal h2.title {
+  color: #101828;
+}
+
+.description {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.footer {
+  padding: 0 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: width 200ms ease, background-color 200ms ease;
+}
+
+.dot:hover {
+  background: #94a3b8;
+}
+
+.dotActive {
+  width: 1.25rem;
+  background: #6d5ef7;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionsSingle {
+  display: block;
+}
+
+.actionsSingle .btnPrimary {
+  width: 100%;
+  flex: none;
+}
+
+.btnSecondary {
+  flex: 1;
+  min-height: 2.75rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.btnPrimary {
+  flex: 1;
+  min-height: 2.75rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6d5ef7 0%, #4d7cfe 100%);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 4px 12px rgba(109, 94, 247, 0.28);
+}
+
+.btnPrimary:hover {
+  box-shadow: 0 6px 16px rgba(109, 94, 247, 0.36);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.optionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #475569;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.optionLabel input {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  accent-color: #6d5ef7;
+  flex-shrink: 0;
+}
+
+@media (max-width: 340px) {
+  .modal {
+    width: min(calc(100% - 1.25rem), 22rem);
+    bottom: max(70px, calc(70px + env(safe-area-inset-bottom, 0px) * 0.25));
+  }
+
+  .options {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}

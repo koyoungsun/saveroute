@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HomeOnboardingHelpButton } from "@/components/home/HomeOnboardingHelpButton";
+import { HomeOnboardingModal } from "@/components/home/HomeOnboardingModal";
 import { HomeOrbitHero } from "@/components/home/HomeOrbitHero";
 import { HomePromoSlotSection } from "@/components/home/HomePromoSlotSection";
 import { UserPage } from "@/components/layout/UserPage";
@@ -68,6 +70,8 @@ export default async function HomePage() {
       tone="comfortable"
       className="sr-user-stack sr-user-home-hub sr-user-home-hub--clip-x flex min-h-full flex-1 flex-col overflow-x-hidden"
     >
+      <HomeOnboardingHelpButton />
+      <HomeOnboardingModal />
       {/* Legacy section: 히어로 이미지 — 추후 메인 상단 비주얼로 재배치 예정 */}
       {SHOW_HOME_HERO_IMAGE ? (
         <section className="sr-user-card--hero overflow-hidden">
@@ -89,7 +93,7 @@ export default async function HomePage() {
         ) : null}
 
         <p className="mt-2 text-center text-xs text-slate-500">
-          현재 SaveRoute는 베타(준비중) 상태입니다. 일부 데이터/기능은 변경될 수 있습니다.
+          현재 SaveRoute는 베타(준비중) 상태입니다.<br /> 일부 데이터/기능은 변경될 수 있습니다.
         </p>
 
         {/* Legacy section: 로그인 사용자 인사말 — 추후 개인화 영역으로 재배치 예정 */}

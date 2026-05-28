@@ -16,7 +16,7 @@ export default async function MyPageSettingsPage() {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "nickname, gender_group, age_group, allow_search_stats, allow_personalized_recommendations, allow_marketing_notifications",
+      "nickname, gender, gender_group, age_group, allow_search_stats, allow_personalized_recommendations, allow_marketing_notifications",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -30,6 +30,7 @@ export default async function MyPageSettingsPage() {
       initial={{
         email: user.email ?? "",
         nickname: profile.nickname,
+        gender: profile.gender,
         gender_group: profile.gender_group,
         age_group: profile.age_group,
         allow_search_stats: profile.allow_search_stats ?? true,

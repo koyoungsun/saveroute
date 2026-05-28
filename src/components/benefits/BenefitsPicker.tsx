@@ -542,13 +542,16 @@ export function BenefitsPicker({ mode = "my-benefits", payload }: BenefitsPicker
 
       {showBenefitsEmptyCta ? (
         <div className="sr-user-callout sr-user-callout--empty px-4 py-6 text-center">
-          <p className="text-sm font-semibold text-gray-900">아직 등록된 혜택이 없어요.</p>
+          <p className="text-sm font-semibold text-gray-900">등록된 혜택이 없어요.</p>
+          <p className="mt-2 text-sm leading-relaxed text-gray-600">
+            카드·통신사·멤버십을 등록하면 맞춤 할인 결과를 볼 수 있어요.
+          </p>
           <div className="mt-5 flex flex-col gap-2.5">
             <a
               href="#benefits-hub"
               className="sr-user-btn-primary inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-bold text-white"
             >
-              내 혜택 등록하기
+              혜택 등록하기
             </a>
             <Link
               href="/"

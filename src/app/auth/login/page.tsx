@@ -87,6 +87,10 @@ function LoginForm() {
 
       <div className="sr-user-auth-page__body">
         <section className="sr-user-auth-form">
+          <p className="sr-user-auth-form__tagline sr-user-canvas-text-secondary text-center">
+            가입 후 내 할인 혜택을 저장하고 맞춤 할인 결과를 확인해보세요.
+          </p>
+
           {SHOW_AUTH_TAGLINE ? (
             <p className="sr-user-auth-form__tagline sr-user-canvas-text-secondary text-center">
               내 혜택 기준으로 더 정확한 할인을 확인해보세요.

@@ -31,6 +31,10 @@ export function getEffectiveDiscountValueForSort(input: {
     return Number.MAX_SAFE_INTEGER;
   }
 
+  if (input.discount_unit === "per_amount") {
+    return min;
+  }
+
   if (max != null && max >= min) {
     return max;
   }

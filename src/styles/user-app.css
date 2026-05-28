@@ -14,6 +14,11 @@
   --sr-user-section-gap: var(--sr-space-2, 16px);
   --sr-user-stack-gap: var(--sr-space-1, 8px);
   --sr-user-bottom-dock-offset: 5.5rem;
+  /* Home hub 44px chrome (floating menu + onboarding help) — sr-user-floating-menu__inner padding-block과 동일 */
+  --sr-home-floating-header-pad: 0.375rem;
+  --sr-home-floating-btn-top: calc(
+    env(safe-area-inset-top, 0px) + var(--sr-home-floating-header-pad)
+  );
   --sr-zoom-scale: 1;
   --sr-user-zoom-fab-bottom: 1.25rem;
   --sr-content-width: min(calc(100% - 40px), 380px);
@@ -1159,7 +1164,7 @@
   min-height: 3.25rem;
   align-items: center;
   justify-content: flex-start;
-  padding-block: 0.375rem;
+  padding-block: var(--sr-home-floating-header-pad, 0.375rem);
   padding-inline: 20px var(--sr-user-page-px);
   pointer-events: none;
 }
@@ -1204,7 +1209,9 @@
 .sr-user-floating-menu + .sr-user-app-shell {
   position: relative;
   z-index: 10;
-  padding-top: calc(3.25rem + env(safe-area-inset-top, 0px) + 0.375rem);
+  padding-top: calc(
+    3.25rem + env(safe-area-inset-top, 0px) + var(--sr-home-floating-header-pad, 0.375rem)
+  );
 }
 
 /* ── SaveRoute ambient canvas (AnimatedBackground — uniform dot grid) ── */

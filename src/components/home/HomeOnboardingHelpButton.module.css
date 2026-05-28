@@ -1,0 +1,49 @@
+/* 햄버거 메뉴(.sr-user-floating-menu) 44px 버튼과 동일 top — user-app.css --sr-home-floating-btn-top */
+.helpBtn {
+  position: fixed;
+  top: var(--sr-home-floating-btn-top);
+  right: max(1.25rem, var(--sr-user-page-px, 1.25rem));
+  z-index: 61;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(126, 162, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(12, 14, 28, 0.55);
+  color: rgba(210, 220, 255, 0.95);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    0 0 0 1px rgba(109, 94, 247, 0.12),
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(77, 124, 254, 0.22);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.helpBtn:hover {
+  background: rgba(22, 26, 48, 0.82);
+  border-color: rgba(160, 188, 255, 0.72);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(109, 94, 247, 0.2),
+    0 6px 18px rgba(0, 0, 0, 0.32),
+    0 0 22px rgba(109, 94, 247, 0.35);
+}
+
+.helpBtn:active {
+  transform: scale(0.96);
+}
+
+.helpBtn:focus-visible {
+  outline: 2px solid rgba(126, 162, 255, 0.85);
+  outline-offset: 2px;
+}

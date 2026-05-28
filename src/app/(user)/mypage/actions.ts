@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import {
+  isProfileAgeGroup,
+  isProfileGender,
+} from "@/lib/profile/demographics";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function normalizeNickname(raw: string) {
@@ -82,27 +86,18 @@ export async function updateDemographicsAction(_prev: unknown, formData: FormDat
     return { ok: false as const, message: "로그인이 필요합니다." };
   }
 
-  const genderRaw = String(formData.get("gender_group") ?? "none");
+  const genderRaw = String(formData.get("gender") ?? "none");
   const ageRaw = String(formData.get("age_group") ?? "none");
 
+  const gender = isProfileGender(genderRaw) ? genderRaw : null;
+  const age_group = isProfileAgeGroup(ageRaw) ? ageRaw : null;
   const gender_group =
-    genderRaw === "male" || genderRaw === "female" || genderRaw === "other"
-      ? genderRaw
-      : null;
-
-  const age_group =
-    ageRaw === "10s" ||
-    ageRaw === "20s" ||
-    ageRaw === "30s" ||
-    ageRaw === "40s" ||
-    ageRaw === "50s" ||
-    ageRaw === "60s+"
-      ? ageRaw
-      : null;
+    gender === "male" || gender === "female" || gender === "other" ? gender : null;
 
   const { error } = await supabase
     .from("profiles")
     .update({
+      gender,
       gender_group,
       age_group,
       updated_at: new Date().toISOString(),
